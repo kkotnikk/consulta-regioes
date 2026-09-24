@@ -311,17 +311,10 @@ async function pesquisar() {
 
     const busca = normalizar(buscaOriginal);
 
-    const encontrados = data.filter(item => {
-
-      const nome = normalizar(item.bairro);
-
-      return (
-        nome === busca ||
-        nome.includes(busca) ||
-        busca.includes(nome)
-      );
-
-    });
+let encontrados = data.filter(item => {
+  const nome = normalizar(item.bairro);
+  return nome === busca;
+});
 
 
     if (encontrados.length === 0) {
