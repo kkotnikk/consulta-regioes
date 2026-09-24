@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consulta de Regiões</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f1f5;color:#211d24;font-family:Arial,sans-serif}
+header{background:#321b49;color:white;text-align:center;padding:28px 16px}
+header h1{margin:0 0 8px;font-size:32px}
+main{max-width:760px;margin:22px auto;padding:0 15px}
+.card{background:white;border-radius:18px;padding:20px;box-shadow:0 5px 20px rgba(0,0,0,.08);margin-bottom:16px}
+label{display:block;font-weight:bold;margin-bottom:8px}
+.row{display:flex;gap:10px}
+input,select{width:100%;padding:15px;border:2px solid #ddd5e2;border-radius:12px;font-size:17px}
+button{border:0;border-radius:12px;padding:14px 18px;background:#542d73;color:white;font-weight:bold;font-size:16px}
+#resultado{margin-top:18px}
+.hidden{display:none}
+.region{font-size:30px;font-weight:bold;color:#542d73;margin:5px 0}
+.pink{margin-top:12px;background:#f5d3df;border-left:6px solid #c35d86;padding:14px;border-radius:9px;font-weight:bold}
+.erro{padding:14px;background:#f5eeee;border-radius:10px}
+.small{font-size:13px;color:#716b74;margin-top:8px}
+.admin{margin-top:18px;border-top:1px solid #eee;padding-top:18px}
+.item{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #eee}
+.delete{background:#a33;padding:8px 10px;font-size:13px}
+@media(max-width:600px){.row{flex-direction:column}button{width:100%}header h1{font-size:26px}}
+</style>
+</head>
+<body>
+<header>
+<h1>Consulta de Regiões</h1>
+<div>Digite um bairro ou município</div>
+</header>
+<main>
+<div class="card">
+<label for="busca">Bairro / município</label>
+<div class="row">
+<input id="busca" type="search" placeholder="Ex.: Vila Mariana" autocomplete="off">
+<button id="btn">Pesquisar</button>
+</div>
+<div id="resultado" class="hidden"></div>
+<div class="small">A busca ignora acentos e maiúsculas/minúsculas.</div>
+</div>
+
+<div class="card">
+<button id="adminBtn" type="button">⚙️ Adicionar / editar bairros</button>
+<div id="admin" class="admin hidden">
+<label for="novo">Novo bairro ou município</label>
+<input id="novo" placeholder="Ex.: Jardim Exemplo">
+<label for="regiao" style="margin-top:12px">Região</label>
+<select id="regiao"></select>
+<button id="add" style="margin-top:12px">Adicionar</button>
+<div id="lista" style="margin-top:15px"></div>
+<div class="small">Nesta versão, os novos cadastros ficam salvos neste navegador.</div>
+</div>
+</div>
+</main>
+
+<script>
+const INICIAL = {"Santo Amaro": ["americanopolis", "campo belo", "campo limpo", "chácara santo antonio", "chácara st antonio", "cidade ademar", "cidade dutra", "congonhas", "cotia", "embu", "embu das artes", "interlagos", "itapecerica da serra", "jabaquara", "jd aeroporto", "jd alzira", "jd cupecê", "jd iracema", "jd kioto", "jd regis", "jd marchá", "jd sabara", "jd lucia", "jd castelo branco", "jd myrna", "jd celeste", "jd leonor", "jd miriam", "jd canoa", "jd de pedreira", "jd riviera", "jurubatuba", "pedreira", "socorro", "taboão da serra", "vila alexandrina", "vila campestre", "vila gea", "vila santa catarina", "vila santana", "vila paulista", "vila livreiro", "vargem gd paulista", "veleiros", "vila imperio", "vila do castelo", "vila da paz"], "Restrito": ["aclimação", "bela vist", "bosque da saude", "brooklin", "butanta", "cambuci", "campo belo", "campos eliseos", "cerqueira cesar", "cidade monções", "chara inglesa", "consolação", "indianopoços", "jd paulistano", "jadins", "liberdade", "moema", "morumbi", "pacaembu", "perdizes", "pinheiro", "pompeia", "republica", "praça da arvore", "santa cecilia", "saude", "sumaré", "vila buarque", "vila clementina", "vila gumercindo", "vila madalena", "vila mariana", "vila monumento", "vila morse", "vila nair", "vila olimpia", "vila sonia", "nova conceição"], "Lapa": ["alphavile", "anhanguera", "barueri", "carapicuiba", "itapevi", "jaguaré", "jandira", "jaragua", "jd bonfigliori", "jd sasrah", "jd estes", "jd santo elias", "osasco", "parada de taipas", "pq sao domingos", "perus", "piqueri", "pirituba", "tamboré", "vila anastácio", "vila carice", "vila jaguara", "vila ribeiro", "vila romana", "vila leopoldina", "vila santa clara", "santana de parnaíba"], "Zona Leste": ["agua rasa", "aricanduva", "cangaiba", "chacara california", "cidade lider", "cidade tiradentes", "cidade mae do ceu", "chacara mafalda", "guaianazes", "guilhermina", "itaim paulista", "itaquera", "jd iguatemi", "jd nossa senhora do carmo", "jd iva", "jd perola", "jd andarai", "jd nove de julo", "jd matarazzo", "limoeiro", "maranhão", "nova manchester", "pq novo mundo", "pq sao lourenço", "patriarca", "penha", "rejente feijo", "sao mateus", "sao miguel paulista", "sapopemba", "tatuapé", "vila antonieta", "vila carmosina", "vila invernada", "vila carrao", "vila cisper", "vila formosa", "vila gomes cardim", "vila ivone", "vila nova york", "vila re", "vila rica", "vila nova pauliceia", "vila canero", "vila curuça", "vila leme", "vila nancy", "ferraz de vascicekis", "vila tanqueray"], "ABC": ["diadema", "jd lourdes", "maua", "ribeirao pires", "sao bernardo do campo", "santo andré"], "Guarulhos": ["arujá", "itaquaquecetuba", "jaçanã", "mogi das cruzes", "poá", "suzano"], "Mooca": ["belenzinho", "jd independencia", "jd previdencia", "jd lurdes", "pq sao lucas", "quarta parada", "sacoma", "santa maria", "sao caetano do sul", "sitio paulinho", "vila alpina", "vila beretioga", "vila carioca", "vila diva", "vila ema", "vila independencia", "vila ivone", "vila livieiro", "vila maria", "vila das merces", "vila prudente", "vila vera", "vila bela", "vila vermelha"], "Brás": ["canindé", "catumbi", "imirim", "pari"], "Centro": ["bom retiro", "luz", "mercado", "pq dom pedro", "ponte pequena", "republica", "santa ifigenia", "se"], "Zona Norte": ["agua branca", "barra funda", "brasilandia", "carandiru", "casa verde", "freguesia do O", "jd brasil", "jd japão", "jd pereira leite", "lauzane paulista", "limão", "mandaqui", "parada inglesa", "pq peruche", "santana", "tucuruvi", "vila aurora", "vila ede", "vila baruel", "vila guilherme"], "Interior": ["americana", "amparo", "aruja", "atibaia", "bragança paulista", "cabreuva", "caieiras", "cajamar", "campinas", "campo limpo paulista", "capivari", "ferraz de vasconcelos", "hortolandia", "indaiatuba", "itaquaquecetuba", "itatiba", "itu", "itupeva", "jacarei", "jaguariuna", "jundiai", "limeira", "louveira", "mairipora", "maua", "mogi das cruzes", "mogi mirim", "nova odessa", "paulinia", "piracicaba", "pirapora do bom jesus", "poa", "ribeirao pires", "santa barbara d'oeste", "santana de parnaiba", "sao jose dos campos", "sorocaba", "sumare", "suzano", "valinhos", "vargem grande paulista", "varzea paulista", "vinhedo", "votorantim"]};
+const STORAGE = "consulta_regioes_v3";
+let base = JSON.parse(localStorage.getItem(STORAGE) || "null");
+if (!base) {
+  base = JSON.parse(JSON.stringify(INICIAL));
+  localStorage.setItem(STORAGE, JSON.stringify(base));
+}
+
+function normalizar(texto) {
+  return String(texto)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function salvar() {
+  localStorage.setItem(STORAGE, JSON.stringify(base));
+}
+
+function encontrar(entrada) {
+  const q = normalizar(entrada);
+  if (!q) return [];
+
+  const exatos = [];
+  const aproximados = [];
+
+  for (const regiao of Object.keys(base)) {
+    for (const local of base[regiao]) {
+      const n = normalizar(local);
+      if (n === q) exatos.push(regiao);
+      else if (n.includes(q) || q.includes(n)) aproximados.push(regiao);
+    }
+  }
+
+  return [...new Set(exatos.length ? exatos : aproximados)];
+}
+
+function pesquisar() {
+  const entrada = document.getElementById("busca").value;
+  const resultado = document.getElementById("resultado");
+  const regioes = encontrar(entrada);
+
+  resultado.classList.remove("hidden");
+
+  if (!entrada.trim()) {
+    resultado.innerHTML = '<div class="erro">Digite um bairro ou município.</div>';
+    return;
+  }
+
+  if (!regioes.length) {
+    resultado.innerHTML = '<div class="erro"><b>Não encontrado.</b><br>Confira a escrita ou tente outro nome.</div>';
+    return;
+  }
+
+  // Regra: se existir Interior + outra região, a outra região prevalece.
+  const outras = regioes.filter(r => r !== "Interior");
+  const escolhida = outras.length ? outras[0] : regioes[0];
+  const folhaRosa = escolhida !== "Interior" && regioes.includes("Interior");
+
+  let html = '<div>Região correspondente:</div>';
+  html += '<div class="region">' + escolhida + '</div>';
+
+  if (folhaRosa) {
+    html += '<div class="pink">🩷 Atenção: imprimir na folha rosa.</div>';
+  }
+
+  if (outras.length > 1) {
+    html += '<div class="small">Também cadastrado em: ' + outras.slice(1).join(", ") + '</div>';
+  }
+
+  resultado.innerHTML = html;
+}
+
+document.getElementById("btn").addEventListener("click", pesquisar);
+document.getElementById("busca").addEventListener("keydown", e => {
+  if (e.key === "Enter") pesquisar();
+});
+document.getElementById("busca").addEventListener("input", () => {
+  if (!document.getElementById("busca").value.trim()) {
+    document.getElementById("resultado").classList.add("hidden");
+  }
+});
+
+function atualizarRegioes() {
+  const select = document.getElementById("regiao");
+  select.innerHTML = "";
+  Object.keys(base).forEach(r => {
+    const option = document.createElement("option");
+    option.value = r;
+    option.textContent = r;
+    select.appendChild(option);
+  });
+}
+
+function renderLista() {
+  const lista = document.getElementById("lista");
+  let html = "";
+  for (const regiao of Object.keys(base)) {
+    for (const local of base[regiao]) {
+      html += '<div class="item"><span><b>' + local + '</b><br><small>' + regiao + '</small></span>';
+      html += '<button class="delete" data-r="' + encodeURIComponent(regiao) + '" data-b="' + encodeURIComponent(local) + '">Excluir</button></div>';
+    }
+  }
+  lista.innerHTML = html || "<div>Nenhum bairro cadastrado.</div>";
+  lista.querySelectorAll(".delete").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const r = decodeURIComponent(btn.dataset.r);
+      const b = decodeURIComponent(btn.dataset.b);
+      base[r] = base[r].filter(x => x !== b);
+      salvar();
+      renderLista();
+    });
+  });
+}
+
+document.getElementById("adminBtn").addEventListener("click", () => {
+  const a = document.getElementById("admin");
+  a.classList.toggle("hidden");
+  atualizarRegioes();
+  renderLista();
+});
+
+document.getElementById("add").addEventListener("click", () => {
+  const campo = document.getElementById("novo");
+  const bairro = campo.value.trim();
+  const regiao = document.getElementById("regiao").value;
+
+  if (!bairro) {
+    alert("Digite o bairro ou município.");
+    return;
+  }
+
+  if (base[regiao].some(x => normalizar(x) === normalizar(bairro))) {
+    alert("Esse local já está cadastrado nessa região.");
+    return;
+  }
+
+  base[regiao].push(bairro);
+  salvar();
+  campo.value = "";
+  renderLista();
+  alert("Bairro adicionado com sucesso.");
+});
+</script>
+</body>
+</html>
