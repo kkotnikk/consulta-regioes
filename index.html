@@ -326,7 +326,69 @@
         flex: 1;
       }
     }
-  </style>
+  
+    .modal-edicao-rota {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,.55);
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .modal-edicao-rota.ativo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-edicao-conteudo {
+      width: 100%;
+      max-width: 560px;
+      background: #fff;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+
+    .modal-edicao-topo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 18px;
+    }
+
+    .modal-edicao-topo h2 {
+      margin: 0;
+      text-align: left;
+    }
+
+    .fechar-modal-rota {
+      width: auto;
+      background: transparent;
+      color: #555;
+      font-size: 26px;
+      padding: 4px 10px;
+      line-height: 1;
+    }
+
+    .modal-edicao-acoes {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .modal-edicao-acoes button {
+      flex: 1;
+    }
+
+    .cancelar-edicao-rota {
+      background: #777;
+    }
+
+</style>
 </head>
 
 <body>
@@ -1239,59 +1301,76 @@ async function confirmarRetorno(id) {
 
 
 async function editarRota(id) {
-
-  const { data, error } =
-    await supabaseClient
-      .from("rotas")
-      .select("*")
-      .eq("id", id)
-      .single();
+  const { data, error } = await supabaseClient
+    .from("rotas")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (error || !data) {
-    alert("Não foi possível carregar a rota.");
+    console.error(error);
+    alert("Não foi possível carregar esta rota.");
     return;
   }
 
-  const motorista = prompt("Motorista:", data.motorista);
-  if (motorista === null) return;
+  document.getElementById("editarRotaId").value = data.id;
+  document.getElementById("editarMotorista").value = data.motorista || "";
+  document.getElementById("editarPlaca").value = data.placa || "";
+  document.getElementById("editarRegiao").value = data.regiao || "";
+  document.getElementById("editarAjudante").value = data.ajudante || "";
+  document.getElementById("editarObservacao").value = data.observacao || "";
 
-  const placa = prompt("Placa:", data.placa);
-  if (placa === null) return;
+  const modal = document.getElementById("modalEditarRota");
+  modal.classList.add("ativo");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
 
-  const regiao = prompt("Região:", data.regiao);
-  if (regiao === null) return;
 
-  const ajudante = prompt("Ajudante:", data.ajudante || "");
-  if (ajudante === null) return;
+function fecharEdicaoRota() {
+  const modal = document.getElementById("modalEditarRota");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
 
-  const observacao = prompt("Observação:", data.observacao || "");
-  if (observacao === null) return;
 
-  if (!motorista.trim() || !placa.trim() || !regiao.trim()) {
-    alert("Motorista, placa e região não podem ficar vazios.");
+async function salvarEdicaoRota() {
+  const id = Number(document.getElementById("editarRotaId").value);
+  const motorista = document.getElementById("editarMotorista").value.trim();
+  const placa = document.getElementById("editarPlaca").value.trim();
+  const regiao = document.getElementById("editarRegiao").value.trim();
+  const ajudante = document.getElementById("editarAjudante").value.trim();
+  const observacao = document.getElementById("editarObservacao").value.trim();
+
+  if (!id) {
+    alert("Não foi possível identificar esta rota.");
     return;
   }
 
-  const { error: updateError } =
-    await supabaseClient
-      .from("rotas")
-      .update({
-        motorista: motorista.trim(),
-        placa: placa.trim(),
-        regiao: regiao.trim(),
-        ajudante: ajudante.trim() || null,
-        observacao: observacao.trim() || null
-      })
-      .eq("id", id);
-
-  if (updateError) {
-    console.error(updateError);
-    alert("Não foi possível editar a rota.");
+  if (!motorista || !placa || !regiao) {
+    alert("Preencha motorista, placa e região.");
     return;
   }
 
-  alert("Rota atualizada!");
+  const { error } = await supabaseClient
+    .from("rotas")
+    .update({
+      motorista,
+      placa,
+      regiao,
+      ajudante: ajudante || null,
+      observacao: observacao || null
+    })
+    .eq("id", id);
 
+  if (error) {
+    console.error(error);
+    alert("Não foi possível salvar as alterações.");
+    return;
+  }
+
+  fecharEdicaoRota();
   carregarRotasAdmin();
   carregarRotasPublicas();
 }
@@ -1519,7 +1598,63 @@ document
 
 
 
+
+document.addEventListener("click", function(event) {
+  const modal = document.getElementById("modalEditarRota");
+  if (event.target === modal) {
+    fecharEdicaoRota();
+  }
+});
+
+document.addEventListener("keydown", function(event) {
+  if (event.key === "Escape" && document.getElementById("modalEditarRota").classList.contains("ativo")) {
+    fecharEdicaoRota();
+  }
+});
+
 </script>
+
+
+<div id="modalEditarRota" class="modal-edicao-rota" aria-hidden="true">
+  <div class="modal-edicao-conteudo">
+    <div class="modal-edicao-topo">
+      <h2>✏️ Editar rota</h2>
+      <button type="button" class="fechar-modal-rota" onclick="fecharEdicaoRota()" aria-label="Fechar">×</button>
+    </div>
+
+    <input type="hidden" id="editarRotaId">
+
+    <div class="campo">
+      <label>Motorista</label>
+      <input type="text" id="editarMotorista">
+    </div>
+
+    <div class="campo">
+      <label>Placa</label>
+      <input type="text" id="editarPlaca">
+    </div>
+
+    <div class="campo">
+      <label>Região</label>
+      <input type="text" id="editarRegiao">
+    </div>
+
+    <div class="campo">
+      <label>Ajudante</label>
+      <input type="text" id="editarAjudante">
+    </div>
+
+    <div class="campo">
+      <label>Observação</label>
+      <input type="text" id="editarObservacao">
+    </div>
+
+    <div class="modal-edicao-acoes">
+      <button type="button" class="cancelar-edicao-rota" onclick="fecharEdicaoRota()">Cancelar</button>
+      <button type="button" onclick="salvarEdicaoRota()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
