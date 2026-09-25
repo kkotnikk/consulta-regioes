@@ -1365,6 +1365,24 @@ h1, h2, h3 {
 .btn-suporte-registrar:disabled { opacity:.65; cursor:wait; }
 @media(max-width:760px) { .suporte-admin-cabecalho{align-items:flex-start;flex-direction:column;} .suporte-admin-resumo{justify-content:flex-start;} .suporte-admin-lista{grid-template-columns:1fr;} }
 
+
+.admin-btn {
+  position: fixed !important; right: 22px !important; bottom: 22px !important;
+  z-index: 8500 !important; width: auto !important; min-width: 0 !important;
+  margin: 0 !important; padding: 11px 16px !important; border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0,72,38,.22) !important;
+  font-size: 13px !important; font-weight: 650 !important; white-space: nowrap !important;
+}
+@media (max-width:600px){
+  .admin-btn { right:14px !important; bottom:14px !important; padding:10px 13px !important; font-size:12px !important; }
+}
+#modalSistema .modal-sistema-conteudo {
+  width:min(88vw,370px) !important; max-width:370px !important;
+  padding:22px !important; border-radius:16px !important;
+}
+#modalSistema #modalSistemaTitulo { margin:0 0 8px !important; font-size:19px !important; }
+#modalSistema #modalSistemaMensagem { margin:0 0 18px !important; font-size:13px !important; line-height:1.45 !important; color:#66736c !important; }
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2920,16 +2938,37 @@ async function salvarNovaRotaModal() {
   carregarRotasPublicas();
 }
 
-function abrirAdicionarBairro() {
-  document.getElementById("modalNovoBairro").value =
-    document.getElementById("novoBairro")?.value || "";
-  document.getElementById("modalNovaRegiao").value =
-    document.getElementById("novaRegiao")?.value || "";
+async function abrirAdicionarBairro() {
+  const bairro = document.getElementById("novoBairro")?.value.trim() || "";
+  const regiao = document.getElementById("novaRegiao")?.value.trim() || "";
 
-  const modal = document.getElementById("modalAdicionarBairro");
-  modal.classList.add("ativo");
-  modal.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
+  if (!bairro || !regiao) {
+    mostrarToast("Preencha o bairro e a região.", "erro");
+    return;
+  }
+
+  const confirmar = await confirmarNoSite({
+    titulo: "Adicionar bairro?",
+    mensagem: `${bairro} — Região ${regiao}`,
+    textoConfirmar: "Confirmar",
+    tipo: "sucesso"
+  });
+
+  if (!confirmar) return;
+
+  const { error } = await supabaseClient.from("bairros").insert([{ bairro, regiao }]);
+
+  if (error) {
+    console.error("Erro ao adicionar bairro:", error);
+    mostrarToast("Não foi possível adicionar o bairro.", "erro");
+    return;
+  }
+
+  document.getElementById("novoBairro").value = "";
+  document.getElementById("novaRegiao").value = "";
+
+  mostrarToast("Bairro adicionado com sucesso.", "sucesso");
+  carregarBairros();
 }
 
 function fecharAdicionarBairro() {
