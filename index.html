@@ -499,7 +499,7 @@
         onkeydown="if(event.key === 'Enter') pesquisar()"
       >
 
-      <button onclick="pesquisar()">
+      <button type="button" onclick="pesquisar()">
         Pesquisar
       </button>
     </div>
@@ -516,7 +516,7 @@
       <div id="rotasPublicas"></div>
     </div>
 
-    <button class="admin-btn" onclick="abrirAdmin()">
+    <button type="button" class="admin-btn" onclick="abrirAdmin()">
       ⚙️ Gerenciar sistema
     </button>
 
@@ -807,7 +807,7 @@ function mostrarLogin() {
     </div>
 
 
-    <button onclick="login()">
+    <button type="button" onclick="login()">
       Entrar
     </button>
 
@@ -875,7 +875,7 @@ async function mostrarPainelAdmin() {
 
     <h2>Gerenciar sistema</h2>
 
-    <button class="sair" onclick="sairAdmin()">
+    <button type="button" class="sair" onclick="sairAdmin()">
       Sair
     </button>
 
@@ -902,7 +902,7 @@ async function mostrarPainelAdmin() {
           >
         </div>
 
-        <button onclick="adicionarBairro()">
+        <button type="button" onclick="abrirAdicionarBairro()">
           + Adicionar bairro
         </button>
 
@@ -967,7 +967,7 @@ async function mostrarPainelAdmin() {
           >
         </div>
 
-        <button onclick="adicionarRota()">
+        <button type="button" onclick="abrirAdicionarRota()">
           + Adicionar rota
         </button>
       </div>
@@ -1128,7 +1128,7 @@ async function carregarBairros() {
 
         <div class="acoes">
 
-          <button
+          <button type="button"
             class="editar"
             onclick="editarBairro(${item.id}, '${escapeJs(item.bairro)}', '${escapeJs(item.regiao)}')"
           >
@@ -1136,7 +1136,7 @@ async function carregarBairros() {
           </button>
 
 
-          <button
+          <button type="button"
             class="excluir"
             onclick="excluirBairro(${item.id})"
           >
@@ -1331,7 +1331,7 @@ async function carregarRotasAdmin() {
           ${
             !confirmada
               ? `
-                <button
+                <button type="button"
                   class="confirmar-retorno"
                   onclick="confirmarRetorno(${rota.id})">
                   ✓ Confirmar retorno
@@ -1340,13 +1340,13 @@ async function carregarRotasAdmin() {
               : ""
           }
 
-          <button
+          <button type="button"
             class="editar"
             onclick="editarRota(${rota.id})">
             Editar
           </button>
 
-          <button
+          <button type="button"
             class="excluir"
             onclick="excluirRota(${rota.id})">
             Excluir
@@ -1749,8 +1749,166 @@ function resolverModalSistema(valor) {
   }
 }
 
+
+function abrirAdicionarRota() {
+  document.getElementById("modalNovoMotorista").value =
+    document.getElementById("novoMotorista")?.value || "";
+  document.getElementById("modalNovaPlaca").value =
+    document.getElementById("novaPlaca")?.value || "";
+  document.getElementById("modalNovaRegiaoRota").value =
+    document.getElementById("novaRegiaoRota")?.value || "";
+  document.getElementById("modalNovoAjudante").value =
+    document.getElementById("novoAjudante")?.value || "";
+  document.getElementById("modalNovaObservacao").value =
+    document.getElementById("novaObservacao")?.value || "";
+
+  const modal = document.getElementById("modalAdicionarRota");
+  modal.classList.add("ativo");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function fecharAdicionarRota() {
+  const modal = document.getElementById("modalAdicionarRota");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+async function salvarNovaRotaModal() {
+  const motorista = document.getElementById("modalNovoMotorista").value.trim();
+  const placa = document.getElementById("modalNovaPlaca").value.trim();
+  const regiao = document.getElementById("modalNovaRegiaoRota").value.trim();
+  const ajudante = document.getElementById("modalNovoAjudante").value.trim();
+  const observacao = document.getElementById("modalNovaObservacao").value.trim();
+
+  if (!motorista || !placa || !regiao) {
+    mostrarToast("Preencha motorista, placa e região.", "erro");
+    return;
+  }
+
+  const { error } = await supabaseClient.from("rotas").insert([{
+    motorista, placa, regiao,
+    ajudante: ajudante || null,
+    observacao: observacao || null,
+    status: "em_rota"
+  }]);
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Não foi possível adicionar a rota.", "erro");
+    return;
+  }
+
+  fecharAdicionarRota();
+  mostrarToast("Rota adicionada com sucesso!", "sucesso");
+  carregarRotasAdmin();
+  carregarRotasPublicas();
+}
+
+function abrirAdicionarBairro() {
+  document.getElementById("modalNovoBairro").value =
+    document.getElementById("novoBairro")?.value || "";
+  document.getElementById("modalNovaRegiao").value =
+    document.getElementById("novaRegiao")?.value || "";
+
+  const modal = document.getElementById("modalAdicionarBairro");
+  modal.classList.add("ativo");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function fecharAdicionarBairro() {
+  const modal = document.getElementById("modalAdicionarBairro");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+async function salvarNovoBairroModal() {
+  const bairro = document.getElementById("modalNovoBairro").value.trim();
+  const regiao = document.getElementById("modalNovaRegiao").value.trim();
+
+  if (!bairro || !regiao) {
+    mostrarToast("Preencha o bairro e a região.", "erro");
+    return;
+  }
+
+  const { error } = await supabaseClient.from("bairros").insert([{ bairro, regiao }]);
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Não foi possível adicionar o bairro.", "erro");
+    return;
+  }
+
+  fecharAdicionarBairro();
+  mostrarToast("Bairro adicionado com sucesso!", "sucesso");
+  carregarBairros();
+}
+
 </script>
 
+
+
+
+<div id="modalAdicionarBairro" class="modal-edicao-rota" aria-hidden="true">
+  <div class="modal-edicao-conteudo">
+    <div class="modal-edicao-topo">
+      <h2>📍 Adicionar bairro</h2>
+      <button type="button" class="fechar-modal-rota" onclick="fecharAdicionarBairro()" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="campo">
+      <label>Bairro / Município</label>
+      <input type="text" id="modalNovoBairro">
+    </div>
+    <div class="campo">
+      <label>Região</label>
+      <input type="text" id="modalNovaRegiao">
+    </div>
+
+    <div class="modal-edicao-acoes">
+      <button type="button" class="cancelar-edicao-rota" onclick="fecharAdicionarBairro()">Cancelar</button>
+      <button type="button" onclick="salvarNovoBairroModal()">Adicionar bairro</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalAdicionarRota" class="modal-edicao-rota" aria-hidden="true">
+  <div class="modal-edicao-conteudo">
+    <div class="modal-edicao-topo">
+      <h2>🚚 Adicionar rota</h2>
+      <button type="button" class="fechar-modal-rota" onclick="fecharAdicionarRota()" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="campo">
+      <label>Motorista</label>
+      <input type="text" id="modalNovoMotorista">
+    </div>
+    <div class="campo">
+      <label>Placa</label>
+      <input type="text" id="modalNovaPlaca">
+    </div>
+    <div class="campo">
+      <label>Região</label>
+      <input type="text" id="modalNovaRegiaoRota">
+    </div>
+    <div class="campo">
+      <label>Ajudante</label>
+      <input type="text" id="modalNovoAjudante">
+    </div>
+    <div class="campo">
+      <label>Observação</label>
+      <input type="text" id="modalNovaObservacao">
+    </div>
+
+    <div class="modal-edicao-acoes">
+      <button type="button" class="cancelar-edicao-rota" onclick="fecharAdicionarRota()">Cancelar</button>
+      <button type="button" onclick="salvarNovaRotaModal()">Adicionar rota</button>
+    </div>
+  </div>
+</div>
 
 <div id="modalEditarRota" class="modal-edicao-rota" aria-hidden="true">
   <div class="modal-edicao-conteudo">
