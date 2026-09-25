@@ -5,48 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Consulta de Regiões</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-/* =========================================================
-   CLIQUES DOS BOTÕES DE ROTA
-   ========================================================= */
-
-document.addEventListener("click", async function(event) {
-  const botao = event.target.closest("[data-acao-rota]");
-
-  if (!botao) return;
-
-  event.preventDefault();
-
-  const id = Number(botao.dataset.rotaId);
-  const acao = botao.dataset.acaoRota;
-
-  if (!id) {
-    alert("Não foi possível identificar esta rota.");
-    return;
-  }
-
-  botao.disabled = true;
-
-  try {
-    if (acao === "confirmar") {
-      await confirmarRetorno(id);
-    } else if (acao === "editar") {
-      await editarRota(id);
-    } else if (acao === "excluir") {
-      await excluirRota(id);
-    }
-  } catch (erro) {
-    console.error(erro);
-    alert("Ocorreu um erro ao executar esta ação.");
-  } finally {
-    if (document.body.contains(botao)) {
-      botao.disabled = false;
-    }
-  }
-});
-
-
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     * {
@@ -1556,6 +1515,45 @@ document
 
     }
   );
+
+
+/* =========================================================
+   CLIQUES DOS BOTÕES DE ROTA
+   ========================================================= */
+
+document.addEventListener("click", async function(event) {
+  const botao = event.target.closest("[data-acao-rota]");
+  if (!botao) return;
+
+  event.preventDefault();
+
+  const id = Number(botao.dataset.rotaId);
+  const acao = botao.dataset.acaoRota;
+
+  if (!id) {
+    alert("Não foi possível identificar esta rota.");
+    return;
+  }
+
+  botao.disabled = true;
+
+  try {
+    if (acao === "confirmar") {
+      await confirmarRetorno(id);
+    } else if (acao === "editar") {
+      await editarRota(id);
+    } else if (acao === "excluir") {
+      await excluirRota(id);
+    }
+  } catch (erro) {
+    console.error(erro);
+    alert("Ocorreu um erro ao executar esta ação.");
+  } finally {
+    if (document.body.contains(botao)) {
+      botao.disabled = false;
+    }
+  }
+});
 
 </script>
 
