@@ -1183,7 +1183,7 @@ async function carregarRotasAdmin() {
               ? `
                 <button
                   class="confirmar-retorno"
-                  data-acao-rota="confirmar" data-rota-id="${rota.id}">
+                  onclick="confirmarRetorno(${rota.id})">
                   ✓ Confirmar retorno
                 </button>
               `
@@ -1192,13 +1192,13 @@ async function carregarRotasAdmin() {
 
           <button
             class="editar"
-            data-acao-rota="editar" data-rota-id="${rota.id}">
+            onclick="editarRota(${rota.id})">
             Editar
           </button>
 
           <button
             class="excluir"
-            data-acao-rota="excluir" data-rota-id="${rota.id}">
+            onclick="excluirRota(${rota.id})">
             Excluir
           </button>
 
@@ -1517,43 +1517,7 @@ document
   );
 
 
-/* =========================================================
-   CLIQUES DOS BOTÕES DE ROTA
-   ========================================================= */
 
-document.addEventListener("click", async function(event) {
-  const botao = event.target.closest("[data-acao-rota]");
-  if (!botao) return;
-
-  event.preventDefault();
-
-  const id = Number(botao.dataset.rotaId);
-  const acao = botao.dataset.acaoRota;
-
-  if (!id) {
-    alert("Não foi possível identificar esta rota.");
-    return;
-  }
-
-  botao.disabled = true;
-
-  try {
-    if (acao === "confirmar") {
-      await confirmarRetorno(id);
-    } else if (acao === "editar") {
-      await editarRota(id);
-    } else if (acao === "excluir") {
-      await excluirRota(id);
-    }
-  } catch (erro) {
-    console.error(erro);
-    alert("Ocorreu um erro ao executar esta ação.");
-  } finally {
-    if (document.body.contains(botao)) {
-      botao.disabled = false;
-    }
-  }
-});
 
 </script>
 
