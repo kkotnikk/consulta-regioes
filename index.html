@@ -5,121 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Consulta de Regiões</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-let rotaDetalhesAtualId = null;
-let reabrirDetalhesAoCancelar = false;
-
-function abrirDetalhesRota(id) {
-  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(id));
-  if (!rota) return;
-
-  rotaDetalhesAtualId = Number(rota.id);
-  const confirmada = rota.status === "retorno_confirmado";
-
-  const statusTopo = document.getElementById("detalhesRotaStatus");
-  statusTopo.textContent = confirmada ? "● Retorno confirmado" : "● Em rota";
-  statusTopo.style.color = confirmada ? "#0bad27" : "#dda600";
-
-  document.getElementById("detalhesRotaMotorista").textContent = rota.motorista || "Detalhes da rota";
-  document.getElementById("detalhesMotorista").textContent = rota.motorista || "—";
-  document.getElementById("detalhesPlaca").textContent = rota.placa || "—";
-  document.getElementById("detalhesRegiao").textContent = rota.regiao || "—";
-  document.getElementById("detalhesAjudante").textContent = rota.ajudante || "—";
-  document.getElementById("detalhesNumeroColetas").textContent = rota.numero_coletas ?? "—";
-  document.getElementById("detalhesStatusTexto").textContent = confirmada ? "Retorno confirmado" : "Em rota";
-  document.getElementById("detalhesRetorno").textContent =
-    confirmada ? formatarHora(rota.retorno_confirmado_em) : "Ainda não confirmado";
-  document.getElementById("detalhesObservacao").textContent = rota.observacao || "Sem observações.";
-  document.getElementById("areaConfirmarRetornoPublico").style.display = confirmada ? "none" : "block";
-
-  const modal = document.getElementById("modalDetalhesRota");
-  modal.classList.add("ativo");
-  modal.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-}
-
-function fecharDetalhesRota() {
-  const modal = document.getElementById("modalDetalhesRota");
-  modal.classList.remove("ativo");
-  modal.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-}
-
-function iniciarConfirmacaoRetornoPublico() {
-  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId));
-  if (!rota || rota.status === "retorno_confirmado") return;
-
-  reabrirDetalhesAoCancelar = true;
-
-  // IMPORTANTE: fecha totalmente o primeiro painel ANTES de abrir a 2ª confirmação.
-  const detalhes = document.getElementById("modalDetalhesRota");
-  detalhes.classList.remove("ativo");
-  detalhes.setAttribute("aria-hidden", "true");
-
-  document.getElementById("confirmacaoRetornoMotorista").textContent =
-    `Você está confirmando o retorno da rota de ${rota.motorista || "motorista não informado"}.`;
-
-  const confirmacao = document.getElementById("modalConfirmarRetornoPublico");
-  confirmacao.classList.add("ativo");
-  confirmacao.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-}
-
-function fecharConfirmacaoRetornoPublico() {
-  const modal = document.getElementById("modalConfirmarRetornoPublico");
-  modal.classList.remove("ativo");
-  modal.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-
-  if (reabrirDetalhesAoCancelar && rotaDetalhesAtualId) {
-    reabrirDetalhesAoCancelar = false;
-    abrirDetalhesRota(rotaDetalhesAtualId);
-  }
-}
-
-async function executarConfirmacaoRetornoPublico() {
-  const id = Number(rotaDetalhesAtualId);
-  const rota = rotasPublicasCache.find(r => Number(r.id) === id);
-  if (!id || !rota) return;
-
-  reabrirDetalhesAoCancelar = false;
-  const botao = document.getElementById("btnSegundaConfirmacaoRetorno");
-  botao.disabled = true;
-  botao.textContent = "Confirmando...";
-
-  const { error } = await supabaseClient
-    .from("rotas")
-    .update({
-      status: "retorno_confirmado",
-      retorno_confirmado_em: new Date().toISOString()
-    })
-    .eq("id", id);
-
-  botao.disabled = false;
-  botao.textContent = "Sim, confirmar retorno";
-
-  if (error) {
-    console.error(error);
-    mostrarToast("Não foi possível confirmar o retorno.", "erro");
-    return;
-  }
-
-  const modal = document.getElementById("modalConfirmarRetornoPublico");
-  modal.classList.remove("ativo");
-  modal.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-
-  mostrarToast(`Retorno de ${rota.motorista || "motorista"} confirmado com sucesso!`, "sucesso");
-  await carregarRotasPublicas();
-  if (document.getElementById("adminRotasLista")) carregarRotasAdmin();
-}
-
-document.addEventListener("click", function(event) {
-  const detalhes = document.getElementById("modalDetalhesRota");
-  if (event.target === detalhes) fecharDetalhesRota();
-});
-
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     * {
@@ -1954,44 +1840,64 @@ async function salvarEdicaoRota() {
   const regiao = document.getElementById("editarRegiao").value.trim();
   const ajudante = document.getElementById("editarAjudante").value.trim();
   const numeroColetasValor = document.getElementById("editarNumeroColetas").value;
-  const numero_coletas = numeroColetasValor === "" ? null : Number(numeroColetasValor);
   const status = document.getElementById("editarStatusRota").value;
   const observacao = document.getElementById("editarObservacao").value.trim();
+  const botaoSalvar = document.querySelector('#modalEditarRota .modal-edicao-acoes button:last-child');
 
   if (!id) {
     mostrarToast("Não foi possível identificar esta rota.", "erro");
     return;
   }
-
   if (!motorista || !placa || !regiao) {
     mostrarToast("Preencha motorista, placa e região.", "erro");
     return;
   }
 
+  const atualizacao = {
+    motorista,
+    placa,
+    regiao,
+    ajudante: ajudante || null,
+    observacao: observacao || null,
+    status
+  };
+
+  // Só envia Número de Coletas quando houver um valor digitado.
+  // Isso mantém compatibilidade com rotas antigas e permite editar o status normalmente.
+  if (numeroColetasValor !== "") {
+    atualizacao.numero_coletas = Number(numeroColetasValor);
+  }
+
+  // Ao voltar para Em rota, apaga o horário do retorno anterior.
+  if (status === "em_rota") {
+    atualizacao.retorno_confirmado_em = null;
+  }
+
+  if (botaoSalvar) {
+    botaoSalvar.disabled = true;
+    botaoSalvar.textContent = "Salvando...";
+  }
+
   const { error } = await supabaseClient
     .from("rotas")
-    .update({
-      motorista,
-      placa,
-      regiao,
-      ajudante: ajudante || null,
-      numero_coletas,
-      observacao: observacao || null,
-      status,
-      retorno_confirmado_em: status === "em_rota" ? null : undefined
-    })
+    .update(atualizacao)
     .eq("id", id);
 
+  if (botaoSalvar) {
+    botaoSalvar.disabled = false;
+    botaoSalvar.textContent = "Salvar alterações";
+  }
+
   if (error) {
-    console.error(error);
+    console.error("Erro ao editar rota:", error);
     mostrarToast("Não foi possível salvar as alterações.", "erro");
     return;
   }
 
   fecharEdicaoRota();
   mostrarToast("Rota atualizada com sucesso!", "sucesso");
-  carregarRotasAdmin();
-  carregarRotasPublicas();
+  await carregarRotasAdmin();
+  await carregarRotasPublicas();
 }
 
 
@@ -2377,6 +2283,121 @@ async function salvarNovoBairroModal() {
   carregarBairros();
 }
 
+
+
+/* ===== DETALHES DA ROTA / CONFIRMACAO PUBLICA ===== */
+let rotaDetalhesAtualId = null;
+let reabrirDetalhesAoCancelar = false;
+
+function abrirDetalhesRota(id) {
+  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(id));
+  if (!rota) return;
+
+  rotaDetalhesAtualId = Number(rota.id);
+  const confirmada = rota.status === "retorno_confirmado";
+
+  const statusTopo = document.getElementById("detalhesRotaStatus");
+  statusTopo.textContent = confirmada ? "● Retorno confirmado" : "● Em rota";
+  statusTopo.style.color = confirmada ? "#0bad27" : "#dda600";
+
+  document.getElementById("detalhesRotaMotorista").textContent = rota.motorista || "Detalhes da rota";
+  document.getElementById("detalhesMotorista").textContent = rota.motorista || "—";
+  document.getElementById("detalhesPlaca").textContent = rota.placa || "—";
+  document.getElementById("detalhesRegiao").textContent = rota.regiao || "—";
+  document.getElementById("detalhesAjudante").textContent = rota.ajudante || "—";
+  document.getElementById("detalhesNumeroColetas").textContent = rota.numero_coletas ?? "—";
+  document.getElementById("detalhesStatusTexto").textContent = confirmada ? "Retorno confirmado" : "Em rota";
+  document.getElementById("detalhesRetorno").textContent =
+    confirmada ? formatarHora(rota.retorno_confirmado_em) : "Ainda não confirmado";
+  document.getElementById("detalhesObservacao").textContent = rota.observacao || "Sem observações.";
+  document.getElementById("areaConfirmarRetornoPublico").style.display = confirmada ? "none" : "block";
+
+  const modal = document.getElementById("modalDetalhesRota");
+  modal.classList.add("ativo");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function fecharDetalhesRota() {
+  const modal = document.getElementById("modalDetalhesRota");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function iniciarConfirmacaoRetornoPublico() {
+  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId));
+  if (!rota || rota.status === "retorno_confirmado") return;
+
+  reabrirDetalhesAoCancelar = true;
+
+  // IMPORTANTE: fecha totalmente o primeiro painel ANTES de abrir a 2ª confirmação.
+  const detalhes = document.getElementById("modalDetalhesRota");
+  detalhes.classList.remove("ativo");
+  detalhes.setAttribute("aria-hidden", "true");
+
+  document.getElementById("confirmacaoRetornoMotorista").textContent =
+    `Você está confirmando o retorno da rota de ${rota.motorista || "motorista não informado"}.`;
+
+  const confirmacao = document.getElementById("modalConfirmarRetornoPublico");
+  confirmacao.classList.add("ativo");
+  confirmacao.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function fecharConfirmacaoRetornoPublico() {
+  const modal = document.getElementById("modalConfirmarRetornoPublico");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+
+  if (reabrirDetalhesAoCancelar && rotaDetalhesAtualId) {
+    reabrirDetalhesAoCancelar = false;
+    abrirDetalhesRota(rotaDetalhesAtualId);
+  }
+}
+
+async function executarConfirmacaoRetornoPublico() {
+  const id = Number(rotaDetalhesAtualId);
+  const rota = rotasPublicasCache.find(r => Number(r.id) === id);
+  if (!id || !rota) return;
+
+  reabrirDetalhesAoCancelar = false;
+  const botao = document.getElementById("btnSegundaConfirmacaoRetorno");
+  botao.disabled = true;
+  botao.textContent = "Confirmando...";
+
+  const { error } = await supabaseClient
+    .from("rotas")
+    .update({
+      status: "retorno_confirmado",
+      retorno_confirmado_em: new Date().toISOString()
+    })
+    .eq("id", id);
+
+  botao.disabled = false;
+  botao.textContent = "Sim, confirmar retorno";
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Não foi possível confirmar o retorno.", "erro");
+    return;
+  }
+
+  const modal = document.getElementById("modalConfirmarRetornoPublico");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+
+  mostrarToast(`Retorno de ${rota.motorista || "motorista"} confirmado com sucesso!`, "sucesso");
+  await carregarRotasPublicas();
+  if (document.getElementById("adminRotasLista")) carregarRotasAdmin();
+}
+
+document.addEventListener("click", function(event) {
+  const detalhes = document.getElementById("modalDetalhesRota");
+  if (event.target === detalhes) fecharDetalhesRota();
+});
 </script>
 
 
