@@ -1340,6 +1340,31 @@ h1, h2, h3 {
   .brand-header::after { width: 46%; background-size: 58px auto; opacity: .06; }
 }
 
+
+/* ===== CENTRAL DE SUPORTE - ÁREA ADMINISTRATIVA ===== */
+.suporte-admin-secao { margin-top:32px; padding-top:26px; border-top:1px solid #e2e9e5; }
+.suporte-admin-cabecalho { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:16px; }
+.suporte-admin-cabecalho h3 { margin:4px 0; font-size:22px; }
+.suporte-admin-cabecalho p { margin:0; color:#718078; font-size:13px; }
+.suporte-admin-resumo { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.suporte-admin-resumo span { padding:7px 10px; border:1px solid #dfe8e3; border-radius:999px; background:#f8fbf9; color:#52645a; font-size:12px; white-space:nowrap; }
+.suporte-admin-lista { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.suporte-admin-card { padding:16px; border:1px solid #e0e8e3; border-radius:12px; background:#fff; }
+.suporte-admin-topo { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+.suporte-admin-tipo { color:#00713a; font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; }
+.suporte-admin-card h4 { margin:3px 0 0; font-size:15px; }
+.suporte-admin-card p { margin:13px 0; color:#35433b; font-size:13px; line-height:1.55; white-space:pre-wrap; }
+.suporte-admin-meta { padding-top:10px; border-top:1px solid #edf1ef; color:#89928d; font-size:11px; }
+.suporte-admin-status { padding:5px 8px; border-radius:999px; font-size:10px; font-weight:700; white-space:nowrap; background:#eef2ef; color:#536159; }
+.status-novo { background:#fff5d8; color:#8b6500; }
+.status-em-analise { background:#e8f1ff; color:#315f9d; }
+.status-resolvido { background:#e6f6eb; color:#19713a; }
+.suporte-admin-acoes { display:flex; gap:8px; margin-top:12px; }
+.suporte-admin-acoes select { flex:1; min-width:0; padding:9px 10px; border:1px solid #d8e1dc; border-radius:8px; background:#fff; font:inherit; font-size:12px; }
+.suporte-admin-acoes button { width:auto; padding:9px 12px; font-size:12px; }
+.btn-suporte-registrar:disabled { opacity:.65; cursor:wait; }
+@media(max-width:760px) { .suporte-admin-cabecalho{align-items:flex-start;flex-direction:column;} .suporte-admin-resumo{justify-content:flex-start;} .suporte-admin-lista{grid-template-columns:1fr;} }
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1975,12 +2000,25 @@ async function mostrarPainelAdmin() {
       <div id="adminRotasLista"></div>
     </div>
 
+    <div class="admin-lista suporte-admin-secao">
+      <div class="suporte-admin-cabecalho">
+        <div>
+          <div class="suporte-kicker">SUPORTE</div>
+          <h3>Central de Suporte</h3>
+          <p>Reports enviados pelo formulário de suporte do site.</p>
+        </div>
+        <div id="suporteResumoAdmin" class="suporte-admin-resumo"></div>
+      </div>
+      <div id="adminSuporteLista" class="suporte-admin-lista"></div>
+    </div>
+
 
   `;
 
 
   carregarBairros();
   carregarRotasAdmin();
+  carregarChamadosSuporte();
 
 }
 
@@ -3098,34 +3136,142 @@ document.addEventListener("DOMContentLoaded", atualizarSaudacaoPeriodo);
 
 
 
-function registrarProblemaSuporte() {
+async function registrarProblemaSuporte() {
   const nome = document.getElementById("suporteNome")?.value.trim() || "";
   const tipo = document.getElementById("suporteTipo")?.value || "Bug";
   const descricao = document.getElementById("suporteDescricao")?.value.trim() || "";
+  const botao = document.querySelector(".btn-suporte-registrar");
 
   if (!nome || !descricao) {
     mostrarToast("Preencha seu nome e a descrição do problema.", "erro");
     return;
   }
 
-  const registro = {
-    nome,
-    tipo,
-    descricao,
-    versao: "1.0.0",
-    criado_em: new Date().toISOString()
-  };
+  if (botao) {
+    botao.disabled = true;
+    botao.textContent = "Registrando...";
+  }
 
-  const historico = JSON.parse(localStorage.getItem("solidez_suporte") || "[]");
-  historico.unshift(registro);
-  localStorage.setItem("solidez_suporte", JSON.stringify(historico.slice(0, 50)));
+  try {
+    const { error } = await supabaseClient
+      .from("suporte_chamados")
+      .insert([{
+        nome,
+        tipo,
+        descricao,
+        status: "Novo",
+        versao_sistema: "1.0.0"
+      }]);
 
-  document.getElementById("suporteNome").value = "";
-  document.getElementById("suporteTipo").value = "Bug";
-  document.getElementById("suporteDescricao").value = "";
+    if (error) throw error;
 
-  fecharModalCabecalho("modalSuporte");
-  mostrarToast("Problema registrado com sucesso.", "sucesso");
+    document.getElementById("suporteNome").value = "";
+    document.getElementById("suporteTipo").value = "Bug";
+    document.getElementById("suporteDescricao").value = "";
+
+    fecharModalCabecalho("modalSuporte");
+    mostrarToast("Problema registrado com sucesso.", "sucesso");
+  } catch (error) {
+    console.error("Erro ao registrar chamado:", error);
+    mostrarToast("Não foi possível registrar o problema. Tente novamente.", "erro");
+  } finally {
+    if (botao) {
+      botao.disabled = false;
+      botao.textContent = "Registrar problema";
+    }
+  }
+}
+
+async function carregarChamadosSuporte() {
+  const lista = document.getElementById("adminSuporteLista");
+  if (!lista) return;
+
+  lista.innerHTML = '<p class="aviso">Carregando chamados...</p>';
+
+  const { data, error } = await supabaseClient
+    .from("suporte_chamados")
+    .select("*")
+    .order("criado_em", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    lista.innerHTML = '<div class="erro">Não foi possível carregar os chamados.</div>';
+    return;
+  }
+
+  const chamados = data || [];
+  const novo = chamados.filter(c => c.status === "Novo").length;
+  const analise = chamados.filter(c => c.status === "Em análise").length;
+  const resolvido = chamados.filter(c => c.status === "Resolvido").length;
+
+  const resumo = document.getElementById("suporteResumoAdmin");
+  if (resumo) resumo.innerHTML = `
+    <span><strong>${novo}</strong> novos</span>
+    <span><strong>${analise}</strong> em análise</span>
+    <span><strong>${resolvido}</strong> resolvidos</span>`;
+
+  if (!chamados.length) {
+    lista.innerHTML = '<p class="aviso">Nenhum chamado de suporte registrado.</p>';
+    return;
+  }
+
+  lista.innerHTML = chamados.map(chamado => {
+    const dataHora = chamado.criado_em
+      ? new Date(chamado.criado_em).toLocaleString("pt-BR")
+      : "—";
+    const status = chamado.status || "Novo";
+    return `
+      <article class="suporte-admin-card">
+        <div class="suporte-admin-topo">
+          <div>
+            <span class="suporte-admin-tipo">${escapeHtml(chamado.tipo || "Outro")}</span>
+            <h4>${escapeHtml(chamado.nome || "Sem nome")}</h4>
+          </div>
+          <span class="suporte-admin-status status-${normalizar(status).replace(/\s+/g, "-")}">${escapeHtml(status)}</span>
+        </div>
+        <p>${escapeHtml(chamado.descricao || "")}</p>
+        <div class="suporte-admin-meta">${escapeHtml(dataHora)} · v${escapeHtml(chamado.versao_sistema || "1.0.0")}</div>
+        <div class="suporte-admin-acoes">
+          <select onchange="alterarStatusChamado(${chamado.id}, this.value)">
+            <option value="Novo" ${status === "Novo" ? "selected" : ""}>Novo</option>
+            <option value="Em análise" ${status === "Em análise" ? "selected" : ""}>Em análise</option>
+            <option value="Resolvido" ${status === "Resolvido" ? "selected" : ""}>Resolvido</option>
+          </select>
+          <button type="button" class="excluir" onclick="excluirChamadoSuporte(${chamado.id})">Excluir</button>
+        </div>
+      </article>`;
+  }).join("");
+}
+
+async function alterarStatusChamado(id, status) {
+  const { error } = await supabaseClient
+    .from("suporte_chamados")
+    .update({ status, atualizado_em: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Não foi possível atualizar o chamado.", "erro");
+    carregarChamadosSuporte();
+    return;
+  }
+  mostrarToast("Status do chamado atualizado.", "sucesso");
+  carregarChamadosSuporte();
+}
+
+async function excluirChamadoSuporte(id) {
+  const { error } = await supabaseClient
+    .from("suporte_chamados")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Não foi possível excluir o chamado.", "erro");
+    return;
+  }
+  mostrarToast("Chamado excluído.", "sucesso");
+  carregarChamadosSuporte();
 }
 
 </script>
