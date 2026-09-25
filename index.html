@@ -5,7 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Consulta de Regiões</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+/* =========================================================
+   CLIQUES DOS BOTÕES DE ROTA
+   ========================================================= */
+
+document.addEventListener("click", async function(event) {
+  const botao = event.target.closest("[data-acao-rota]");
+
+  if (!botao) return;
+
+  event.preventDefault();
+
+  const id = Number(botao.dataset.rotaId);
+  const acao = botao.dataset.acaoRota;
+
+  if (!id) {
+    alert("Não foi possível identificar esta rota.");
+    return;
+  }
+
+  botao.disabled = true;
+
+  try {
+    if (acao === "confirmar") {
+      await confirmarRetorno(id);
+    } else if (acao === "editar") {
+      await editarRota(id);
+    } else if (acao === "excluir") {
+      await excluirRota(id);
+    }
+  } catch (erro) {
+    console.error(erro);
+    alert("Ocorreu um erro ao executar esta ação.");
+  } finally {
+    if (document.body.contains(botao)) {
+      botao.disabled = false;
+    }
+  }
+});
+
+
+</script>
 
   <style>
     * {
@@ -1080,7 +1121,7 @@ async function adicionarRota() {
 
   const motorista = document.getElementById("novoMotorista").value.trim();
   const placa = document.getElementById("novaPlaca").value.trim();
-  const regiao = document.getElementById("novaRotaRegiao").value.trim();
+  const regiao = document.getElementById("novaRegiaoRota").value.trim();
   const ajudante = document.getElementById("novoAjudante").value.trim();
   const observacao = document.getElementById("novaObservacao").value.trim();
 
@@ -1109,7 +1150,7 @@ async function adicionarRota() {
 
   document.getElementById("novoMotorista").value = "";
   document.getElementById("novaPlaca").value = "";
-  document.getElementById("novaRotaRegiao").value = "";
+  document.getElementById("novaRegiaoRota").value = "";
   document.getElementById("novoAjudante").value = "";
   document.getElementById("novaObservacao").value = "";
 
@@ -1122,7 +1163,7 @@ async function adicionarRota() {
 
 async function carregarRotasAdmin() {
 
-  const lista = document.getElementById("rotasAdmin");
+  const lista = document.getElementById("adminRotasLista");
 
   if (!lista) return;
 
@@ -1183,7 +1224,7 @@ async function carregarRotasAdmin() {
               ? `
                 <button
                   class="confirmar-retorno"
-                  onclick="confirmarRetorno(${rota.id})">
+                  data-acao-rota="confirmar" data-rota-id="${rota.id}">
                   ✓ Confirmar retorno
                 </button>
               `
@@ -1192,13 +1233,13 @@ async function carregarRotasAdmin() {
 
           <button
             class="editar"
-            onclick="editarRota(${rota.id})">
+            data-acao-rota="editar" data-rota-id="${rota.id}">
             Editar
           </button>
 
           <button
             class="excluir"
-            onclick="excluirRota(${rota.id})">
+            data-acao-rota="excluir" data-rota-id="${rota.id}">
             Excluir
           </button>
 
