@@ -1773,6 +1773,9 @@ function escapeHtml(texto) {
 
 async function abrirAdmin() {
 
+  const botaoAdmin = document.querySelector(".admin-btn");
+  if (botaoAdmin) botaoAdmin.style.display = "none";
+
   const {
     data: {
       session
@@ -2757,6 +2760,9 @@ async function sairAdmin() {
   document.getElementById("admin").style.display =
     "none";
 
+  const botaoAdmin = document.querySelector(".admin-btn");
+  if (botaoAdmin) botaoAdmin.style.display = "";
+
 }
 
 
@@ -3212,7 +3218,13 @@ async function registrarProblemaSuporte() {
     mostrarToast("Problema registrado com sucesso.", "sucesso");
   } catch (error) {
     console.error("Erro ao registrar chamado:", error);
-    mostrarToast("Não foi possível registrar o problema. Tente novamente.", "erro");
+    const detalhe = error?.message || error?.details || error?.hint || "";
+    mostrarToast(
+      detalhe
+        ? "Erro ao registrar: " + detalhe
+        : "Não foi possível registrar o problema. Tente novamente.",
+      "erro"
+    );
   } finally {
     if (botao) {
       botao.disabled = false;
@@ -3233,8 +3245,9 @@ async function carregarChamadosSuporte() {
     .order("criado_em", { ascending: false });
 
   if (error) {
-    console.error(error);
-    lista.innerHTML = '<div class="erro">Não foi possível carregar os chamados.</div>';
+    console.error("Erro ao carregar chamados:", error);
+    const detalhe = error?.message || error?.details || error?.hint || "";
+    lista.innerHTML = `<div class="erro">Não foi possível carregar os chamados.${detalhe ? "<br><small>" + escapeHtml(detalhe) + "</small>" : ""}</div>`;
     return;
   }
 
