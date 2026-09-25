@@ -1902,6 +1902,14 @@ async function salvarEdicaoRota() {
     return;
   }
 
+  ["editarRotaId", "editarMotorista", "editarPlaca", "editarRegiao", "editarAjudante", "editarNumeroColetas", "editarObservacao"]
+    .forEach(idCampo => {
+      const campo = document.getElementById(idCampo);
+      if (campo) campo.value = "";
+    });
+  const statusEdicao = document.getElementById("editarStatusRota");
+  if (statusEdicao) statusEdicao.value = "em_rota";
+
   fecharEdicaoRota();
   mostrarToast("Rota atualizada com sucesso!", "sucesso");
   await carregarRotasAdmin();
@@ -2015,6 +2023,12 @@ async function salvarEdicaoBairro() {
     mostrarToast("Não foi possível editar o bairro.", "erro");
     return;
   }
+
+  ["editarBairroId", "editarBairroNome", "editarBairroRegiao"]
+    .forEach(idCampo => {
+      const campo = document.getElementById(idCampo);
+      if (campo) campo.value = "";
+    });
 
   fecharEdicaoBairro();
   mostrarToast("Bairro atualizado com sucesso!", "sucesso");
@@ -2189,24 +2203,25 @@ function resolverModalSistema(valor) {
 }
 
 
-function abrirAdicionarRota() {
-  document.getElementById("modalNovoMotorista").value =
-    document.getElementById("novoMotorista")?.value || "";
-  document.getElementById("modalNovaPlaca").value =
-    document.getElementById("novaPlaca")?.value || "";
-  document.getElementById("modalNovaRegiaoRota").value =
-    document.getElementById("novaRegiaoRota")?.value || "";
-  document.getElementById("modalNovoAjudante").value =
-    document.getElementById("novoAjudante")?.value || "";
-  document.getElementById("modalNumeroColetas").value =
-    document.getElementById("numeroColetas")?.value || "";
-  document.getElementById("modalNovaObservacao").value =
-    document.getElementById("novaObservacao")?.value || "";
+async function abrirAdicionarRota() {
+  const motorista = document.getElementById("novoMotorista")?.value.trim() || "";
+  const placa = document.getElementById("novaPlaca")?.value.trim() || "";
+  const regiao = document.getElementById("novaRegiaoRota")?.value.trim() || "";
 
-  const modal = document.getElementById("modalAdicionarRota");
-  modal.classList.add("ativo");
-  modal.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
+  if (!motorista || !placa || !regiao) {
+    mostrarToast("Preencha motorista, placa e região.", "erro");
+    return;
+  }
+
+  const confirmar = await confirmarNoSite({
+    titulo: "Adicionar rota?",
+    mensagem: "Confirma o cadastro desta rota?",
+    textoConfirmar: "Confirmar",
+    tipo: "normal"
+  });
+
+  if (!confirmar) return;
+  await adicionarRota();
 }
 
 function fecharAdicionarRota() {
@@ -2243,6 +2258,13 @@ async function salvarNovaRotaModal() {
     mostrarToast("Não foi possível adicionar a rota.", "erro");
     return;
   }
+
+  ["novoMotorista", "novaPlaca", "novaRegiaoRota", "novoAjudante", "numeroColetas", "novaObservacao",
+   "modalNovoMotorista", "modalNovaPlaca", "modalNovaRegiaoRota", "modalNovoAjudante", "modalNumeroColetas", "modalNovaObservacao"]
+    .forEach(idCampo => {
+      const campo = document.getElementById(idCampo);
+      if (campo) campo.value = "";
+    });
 
   fecharAdicionarRota();
   mostrarToast("Rota adicionada com sucesso!", "sucesso");
@@ -2285,6 +2307,12 @@ async function salvarNovoBairroModal() {
     mostrarToast("Não foi possível adicionar o bairro.", "erro");
     return;
   }
+
+  ["novoBairro", "novaRegiao", "modalNovoBairro", "modalNovaRegiao"]
+    .forEach(idCampo => {
+      const campo = document.getElementById(idCampo);
+      if (campo) campo.value = "";
+    });
 
   fecharAdicionarBairro();
   mostrarToast("Bairro adicionado com sucesso!", "sucesso");
