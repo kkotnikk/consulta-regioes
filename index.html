@@ -20,10 +20,10 @@
     }
 
     .container {
-      width: 100%;
-      max-width: 700px;
+      width: min(94%, 1480px);
+      max-width: 1480px;
       margin: 0 auto;
-      padding: 25px 18px;
+      padding: 30px 28px 48px;
     }
 
     h1 {
@@ -495,7 +495,8 @@
 
 /* ===== ROTAS — VISUAL CLEAN APROVADO ===== */
 .rotas {
-  max-width: 1180px;
+  max-width: none;
+  width: 100%;
   margin: 42px auto 0;
 }
 
@@ -831,6 +832,13 @@
   .detalhe-rota-item,.detalhe-rota-item:nth-child(odd){padding:13px 0;}
 }
 
+
+@media (max-width: 700px) {
+  .container {
+    width: 100%;
+    padding: 22px 16px 36px;
+  }
+}
 </style>
 </head>
 
