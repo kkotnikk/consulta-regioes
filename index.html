@@ -5,7 +5,121 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Consulta de Regiões</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+let rotaDetalhesAtualId = null;
+let reabrirDetalhesAoCancelar = false;
+
+function abrirDetalhesRota(id) {
+  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(id));
+  if (!rota) return;
+
+  rotaDetalhesAtualId = Number(rota.id);
+  const confirmada = rota.status === "retorno_confirmado";
+
+  const statusTopo = document.getElementById("detalhesRotaStatus");
+  statusTopo.textContent = confirmada ? "● Retorno confirmado" : "● Em rota";
+  statusTopo.style.color = confirmada ? "#0bad27" : "#dda600";
+
+  document.getElementById("detalhesRotaMotorista").textContent = rota.motorista || "Detalhes da rota";
+  document.getElementById("detalhesMotorista").textContent = rota.motorista || "—";
+  document.getElementById("detalhesPlaca").textContent = rota.placa || "—";
+  document.getElementById("detalhesRegiao").textContent = rota.regiao || "—";
+  document.getElementById("detalhesAjudante").textContent = rota.ajudante || "—";
+  document.getElementById("detalhesNumeroColetas").textContent = rota.numero_coletas ?? "—";
+  document.getElementById("detalhesStatusTexto").textContent = confirmada ? "Retorno confirmado" : "Em rota";
+  document.getElementById("detalhesRetorno").textContent =
+    confirmada ? formatarHora(rota.retorno_confirmado_em) : "Ainda não confirmado";
+  document.getElementById("detalhesObservacao").textContent = rota.observacao || "Sem observações.";
+  document.getElementById("areaConfirmarRetornoPublico").style.display = confirmada ? "none" : "block";
+
+  const modal = document.getElementById("modalDetalhesRota");
+  modal.classList.add("ativo");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function fecharDetalhesRota() {
+  const modal = document.getElementById("modalDetalhesRota");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function iniciarConfirmacaoRetornoPublico() {
+  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId));
+  if (!rota || rota.status === "retorno_confirmado") return;
+
+  reabrirDetalhesAoCancelar = true;
+
+  // IMPORTANTE: fecha totalmente o primeiro painel ANTES de abrir a 2ª confirmação.
+  const detalhes = document.getElementById("modalDetalhesRota");
+  detalhes.classList.remove("ativo");
+  detalhes.setAttribute("aria-hidden", "true");
+
+  document.getElementById("confirmacaoRetornoMotorista").textContent =
+    `Você está confirmando o retorno da rota de ${rota.motorista || "motorista não informado"}.`;
+
+  const confirmacao = document.getElementById("modalConfirmarRetornoPublico");
+  confirmacao.classList.add("ativo");
+  confirmacao.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function fecharConfirmacaoRetornoPublico() {
+  const modal = document.getElementById("modalConfirmarRetornoPublico");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+
+  if (reabrirDetalhesAoCancelar && rotaDetalhesAtualId) {
+    reabrirDetalhesAoCancelar = false;
+    abrirDetalhesRota(rotaDetalhesAtualId);
+  }
+}
+
+async function executarConfirmacaoRetornoPublico() {
+  const id = Number(rotaDetalhesAtualId);
+  const rota = rotasPublicasCache.find(r => Number(r.id) === id);
+  if (!id || !rota) return;
+
+  reabrirDetalhesAoCancelar = false;
+  const botao = document.getElementById("btnSegundaConfirmacaoRetorno");
+  botao.disabled = true;
+  botao.textContent = "Confirmando...";
+
+  const { error } = await supabaseClient
+    .from("rotas")
+    .update({
+      status: "retorno_confirmado",
+      retorno_confirmado_em: new Date().toISOString()
+    })
+    .eq("id", id);
+
+  botao.disabled = false;
+  botao.textContent = "Sim, confirmar retorno";
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Não foi possível confirmar o retorno.", "erro");
+    return;
+  }
+
+  const modal = document.getElementById("modalConfirmarRetornoPublico");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+
+  mostrarToast(`Retorno de ${rota.motorista || "motorista"} confirmado com sucesso!`, "sucesso");
+  await carregarRotasPublicas();
+  if (document.getElementById("adminRotasLista")) carregarRotasAdmin();
+}
+
+document.addEventListener("click", function(event) {
+  const detalhes = document.getElementById("modalDetalhesRota");
+  if (event.target === detalhes) fecharDetalhesRota();
+});
+
+</script>
 
   <style>
     * {
@@ -740,6 +854,97 @@
   }
 }
 
+
+/* ===== CAMPOS / DETALHES DE ROTA ===== */
+.campo select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  background: #fff;
+  outline: none;
+}
+
+#rotasPublicas .rota-card {
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+#rotasPublicas .rota-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 24px rgba(46,32,55,.11);
+}
+
+.modal-detalhes-rota {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  background: rgba(22,17,26,.48);
+  padding: 22px;
+  overflow-y: auto;
+}
+.modal-detalhes-rota.ativo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.detalhes-rota-conteudo {
+  width: 100%;
+  max-width: 650px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 26px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.22);
+}
+.detalhes-rota-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #eeeaf0;
+}
+.detalhes-rota-topo h2 { margin: 4px 0 0; text-align:left; }
+.detalhes-status { font-size:13px; font-weight:700; }
+.fechar-detalhes-rota {
+  width:38px; height:38px; padding:0; border-radius:50%;
+  background:#f1edf3; color:#5e5664; font-size:24px;
+}
+.detalhes-rota-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  margin-top:8px;
+}
+.detalhe-rota-item {
+  padding:16px 8px;
+  border-bottom:1px solid #f0edf2;
+}
+.detalhe-rota-item:nth-child(odd) { padding-left:0; }
+.detalhe-rota-label {
+  display:block;
+  margin-bottom:5px;
+  color:#817987;
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.35px;
+}
+.detalhe-rota-valor { color:#211d25; font-size:16px; font-weight:600; }
+.detalhe-rota-observacao {
+  margin-top:18px; padding:16px; border-radius:11px; background:#f6f3f7;
+}
+.btn-confirmar-retorno-publico {
+  width:100%; margin-top:20px; min-height:48px;
+  background:#159b39; font-weight:700;
+}
+@media(max-width:620px) {
+  .modal-detalhes-rota { padding:12px; }
+  .detalhes-rota-conteudo { padding:20px; }
+  .detalhes-rota-grid { grid-template-columns:1fr; }
+  .detalhe-rota-item,.detalhe-rota-item:nth-child(odd){padding:13px 0;}
+}
+
 </style>
 </head>
 
@@ -1234,6 +1439,18 @@ async function mostrarPainelAdmin() {
         </div>
 
         <div class="campo">
+          <label>Número de Coletas</label>
+          <input
+            type="number"
+            id="numeroColetas"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            placeholder="Ex.: 25"
+          >
+        </div>
+
+        <div class="campo">
           <label>Observação</label>
           <input
             type="text"
@@ -1487,13 +1704,14 @@ function renderizarRotasPublicas() {
       : "🟡 Em rota";
 
     return `
-      <div class="rota-card ${confirmada ? "confirmada" : ""}">
+      <div class="rota-card ${confirmada ? "confirmada" : ""}" onclick="abrirDetalhesRota(${rota.id})" role="button" tabindex="0">
         <div class="rota-status ${confirmada ? "confirmada" : "em-rota"}">${statusHtml}</div>
         <div class="rota-dados">
           <div><strong>Motorista:</strong> ${escapeHtml(rota.motorista)}</div>
           <div><strong>Placa:</strong> ${escapeHtml(rota.placa)}</div>
           <div><strong>Região:</strong> ${escapeHtml(rota.regiao)}</div>
           ${rota.ajudante ? `<div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante)}</div>` : ""}
+          <div><strong>Número de Coletas:</strong> ${rota.numero_coletas ?? "—"}</div>
         </div>
         ${rota.observacao ? `<div class="rota-observacao"><strong>Observação:</strong> ${escapeHtml(rota.observacao)}</div>` : ""}
       </div>`;
@@ -1527,6 +1745,8 @@ async function adicionarRota() {
   const placa = document.getElementById("novaPlaca").value.trim();
   const regiao = document.getElementById("novaRegiaoRota").value.trim();
   const ajudante = document.getElementById("novoAjudante").value.trim();
+  const numeroColetasValor = document.getElementById("numeroColetas").value;
+  const numero_coletas = numeroColetasValor === "" ? null : Number(numeroColetasValor);
   const observacao = document.getElementById("novaObservacao").value.trim();
 
   if (!motorista || !placa || !regiao) {
@@ -1542,6 +1762,7 @@ async function adicionarRota() {
         placa,
         regiao,
         ajudante: ajudante || null,
+        numero_coletas,
         observacao: observacao || null,
         status: "em_rota"
       }]);
@@ -1556,6 +1777,7 @@ async function adicionarRota() {
   document.getElementById("novaPlaca").value = "";
   document.getElementById("novaRegiaoRota").value = "";
   document.getElementById("novoAjudante").value = "";
+  document.getElementById("numeroColetas").value = "";
   document.getElementById("novaObservacao").value = "";
 
   mostrarToast("Rota adicionada com sucesso!", "sucesso");
@@ -1706,6 +1928,8 @@ async function editarRota(id) {
   document.getElementById("editarPlaca").value = data.placa || "";
   document.getElementById("editarRegiao").value = data.regiao || "";
   document.getElementById("editarAjudante").value = data.ajudante || "";
+  document.getElementById("editarNumeroColetas").value = data.numero_coletas ?? "";
+  document.getElementById("editarStatusRota").value = data.status === "retorno_confirmado" ? "retorno_confirmado" : "em_rota";
   document.getElementById("editarObservacao").value = data.observacao || "";
 
   const modal = document.getElementById("modalEditarRota");
@@ -1729,6 +1953,9 @@ async function salvarEdicaoRota() {
   const placa = document.getElementById("editarPlaca").value.trim();
   const regiao = document.getElementById("editarRegiao").value.trim();
   const ajudante = document.getElementById("editarAjudante").value.trim();
+  const numeroColetasValor = document.getElementById("editarNumeroColetas").value;
+  const numero_coletas = numeroColetasValor === "" ? null : Number(numeroColetasValor);
+  const status = document.getElementById("editarStatusRota").value;
   const observacao = document.getElementById("editarObservacao").value.trim();
 
   if (!id) {
@@ -1748,7 +1975,10 @@ async function salvarEdicaoRota() {
       placa,
       regiao,
       ajudante: ajudante || null,
-      observacao: observacao || null
+      numero_coletas,
+      observacao: observacao || null,
+      status,
+      retorno_confirmado_em: status === "em_rota" ? null : undefined
     })
     .eq("id", id);
 
@@ -2054,6 +2284,8 @@ function abrirAdicionarRota() {
     document.getElementById("novaRegiaoRota")?.value || "";
   document.getElementById("modalNovoAjudante").value =
     document.getElementById("novoAjudante")?.value || "";
+  document.getElementById("modalNumeroColetas").value =
+    document.getElementById("numeroColetas")?.value || "";
   document.getElementById("modalNovaObservacao").value =
     document.getElementById("novaObservacao")?.value || "";
 
@@ -2075,6 +2307,8 @@ async function salvarNovaRotaModal() {
   const placa = document.getElementById("modalNovaPlaca").value.trim();
   const regiao = document.getElementById("modalNovaRegiaoRota").value.trim();
   const ajudante = document.getElementById("modalNovoAjudante").value.trim();
+  const numeroColetasValor = document.getElementById("modalNumeroColetas").value;
+  const numero_coletas = numeroColetasValor === "" ? null : Number(numeroColetasValor);
   const observacao = document.getElementById("modalNovaObservacao").value.trim();
 
   if (!motorista || !placa || !regiao) {
@@ -2085,6 +2319,7 @@ async function salvarNovaRotaModal() {
   const { error } = await supabaseClient.from("rotas").insert([{
     motorista, placa, regiao,
     ajudante: ajudante || null,
+    numero_coletas,
     observacao: observacao || null,
     status: "em_rota"
   }]);
@@ -2194,6 +2429,10 @@ async function salvarNovoBairroModal() {
       <input type="text" id="modalNovoAjudante">
     </div>
     <div class="campo">
+      <label>Número de Coletas</label>
+      <input type="number" id="modalNumeroColetas" min="0" step="1" inputmode="numeric" placeholder="Ex.: 25">
+    </div>
+    <div class="campo">
       <label>Observação</label>
       <input type="text" id="modalNovaObservacao">
     </div>
@@ -2235,6 +2474,19 @@ async function salvarNovoBairroModal() {
     </div>
 
     <div class="campo">
+      <label>Número de Coletas</label>
+      <input type="number" id="editarNumeroColetas" min="0" step="1" inputmode="numeric">
+    </div>
+
+    <div class="campo">
+      <label>Status</label>
+      <select id="editarStatusRota">
+        <option value="em_rota">🟡 Em rota</option>
+        <option value="retorno_confirmado">🟢 Retorno confirmado</option>
+      </select>
+    </div>
+
+    <div class="campo">
       <label>Observação</label>
       <input type="text" id="editarObservacao">
     </div>
@@ -2270,6 +2522,49 @@ async function salvarNovoBairroModal() {
     <div class="modal-edicao-acoes">
       <button type="button" class="cancelar-edicao-rota" onclick="fecharEdicaoBairro()">Cancelar</button>
       <button type="button" onclick="salvarEdicaoBairro()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="modalDetalhesRota" class="modal-detalhes-rota" aria-hidden="true">
+  <div class="detalhes-rota-conteudo">
+    <div class="detalhes-rota-topo">
+      <div>
+        <div id="detalhesRotaStatus" class="detalhes-status"></div>
+        <h2 id="detalhesRotaMotorista">Detalhes da rota</h2>
+      </div>
+      <button type="button" class="fechar-detalhes-rota" onclick="fecharDetalhesRota()">×</button>
+    </div>
+    <div class="detalhes-rota-grid">
+      <div class="detalhe-rota-item"><span class="detalhe-rota-label">Motorista</span><span id="detalhesMotorista" class="detalhe-rota-valor">—</span></div>
+      <div class="detalhe-rota-item"><span class="detalhe-rota-label">Placa</span><span id="detalhesPlaca" class="detalhe-rota-valor">—</span></div>
+      <div class="detalhe-rota-item"><span class="detalhe-rota-label">Região</span><span id="detalhesRegiao" class="detalhe-rota-valor">—</span></div>
+      <div class="detalhe-rota-item"><span class="detalhe-rota-label">Ajudante</span><span id="detalhesAjudante" class="detalhe-rota-valor">—</span></div>
+      <div class="detalhe-rota-item"><span class="detalhe-rota-label">Número de Coletas</span><span id="detalhesNumeroColetas" class="detalhe-rota-valor">—</span></div>
+      <div class="detalhe-rota-item"><span class="detalhe-rota-label">Status</span><span id="detalhesStatusTexto" class="detalhe-rota-valor">—</span></div>
+      <div class="detalhe-rota-item"><span class="detalhe-rota-label">Horário de retorno</span><span id="detalhesRetorno" class="detalhe-rota-valor">—</span></div>
+    </div>
+    <div class="detalhe-rota-observacao">
+      <span class="detalhe-rota-label">Observação</span>
+      <div id="detalhesObservacao" class="detalhe-rota-valor">—</div>
+    </div>
+    <div id="areaConfirmarRetornoPublico">
+      <button type="button" class="btn-confirmar-retorno-publico" onclick="iniciarConfirmacaoRetornoPublico()">✓ Confirmar retorno</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalConfirmarRetornoPublico" class="modal-sistema" aria-hidden="true" style="z-index:13000">
+  <div class="modal-sistema-conteudo">
+    <h2>Confirmar retorno</h2>
+    <div class="modal-sistema-mensagem">
+      <p id="confirmacaoRetornoMotorista" style="margin-top:0"></p>
+      <p>Esta ação registrará o retorno da rota e o horário atual. Confirme novamente para continuar.</p>
+    </div>
+    <div class="modal-sistema-acoes">
+      <button type="button" class="btn-cancelar" onclick="fecharConfirmacaoRetornoPublico()">Cancelar</button>
+      <button type="button" class="btn-sucesso" id="btnSegundaConfirmacaoRetorno" onclick="executarConfirmacaoRetornoPublico()">Sim, confirmar retorno</button>
     </div>
   </div>
 </div>
