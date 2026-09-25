@@ -478,6 +478,268 @@
       to { transform: translateY(0); opacity: 1; }
     }
 
+
+    .rotas-painel-topo { max-width:1100px; margin:18px auto; }
+    .rotas-busca { width:100%; padding:13px 14px; border:1px solid #cfc8d4; border-radius:10px; font-size:15px; background:#fff; }
+    .rotas-resumo { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:12px 0; }
+    .rotas-resumo span { background:#fff; border:1px solid #ddd6e2; border-radius:999px; padding:7px 11px; font-size:13px; font-weight:600; }
+    .rotas-filtros { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    .rotas-filtros button { width:auto; padding:8px 13px; border-radius:999px; background:#e9e4ec; color:#4d315b; font-size:13px; }
+    .rotas-filtros button.ativo { background:#5b356f; color:#fff; }
+    #rotasPublicas { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; max-width:1100px; margin:0 auto; }
+    #rotasPublicas .rota-card { margin:0; min-width:0; }
+    .rotas-vazio-filtro { grid-column:1/-1; text-align:center; background:#fff; border-radius:12px; padding:24px; color:#666; }
+    @media(max-width:900px){ #rotasPublicas{grid-template-columns:repeat(2,minmax(0,1fr));} }
+    @media(max-width:620px){ #rotasPublicas{grid-template-columns:1fr;} .rotas-filtros button{flex:1;} }
+
+
+/* ===== ROTAS — VISUAL CLEAN APROVADO ===== */
+.rotas {
+  max-width: 1180px;
+  margin: 42px auto 0;
+}
+
+.rotas h2 {
+  text-align: left;
+  margin: 0 0 5px;
+  font-size: 28px;
+  letter-spacing: -0.4px;
+}
+
+.rotas-subtitulo {
+  text-align: left;
+  margin: 0 0 18px;
+  color: #6f6874;
+  font-size: 14px;
+}
+
+.rotas-painel-topo {
+  max-width: none;
+  margin: 0 0 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 430px);
+  grid-template-areas:
+    "resumo busca"
+    "filtros busca";
+  gap: 10px 24px;
+  align-items: center;
+}
+
+.rotas-resumo {
+  grid-area: resumo;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  margin: 0;
+  font-size: 14px;
+}
+
+.rotas-resumo span {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0 16px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.rotas-resumo span:first-child {
+  padding-left: 0;
+}
+
+.rotas-resumo span + span {
+  border-left: 1px solid #d9d3dd;
+}
+
+.rotas-busca {
+  grid-area: busca;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid #ddd8e1;
+  border-radius: 11px;
+  background: #fff;
+  font-size: 14px;
+  outline: none;
+  box-shadow: 0 3px 12px rgba(43, 30, 50, .04);
+}
+
+.rotas-busca:focus {
+  border-color: #76518a;
+  box-shadow: 0 0 0 3px rgba(91,53,111,.09);
+}
+
+.rotas-filtros {
+  grid-area: filtros;
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0;
+}
+
+.rotas-filtros button {
+  width: auto;
+  padding: 9px 17px;
+  border-radius: 999px;
+  border: 0;
+  background: #eee9f1;
+  color: #58346a;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.rotas-filtros button.ativo {
+  background: #603678;
+  color: #fff;
+}
+
+#rotasPublicas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  max-width: none;
+  margin: 0;
+}
+
+#rotasPublicas .rota-card {
+  position: relative;
+  margin: 0;
+  padding: 18px 20px 17px;
+  min-width: 0;
+  border: 0;
+  border-left: 4px solid #f0bd00;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(41, 29, 48, .07);
+}
+
+#rotasPublicas .rota-card.confirmada {
+  border-left-color: #16b52c;
+}
+
+#rotasPublicas .rota-status {
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#rotasPublicas .rota-status.em-rota {
+  color: #d39c00;
+}
+
+#rotasPublicas .rota-status.confirmada {
+  color: #0fa72a;
+}
+
+#rotasPublicas .rota-dados {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+#rotasPublicas .rota-dados div:first-child {
+  margin-bottom: 2px;
+  color: #1f1d23;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+#rotasPublicas .rota-dados div:first-child strong {
+  display: none;
+}
+
+#rotasPublicas .rota-dados div:nth-child(2),
+#rotasPublicas .rota-dados div:nth-child(3) {
+  display: inline;
+  color: #666070;
+}
+
+#rotasPublicas .rota-dados div:nth-child(2)::after {
+  content: "  •  ";
+  margin: 0 5px;
+}
+
+#rotasPublicas .rota-dados div:nth-child(2) strong,
+#rotasPublicas .rota-dados div:nth-child(3) strong {
+  display: none;
+}
+
+#rotasPublicas .rota-dados div:nth-child(4) {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #eeeaf0;
+}
+
+#rotasPublicas .rota-observacao {
+  margin-top: 3px;
+  padding: 0;
+  background: transparent;
+  color: #5f5967;
+  font-size: 13px;
+}
+
+.rotas-vazio-filtro {
+  grid-column: 1 / -1;
+  padding: 28px;
+  text-align: center;
+  color: #777;
+  background: #fff;
+  border-radius: 12px;
+}
+
+@media (max-width: 920px) {
+  .rotas-painel-topo {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "resumo"
+      "busca"
+      "filtros";
+  }
+
+  #rotasPublicas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .rotas {
+    margin-top: 32px;
+  }
+
+  .rotas h2,
+  .rotas-subtitulo {
+    text-align: center;
+  }
+
+  .rotas-resumo {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px 0;
+  }
+
+  .rotas-resumo span {
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .rotas-filtros {
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 2px;
+  }
+
+  .rotas-filtros button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  #rotasPublicas {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 </style>
 </head>
 
@@ -513,6 +775,19 @@
     <div class="rotas-section">
       <h2 class="rotas-titulo">🚚 Rotas</h2>
       <div class="rotas-subtitulo">Acompanhamento das rotas em andamento</div>
+      <div class="rotas-painel-topo">
+        <input id="buscaRotas" class="rotas-busca" type="search"
+          placeholder="Pesquisar motorista, placa ou região..."
+          autocomplete="off" oninput="renderizarRotasPublicas()">
+
+        <div id="resumoRotas" class="rotas-resumo"></div>
+
+        <div class="rotas-filtros">
+          <button type="button" id="filtroTodas" class="ativo" onclick="definirFiltroRotas('todas')">Todas</button>
+          <button type="button" id="filtroEmRota" onclick="definirFiltroRotas('em_rota')">🟡 Em rota</button>
+          <button type="button" id="filtroRetorno" onclick="definirFiltroRotas('retorno_confirmado')">🟢 Retorno confirmado</button>
+        </div>
+      </div>
       <div id="rotasPublicas"></div>
     </div>
 
@@ -1157,68 +1432,88 @@ async function carregarBairros() {
    ROTAS - ÁREA PÚBLICA
    ========================================================= */
 
-async function carregarRotasPublicas() {
+let rotasPublicasCache = [];
+let filtroRotasAtual = "todas";
 
+function definirFiltroRotas(filtro) {
+  filtroRotasAtual = filtro;
+  document.getElementById("filtroTodas")?.classList.toggle("ativo", filtro === "todas");
+  document.getElementById("filtroEmRota")?.classList.toggle("ativo", filtro === "em_rota");
+  document.getElementById("filtroRetorno")?.classList.toggle("ativo", filtro === "retorno_confirmado");
+  renderizarRotasPublicas();
+}
+
+function renderizarRotasPublicas() {
   const container = document.getElementById("rotasPublicas");
-
   if (!container) return;
 
-  const { data, error } =
-    await supabaseClient
-      .from("rotas")
-      .select("*")
-      .order("status", { ascending: true })
-      .order("criado_em", { ascending: false });
+  const busca = normalizar(document.getElementById("buscaRotas")?.value || "");
+  const total = rotasPublicasCache.length;
+  const emRota = rotasPublicasCache.filter(r => r.status !== "retorno_confirmado").length;
+  const retornos = total - emRota;
 
-  if (error) {
-    console.error(error);
-    container.innerHTML =
-      '<div class="card erro">Erro ao carregar as rotas.</div>';
-    return;
-  }
+  const resumo = document.getElementById("resumoRotas");
+  if (resumo) resumo.innerHTML = `
+    <span>${total} rota${total === 1 ? "" : "s"}</span>
+    <span>🟡 ${emRota} em rota</span>
+    <span>🟢 ${retornos} retorno${retornos === 1 ? "" : "s"} confirmado${retornos === 1 ? "" : "s"}</span>`;
 
-  if (!data || data.length === 0) {
-    container.innerHTML =
-      '<div class="card rota-vazia">Nenhuma rota cadastrada no momento.</div>';
-    return;
-  }
-
-  container.innerHTML = data.map(rota => {
-
+  const rotas = rotasPublicasCache.filter(rota => {
     const confirmada = rota.status === "retorno_confirmado";
+    if (filtroRotasAtual === "em_rota" && confirmada) return false;
+    if (filtroRotasAtual === "retorno_confirmado" && !confirmada) return false;
+    if (!busca) return true;
 
+    const texto = normalizar([
+      rota.motorista, rota.placa, rota.regiao, rota.ajudante, rota.observacao
+    ].filter(Boolean).join(" "));
+    return texto.includes(busca);
+  }).sort((a,b) => {
+    const sa = a.status === "retorno_confirmado" ? 1 : 0;
+    const sb = b.status === "retorno_confirmado" ? 1 : 0;
+    if (sa !== sb) return sa - sb;
+    return (a.motorista || "").localeCompare(b.motorista || "", "pt-BR", {sensitivity:"base"});
+  });
+
+  if (!rotas.length) {
+    container.innerHTML = '<div class="rotas-vazio-filtro">Nenhuma rota encontrada.</div>';
+    return;
+  }
+
+  container.innerHTML = rotas.map(rota => {
+    const confirmada = rota.status === "retorno_confirmado";
     const statusHtml = confirmada
       ? `🟢 Retorno confirmado às ${formatarHora(rota.retorno_confirmado_em)}`
-      : `🟡 Em rota`;
+      : "🟡 Em rota";
 
     return `
       <div class="rota-card ${confirmada ? "confirmada" : ""}">
-
-        <div class="rota-status ${confirmada ? "confirmada" : "em-rota"}">
-          ${statusHtml}
-        </div>
-
+        <div class="rota-status ${confirmada ? "confirmada" : "em-rota"}">${statusHtml}</div>
         <div class="rota-dados">
           <div><strong>Motorista:</strong> ${escapeHtml(rota.motorista)}</div>
           <div><strong>Placa:</strong> ${escapeHtml(rota.placa)}</div>
           <div><strong>Região:</strong> ${escapeHtml(rota.regiao)}</div>
-          ${
-            rota.ajudante
-              ? `<div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante)}</div>`
-              : ""
-          }
+          ${rota.ajudante ? `<div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante)}</div>` : ""}
         </div>
-
-        ${
-          rota.observacao
-            ? `<div class="rota-observacao"><strong>Observação:</strong> ${escapeHtml(rota.observacao)}</div>`
-            : ""
-        }
-
-      </div>
-    `;
-
+        ${rota.observacao ? `<div class="rota-observacao"><strong>Observação:</strong> ${escapeHtml(rota.observacao)}</div>` : ""}
+      </div>`;
   }).join("");
+}
+
+async function carregarRotasPublicas() {
+  const container = document.getElementById("rotasPublicas");
+  if (!container) return;
+
+  const { data, error } = await supabaseClient.from("rotas").select("*");
+
+  if (error) {
+    console.error(error);
+    container.innerHTML = '<div class="card erro">Erro ao carregar as rotas.</div>';
+    return;
+  }
+
+  rotasPublicasCache = data || [];
+  renderizarRotasPublicas();
 }
 
 
