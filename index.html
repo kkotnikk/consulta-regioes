@@ -388,6 +388,96 @@
       background: #777;
     }
 
+
+    .modal-sistema {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(0,0,0,.55);
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .modal-sistema.ativo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-sistema-conteudo {
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+
+    .modal-sistema-conteudo h2 {
+      margin: 0 0 10px;
+    }
+
+    .modal-sistema-mensagem {
+      color: #555;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .modal-sistema-acoes {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .modal-sistema-acoes button {
+      width: auto;
+    }
+
+    .btn-cancelar {
+      background: #777;
+    }
+
+    .btn-perigo {
+      background: #a00000;
+    }
+
+    .btn-sucesso {
+      background: #2e9b57;
+    }
+
+    .toast-area {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 11000;
+      display: grid;
+      gap: 10px;
+      width: min(360px, calc(100% - 36px));
+    }
+
+    .toast {
+      background: #222;
+      color: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.22);
+      animation: toastEntrar .2s ease-out;
+    }
+
+    .toast.sucesso {
+      background: #246b3b;
+    }
+
+    .toast.erro-toast {
+      background: #8d1b1b;
+    }
+
+    @keyframes toastEntrar {
+      from { transform: translateY(8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
 </style>
 </head>
 
@@ -914,7 +1004,7 @@ async function adicionarBairro() {
 
   if (!bairro || !regiao) {
 
-    alert("Preencha o bairro e a região.");
+    mostrarToast("Preencha o bairro e a região.", "erro");
 
     return;
   }
@@ -937,9 +1027,7 @@ async function adicionarBairro() {
 
     console.error(error);
 
-    alert(
-      "Não foi possível adicionar o bairro."
-    );
+    mostrarToast("Não foi possível adicionar o bairro.", "erro");
 
     return;
   }
@@ -949,7 +1037,7 @@ async function adicionarBairro() {
   document.getElementById("novaRegiao").value = "";
 
 
-  alert("Bairro adicionado com sucesso!");
+  mostrarToast("Bairro adicionado com sucesso!", "sucesso");
 
   carregarBairros();
 
@@ -1147,7 +1235,7 @@ async function adicionarRota() {
   const observacao = document.getElementById("novaObservacao").value.trim();
 
   if (!motorista || !placa || !regiao) {
-    alert("Preencha motorista, placa e região.");
+    mostrarToast("Preencha motorista, placa e região.", "erro");
     return;
   }
 
@@ -1165,7 +1253,7 @@ async function adicionarRota() {
 
   if (error) {
     console.error(error);
-    alert("Não foi possível adicionar a rota.");
+    mostrarToast("Não foi possível adicionar a rota.", "erro");
     return;
   }
 
@@ -1175,7 +1263,7 @@ async function adicionarRota() {
   document.getElementById("novoAjudante").value = "";
   document.getElementById("novaObservacao").value = "";
 
-  alert("Rota adicionada com sucesso!");
+  mostrarToast("Rota adicionada com sucesso!", "sucesso");
 
   carregarRotasAdmin();
   carregarRotasPublicas();
@@ -1275,8 +1363,12 @@ async function carregarRotasAdmin() {
 
 async function confirmarRetorno(id) {
 
-  const confirmar =
-    confirm("Confirmar o retorno desta rota?");
+  const confirmar = await confirmarNoSite({
+    titulo: "Confirmar retorno",
+    mensagem: "Deseja confirmar o retorno desta rota à base?",
+    textoConfirmar: "Confirmar retorno",
+    tipo: "sucesso"
+  });
 
   if (!confirmar) return;
 
@@ -1291,10 +1383,11 @@ async function confirmarRetorno(id) {
 
   if (error) {
     console.error(error);
-    alert("Não foi possível confirmar o retorno.");
+    mostrarToast("Não foi possível confirmar o retorno.", "erro");
     return;
   }
 
+  mostrarToast("Retorno confirmado com sucesso!", "sucesso");
   carregarRotasAdmin();
   carregarRotasPublicas();
 }
@@ -1309,7 +1402,7 @@ async function editarRota(id) {
 
   if (error || !data) {
     console.error(error);
-    alert("Não foi possível carregar esta rota.");
+    mostrarToast("Não foi possível carregar esta rota.", "erro");
     return;
   }
 
@@ -1344,12 +1437,12 @@ async function salvarEdicaoRota() {
   const observacao = document.getElementById("editarObservacao").value.trim();
 
   if (!id) {
-    alert("Não foi possível identificar esta rota.");
+    mostrarToast("Não foi possível identificar esta rota.", "erro");
     return;
   }
 
   if (!motorista || !placa || !regiao) {
-    alert("Preencha motorista, placa e região.");
+    mostrarToast("Preencha motorista, placa e região.", "erro");
     return;
   }
 
@@ -1366,11 +1459,12 @@ async function salvarEdicaoRota() {
 
   if (error) {
     console.error(error);
-    alert("Não foi possível salvar as alterações.");
+    mostrarToast("Não foi possível salvar as alterações.", "erro");
     return;
   }
 
   fecharEdicaoRota();
+  mostrarToast("Rota atualizada com sucesso!", "sucesso");
   carregarRotasAdmin();
   carregarRotasPublicas();
 }
@@ -1378,8 +1472,12 @@ async function salvarEdicaoRota() {
 
 async function excluirRota(id) {
 
-  const confirmar =
-    confirm("Tem certeza que deseja excluir esta rota?");
+  const confirmar = await confirmarNoSite({
+    titulo: "Excluir rota",
+    mensagem: "Tem certeza que deseja excluir esta rota? Esta ação não poderá ser desfeita.",
+    textoConfirmar: "Excluir rota",
+    tipo: "perigo"
+  });
 
   if (!confirmar) return;
 
@@ -1391,11 +1489,11 @@ async function excluirRota(id) {
 
   if (error) {
     console.error(error);
-    alert("Não foi possível excluir a rota.");
+    mostrarToast("Não foi possível excluir a rota.", "erro");
     return;
   }
 
-  alert("Rota excluída!");
+  mostrarToast("Rota excluída com sucesso!", "sucesso");
 
   carregarRotasAdmin();
   carregarRotasPublicas();
@@ -1435,77 +1533,53 @@ function escapeJs(texto) {
    EDITAR BAIRRO
    ========================================================= */
 
-async function editarBairro(
-  id,
-  bairroAtual,
-  regiaoAtual
-) {
+function editarBairro(id, bairroAtual, regiaoAtual) {
+  document.getElementById("editarBairroId").value = id;
+  document.getElementById("editarBairroNome").value = bairroAtual || "";
+  document.getElementById("editarBairroRegiao").value = regiaoAtual || "";
 
-  const novoBairro =
-    prompt(
-      "Nome do bairro/município:",
-      bairroAtual
-    );
+  const modal = document.getElementById("modalEditarBairro");
+  modal.classList.add("ativo");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
 
 
-  if (novoBairro === null) {
+function fecharEdicaoBairro() {
+  const modal = document.getElementById("modalEditarBairro");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+
+async function salvarEdicaoBairro() {
+  const id = Number(document.getElementById("editarBairroId").value);
+  const novoBairro = document.getElementById("editarBairroNome").value.trim();
+  const novaRegiao = document.getElementById("editarBairroRegiao").value.trim();
+
+  if (!novoBairro || !novaRegiao) {
+    mostrarToast("Os campos não podem ficar vazios.", "erro");
     return;
   }
 
-
-  const novaRegiao =
-    prompt(
-      "Região:",
-      regiaoAtual
-    );
-
-
-  if (novaRegiao === null) {
-    return;
-  }
-
-
-  if (
-    !novoBairro.trim() ||
-    !novaRegiao.trim()
-  ) {
-
-    alert(
-      "Os campos não podem ficar vazios."
-    );
-
-    return;
-  }
-
-
-  const {
-    error
-  } =
-    await supabaseClient
-      .from("bairros")
-      .update({
-        bairro: novoBairro.trim(),
-        regiao: novaRegiao.trim()
-      })
-      .eq("id", id);
-
+  const { error } = await supabaseClient
+    .from("bairros")
+    .update({
+      bairro: novoBairro,
+      regiao: novaRegiao
+    })
+    .eq("id", id);
 
   if (error) {
-
     console.error(error);
-
-    alert(
-      "Não foi possível editar o bairro."
-    );
-
+    mostrarToast("Não foi possível editar o bairro.", "erro");
     return;
   }
 
-
-  alert("Bairro atualizado!");
-
+  fecharEdicaoBairro();
+  mostrarToast("Bairro atualizado com sucesso!", "sucesso");
   carregarBairros();
-
 }
 
 
@@ -1515,11 +1589,12 @@ async function editarBairro(
 
 async function excluirBairro(id) {
 
-  const confirmar =
-    confirm(
-      "Tem certeza que deseja excluir este bairro?"
-    );
-
+  const confirmar = await confirmarNoSite({
+    titulo: "Excluir bairro",
+    mensagem: "Tem certeza que deseja excluir este bairro? Esta ação não poderá ser desfeita.",
+    textoConfirmar: "Excluir bairro",
+    tipo: "perigo"
+  });
 
   if (!confirmar) {
     return;
@@ -1539,15 +1614,13 @@ async function excluirBairro(id) {
 
     console.error(error);
 
-    alert(
-      "Não foi possível excluir o bairro."
-    );
+    mostrarToast("Não foi possível excluir o bairro.", "erro");
 
     return;
   }
 
 
-  alert("Bairro excluído!");
+  mostrarToast("Bairro excluído com sucesso!", "sucesso");
 
   carregarBairros();
 
@@ -1612,6 +1685,70 @@ document.addEventListener("keydown", function(event) {
   }
 });
 
+
+let resolverConfirmacaoSistema = null;
+
+function mostrarToast(mensagem, tipo = "normal") {
+  const area = document.getElementById("toastArea");
+  if (!area) return;
+
+  const toast = document.createElement("div");
+  toast.className = "toast" +
+    (tipo === "sucesso" ? " sucesso" : "") +
+    (tipo === "erro" ? " erro-toast" : "");
+
+  toast.textContent = mensagem;
+  area.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3200);
+}
+
+
+function confirmarNoSite({
+  titulo = "Confirmar ação",
+  mensagem = "Deseja continuar?",
+  textoConfirmar = "Confirmar",
+  tipo = "normal"
+} = {}) {
+  return new Promise(resolve => {
+    const modal = document.getElementById("modalSistema");
+    const tituloEl = document.getElementById("modalSistemaTitulo");
+    const mensagemEl = document.getElementById("modalSistemaMensagem");
+    const confirmarBtn = document.getElementById("modalSistemaConfirmar");
+
+    tituloEl.textContent = titulo;
+    mensagemEl.textContent = mensagem;
+    confirmarBtn.textContent = textoConfirmar;
+    confirmarBtn.className =
+      tipo === "perigo"
+        ? "btn-perigo"
+        : tipo === "sucesso"
+          ? "btn-sucesso"
+          : "";
+
+    resolverConfirmacaoSistema = resolve;
+    modal.classList.add("ativo");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  });
+}
+
+
+function resolverModalSistema(valor) {
+  const modal = document.getElementById("modalSistema");
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+
+  if (resolverConfirmacaoSistema) {
+    const resolver = resolverConfirmacaoSistema;
+    resolverConfirmacaoSistema = null;
+    resolver(valor);
+  }
+}
+
 </script>
 
 
@@ -1655,6 +1792,47 @@ document.addEventListener("keydown", function(event) {
     </div>
   </div>
 </div>
+
+
+
+<div id="modalEditarBairro" class="modal-edicao-rota" aria-hidden="true">
+  <div class="modal-edicao-conteudo">
+    <div class="modal-edicao-topo">
+      <h2>✏️ Editar bairro</h2>
+      <button type="button" class="fechar-modal-rota" onclick="fecharEdicaoBairro()" aria-label="Fechar">×</button>
+    </div>
+
+    <input type="hidden" id="editarBairroId">
+
+    <div class="campo">
+      <label>Bairro / Município</label>
+      <input type="text" id="editarBairroNome">
+    </div>
+
+    <div class="campo">
+      <label>Região</label>
+      <input type="text" id="editarBairroRegiao">
+    </div>
+
+    <div class="modal-edicao-acoes">
+      <button type="button" class="cancelar-edicao-rota" onclick="fecharEdicaoBairro()">Cancelar</button>
+      <button type="button" onclick="salvarEdicaoBairro()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalSistema" class="modal-sistema" aria-hidden="true">
+  <div class="modal-sistema-conteudo">
+    <h2 id="modalSistemaTitulo">Confirmar ação</h2>
+    <div id="modalSistemaMensagem" class="modal-sistema-mensagem"></div>
+    <div class="modal-sistema-acoes">
+      <button type="button" class="btn-cancelar" onclick="resolverModalSistema(false)">Cancelar</button>
+      <button type="button" id="modalSistemaConfirmar" onclick="resolverModalSistema(true)">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastArea" class="toast-area" aria-live="polite"></div>
 
 </body>
 </html>
