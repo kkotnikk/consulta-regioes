@@ -127,9 +127,33 @@
       font-weight: bold;
     }
 
+    .admin-formularios {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .admin-bloco {
+      border: 1px solid #e2dfe5;
+      border-radius: 12px;
+      padding: 18px;
+      background: #faf9fb;
+    }
+
+    .admin-bloco h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+
     .admin-lista {
       margin-top: 25px;
     }
+
+    .lista-bairros-admin {
+      margin-top: 12px;
+    }
+
 
     .bairro-item {
       display: flex;
@@ -287,6 +311,10 @@
 
       .busca button {
         width: 100%;
+      }
+
+      .admin-formularios {
+        grid-template-columns: 1fr;
       }
 
       .bairro-item {
@@ -693,97 +721,112 @@ async function mostrarPainelAdmin() {
 
   admin.innerHTML = `
 
-    <h2>Gerenciar bairros</h2>
+    <h2>Gerenciar sistema</h2>
 
     <button class="sair" onclick="sairAdmin()">
       Sair
     </button>
 
+    <div class="admin-formularios">
 
-    <div class="campo">
+      <div class="admin-bloco">
+        <h3>📍 Gerenciar bairros</h3>
 
-      <label>Bairro / Município</label>
+        <div class="campo">
+          <label>Bairro / Município</label>
+          <input
+            type="text"
+            id="novoBairro"
+            placeholder="Ex.: Jardim Primavera"
+          >
+        </div>
 
-      <input
-        type="text"
-        id="novoBairro"
-        placeholder="Ex.: Jardim Primavera"
-      >
+        <div class="campo">
+          <label>Região</label>
+          <input
+            type="text"
+            id="novaRegiao"
+            placeholder="Ex.: Santo Amaro"
+          >
+        </div>
+
+        <button onclick="adicionarBairro()">
+          + Adicionar bairro
+        </button>
+
+        <div class="campo" style="margin-top:20px">
+          <label>Pesquisar bairro para editar ou excluir</label>
+          <input
+            type="text"
+            id="filtroAdmin"
+            placeholder="Digite o nome do bairro..."
+            oninput="carregarBairros()"
+          >
+        </div>
+
+        <div id="adminLista" class="lista-bairros-admin"></div>
+      </div>
+
+      <div class="admin-bloco">
+        <h3>🚚 Gerenciar rotas</h3>
+
+        <div class="campo">
+          <label>Motorista</label>
+          <input
+            type="text"
+            id="novoMotorista"
+            placeholder="Nome do motorista"
+          >
+        </div>
+
+        <div class="campo">
+          <label>Placa</label>
+          <input
+            type="text"
+            id="novaPlaca"
+            placeholder="ABC1D23"
+          >
+        </div>
+
+        <div class="campo">
+          <label>Região</label>
+          <input
+            type="text"
+            id="novaRegiaoRota"
+            placeholder="Ex.: Santo Amaro"
+          >
+        </div>
+
+        <div class="campo">
+          <label>Ajudante</label>
+          <input
+            type="text"
+            id="novoAjudante"
+            placeholder="Nome do ajudante"
+          >
+        </div>
+
+        <div class="campo">
+          <label>Observação</label>
+          <input
+            type="text"
+            id="novaObservacao"
+            placeholder="Observação (opcional)"
+          >
+        </div>
+
+        <button onclick="adicionarRota()">
+          + Adicionar rota
+        </button>
+      </div>
 
     </div>
 
-
-    <div class="campo">
-
-      <label>Região</label>
-
-      <input
-        type="text"
-        id="novaRegiao"
-        placeholder="Ex.: Santo Amaro"
-      >
-
+    <div class="admin-lista">
+      <h3>🚚 Rotas cadastradas</h3>
+      <div id="adminRotasLista"></div>
     </div>
 
-
-    <button onclick="adicionarBairro()">
-      + Adicionar bairro
-    </button>
-
-
-    <div class="campo" style="margin-top:20px">
-
-      <label>Pesquisar na lista</label>
-
-      <input
-        type="text"
-        id="filtroAdmin"
-        placeholder="Filtrar bairros..."
-        oninput="carregarBairros()"
-      >
-
-    </div>
-
-
-    <div
-      id="adminLista"
-      class="admin-lista">
-    </div>
-
-    <div class="admin-separador">
-      <h2>Gerenciar rotas</h2>
-
-      <div class="campo">
-        <label>Motorista</label>
-        <input type="text" id="novoMotorista" placeholder="Nome do motorista">
-      </div>
-
-      <div class="campo">
-        <label>Placa</label>
-        <input type="text" id="novaPlaca" placeholder="Ex.: ABC-1234">
-      </div>
-
-      <div class="campo">
-        <label>Região</label>
-        <input type="text" id="novaRotaRegiao" placeholder="Ex.: Zona Norte">
-      </div>
-
-      <div class="campo">
-        <label>Ajudante</label>
-        <input type="text" id="novoAjudante" placeholder="Nome do ajudante">
-      </div>
-
-      <div class="campo">
-        <label>Observação</label>
-        <input type="text" id="novaObservacao" placeholder="Observação, se necessário">
-      </div>
-
-      <button onclick="adicionarRota()">
-        + Adicionar rota
-      </button>
-
-      <div id="rotasAdmin" class="admin-lista"></div>
-    </div>
 
   `;
 
@@ -890,32 +933,27 @@ async function carregarBairros() {
 
   const filtro =
     filtroInput
-    ?
-    normalizar(filtroInput.value)
-    :
-    "";
+      ? normalizar(filtroInput.value)
+      : "";
 
+  if (!filtro) {
+    lista.innerHTML = `
+      <p class="aviso">
+        Digite um bairro acima para encontrar os registros que deseja editar ou excluir.
+      </p>
+    `;
+    return;
+  }
 
   const bairrosFiltrados =
-    data.filter(item => {
-
-      if (!filtro) {
-        return true;
-      }
-
-      return (
-        normalizar(item.bairro).includes(filtro) ||
-        normalizar(item.regiao).includes(filtro)
-      );
-
-    });
-
+    data.filter(item =>
+      normalizar(item.bairro).includes(filtro) ||
+      normalizar(item.regiao).includes(filtro)
+    );
 
   if (bairrosFiltrados.length === 0) {
-
     lista.innerHTML =
       "<p>Nenhum bairro encontrado.</p>";
-
     return;
   }
 
