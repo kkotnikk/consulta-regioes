@@ -180,6 +180,106 @@
       margin-top: 10px;
     }
 
+
+    /* =========================================================
+       ROTAS
+       ========================================================= */
+
+    .rotas-section {
+      margin-top: 35px;
+    }
+
+    .rotas-titulo {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .rotas-subtitulo {
+      text-align: center;
+      color: #666;
+      margin-bottom: 18px;
+    }
+
+    .rota-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-left: 5px solid #d39a00;
+    }
+
+    .rota-card.confirmada {
+      border-left-color: #2e9b57;
+    }
+
+    .rota-status {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .rota-status.em-rota {
+      color: #b27a00;
+    }
+
+    .rota-status.confirmada {
+      color: #2e9b57;
+    }
+
+    .rota-dados {
+      display: grid;
+      gap: 7px;
+      color: #333;
+    }
+
+    .rota-dados strong {
+      color: #555;
+    }
+
+    .rota-observacao {
+      margin-top: 12px;
+      padding: 10px;
+      background: #f4f1f6;
+      border-radius: 8px;
+    }
+
+    .confirmar-retorno {
+      margin-top: 15px;
+      background: #2e9b57;
+      width: 100%;
+    }
+
+    .rota-vazia {
+      text-align: center;
+      color: #777;
+      padding: 15px;
+    }
+
+    .admin-separador {
+      margin: 30px 0 20px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+
+    .rota-admin-item {
+      padding: 15px 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .rota-admin-status {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .rota-admin-status.em-rota {
+      color: #b27a00;
+    }
+
+    .rota-admin-status.confirmada {
+      color: #2e9b57;
+    }
+
     @media (max-width: 600px) {
       .busca {
         flex-direction: column;
@@ -230,8 +330,14 @@
 
     <div id="resultado" class="resultado"></div>
 
+    <div class="rotas-section">
+      <h2 class="rotas-titulo">🚚 Rotas</h2>
+      <div class="rotas-subtitulo">Acompanhamento das rotas em andamento</div>
+      <div id="rotasPublicas"></div>
+    </div>
+
     <button class="admin-btn" onclick="abrirAdmin()">
-      ⚙️ Adicionar / editar bairros
+      ⚙️ Gerenciar sistema
     </button>
 
     <div id="admin" class="admin"></div>
@@ -407,6 +513,10 @@ let encontrados = data.filter(item => {
 
           <div class="regiao">
             Interior
+          </div>
+
+          <div class="alerta">
+            🩷 Atenção: imprimir na folha rosa.
           </div>
 
         </div>
@@ -640,10 +750,46 @@ async function mostrarPainelAdmin() {
       class="admin-lista">
     </div>
 
+    <div class="admin-separador">
+      <h2>Gerenciar rotas</h2>
+
+      <div class="campo">
+        <label>Motorista</label>
+        <input type="text" id="novoMotorista" placeholder="Nome do motorista">
+      </div>
+
+      <div class="campo">
+        <label>Placa</label>
+        <input type="text" id="novaPlaca" placeholder="Ex.: ABC-1234">
+      </div>
+
+      <div class="campo">
+        <label>Região</label>
+        <input type="text" id="novaRotaRegiao" placeholder="Ex.: Zona Norte">
+      </div>
+
+      <div class="campo">
+        <label>Ajudante</label>
+        <input type="text" id="novoAjudante" placeholder="Nome do ajudante">
+      </div>
+
+      <div class="campo">
+        <label>Observação</label>
+        <input type="text" id="novaObservacao" placeholder="Observação, se necessário">
+      </div>
+
+      <button onclick="adicionarRota()">
+        + Adicionar rota
+      </button>
+
+      <div id="rotasAdmin" class="admin-lista"></div>
+    </div>
+
   `;
 
 
   carregarBairros();
+  carregarRotasAdmin();
 
 }
 
@@ -818,6 +964,340 @@ async function carregarBairros() {
 }
 
 
+
+/* =========================================================
+   ROTAS - ÁREA PÚBLICA
+   ========================================================= */
+
+async function carregarRotasPublicas() {
+
+  const container = document.getElementById("rotasPublicas");
+
+  if (!container) return;
+
+  const { data, error } =
+    await supabaseClient
+      .from("rotas")
+      .select("*")
+      .order("status", { ascending: true })
+      .order("criado_em", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    container.innerHTML =
+      '<div class="card erro">Erro ao carregar as rotas.</div>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    container.innerHTML =
+      '<div class="card rota-vazia">Nenhuma rota cadastrada no momento.</div>';
+    return;
+  }
+
+  container.innerHTML = data.map(rota => {
+
+    const confirmada = rota.status === "retorno_confirmado";
+
+    const statusHtml = confirmada
+      ? `🟢 Retorno confirmado às ${formatarHora(rota.retorno_confirmado_em)}`
+      : `🟡 Em rota`;
+
+    return `
+      <div class="rota-card ${confirmada ? "confirmada" : ""}">
+
+        <div class="rota-status ${confirmada ? "confirmada" : "em-rota"}">
+          ${statusHtml}
+        </div>
+
+        <div class="rota-dados">
+          <div><strong>Motorista:</strong> ${escapeHtml(rota.motorista)}</div>
+          <div><strong>Placa:</strong> ${escapeHtml(rota.placa)}</div>
+          <div><strong>Região:</strong> ${escapeHtml(rota.regiao)}</div>
+          ${
+            rota.ajudante
+              ? `<div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante)}</div>`
+              : ""
+          }
+        </div>
+
+        ${
+          rota.observacao
+            ? `<div class="rota-observacao"><strong>Observação:</strong> ${escapeHtml(rota.observacao)}</div>`
+            : ""
+        }
+
+      </div>
+    `;
+
+  }).join("");
+}
+
+
+/* =========================================================
+   ROTAS - ADMIN
+   ========================================================= */
+
+async function adicionarRota() {
+
+  const motorista = document.getElementById("novoMotorista").value.trim();
+  const placa = document.getElementById("novaPlaca").value.trim();
+  const regiao = document.getElementById("novaRotaRegiao").value.trim();
+  const ajudante = document.getElementById("novoAjudante").value.trim();
+  const observacao = document.getElementById("novaObservacao").value.trim();
+
+  if (!motorista || !placa || !regiao) {
+    alert("Preencha motorista, placa e região.");
+    return;
+  }
+
+  const { error } =
+    await supabaseClient
+      .from("rotas")
+      .insert([{
+        motorista,
+        placa,
+        regiao,
+        ajudante: ajudante || null,
+        observacao: observacao || null,
+        status: "em_rota"
+      }]);
+
+  if (error) {
+    console.error(error);
+    alert("Não foi possível adicionar a rota.");
+    return;
+  }
+
+  document.getElementById("novoMotorista").value = "";
+  document.getElementById("novaPlaca").value = "";
+  document.getElementById("novaRotaRegiao").value = "";
+  document.getElementById("novoAjudante").value = "";
+  document.getElementById("novaObservacao").value = "";
+
+  alert("Rota adicionada com sucesso!");
+
+  carregarRotasAdmin();
+  carregarRotasPublicas();
+}
+
+
+async function carregarRotasAdmin() {
+
+  const lista = document.getElementById("rotasAdmin");
+
+  if (!lista) return;
+
+  const { data, error } =
+    await supabaseClient
+      .from("rotas")
+      .select("*")
+      .order("status", { ascending: true })
+      .order("criado_em", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    lista.innerHTML =
+      '<div class="erro">Erro ao carregar rotas.</div>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    lista.innerHTML = "<p>Nenhuma rota cadastrada.</p>";
+    return;
+  }
+
+  lista.innerHTML = data.map(rota => {
+
+    const confirmada = rota.status === "retorno_confirmado";
+
+    return `
+      <div class="rota-admin-item">
+
+        <div class="rota-admin-status ${confirmada ? "confirmada" : "em-rota"}">
+          ${
+            confirmada
+              ? `🟢 Retorno confirmado às ${formatarHora(rota.retorno_confirmado_em)}`
+              : "🟡 Em rota"
+          }
+        </div>
+
+        <div class="rota-dados">
+          <div><strong>Motorista:</strong> ${escapeHtml(rota.motorista)}</div>
+          <div><strong>Placa:</strong> ${escapeHtml(rota.placa)}</div>
+          <div><strong>Região:</strong> ${escapeHtml(rota.regiao)}</div>
+          ${
+            rota.ajudante
+              ? `<div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante)}</div>`
+              : ""
+          }
+          ${
+            rota.observacao
+              ? `<div><strong>Observação:</strong> ${escapeHtml(rota.observacao)}</div>`
+              : ""
+          }
+        </div>
+
+        <div class="acoes" style="margin-top:10px; flex-wrap:wrap;">
+
+          ${
+            !confirmada
+              ? `
+                <button
+                  class="confirmar-retorno"
+                  onclick="confirmarRetorno(${rota.id})">
+                  ✓ Confirmar retorno
+                </button>
+              `
+              : ""
+          }
+
+          <button
+            class="editar"
+            onclick="editarRota(${rota.id})">
+            Editar
+          </button>
+
+          <button
+            class="excluir"
+            onclick="excluirRota(${rota.id})">
+            Excluir
+          </button>
+
+        </div>
+
+      </div>
+    `;
+
+  }).join("");
+}
+
+
+async function confirmarRetorno(id) {
+
+  const confirmar =
+    confirm("Confirmar o retorno desta rota?");
+
+  if (!confirmar) return;
+
+  const { error } =
+    await supabaseClient
+      .from("rotas")
+      .update({
+        status: "retorno_confirmado",
+        retorno_confirmado_em: new Date().toISOString()
+      })
+      .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    alert("Não foi possível confirmar o retorno.");
+    return;
+  }
+
+  carregarRotasAdmin();
+  carregarRotasPublicas();
+}
+
+
+async function editarRota(id) {
+
+  const { data, error } =
+    await supabaseClient
+      .from("rotas")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+  if (error || !data) {
+    alert("Não foi possível carregar a rota.");
+    return;
+  }
+
+  const motorista = prompt("Motorista:", data.motorista);
+  if (motorista === null) return;
+
+  const placa = prompt("Placa:", data.placa);
+  if (placa === null) return;
+
+  const regiao = prompt("Região:", data.regiao);
+  if (regiao === null) return;
+
+  const ajudante = prompt("Ajudante:", data.ajudante || "");
+  if (ajudante === null) return;
+
+  const observacao = prompt("Observação:", data.observacao || "");
+  if (observacao === null) return;
+
+  if (!motorista.trim() || !placa.trim() || !regiao.trim()) {
+    alert("Motorista, placa e região não podem ficar vazios.");
+    return;
+  }
+
+  const { error: updateError } =
+    await supabaseClient
+      .from("rotas")
+      .update({
+        motorista: motorista.trim(),
+        placa: placa.trim(),
+        regiao: regiao.trim(),
+        ajudante: ajudante.trim() || null,
+        observacao: observacao.trim() || null
+      })
+      .eq("id", id);
+
+  if (updateError) {
+    console.error(updateError);
+    alert("Não foi possível editar a rota.");
+    return;
+  }
+
+  alert("Rota atualizada!");
+
+  carregarRotasAdmin();
+  carregarRotasPublicas();
+}
+
+
+async function excluirRota(id) {
+
+  const confirmar =
+    confirm("Tem certeza que deseja excluir esta rota?");
+
+  if (!confirmar) return;
+
+  const { error } =
+    await supabaseClient
+      .from("rotas")
+      .delete()
+      .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    alert("Não foi possível excluir a rota.");
+    return;
+  }
+
+  alert("Rota excluída!");
+
+  carregarRotasAdmin();
+  carregarRotasPublicas();
+}
+
+
+function formatarHora(dataIso) {
+
+  if (!dataIso) return "--:--";
+
+  return new Date(dataIso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+
+}
+
+
 /* =========================================================
    ESCAPAR JAVASCRIPT
    ========================================================= */
@@ -969,6 +1449,16 @@ async function sairAdmin() {
     "none";
 
 }
+
+
+
+/* =========================================================
+   CARREGAR ROTAS
+   ========================================================= */
+
+carregarRotasPublicas();
+
+setInterval(carregarRotasPublicas, 30000);
 
 
 /* =========================================================
