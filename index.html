@@ -1383,6 +1383,81 @@ h1, h2, h3 {
 #modalSistema #modalSistemaTitulo { margin:0 0 8px !important; font-size:19px !important; }
 #modalSistema #modalSistemaMensagem { margin:0 0 18px !important; font-size:13px !important; line-height:1.45 !important; color:#66736c !important; }
 
+
+/* ===== ADMIN: ROTAS COMPACTAS EM GRADE ===== */
+#adminRotasLista {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+#adminRotasLista .rota-admin-item {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e0e8e3;
+  border-left: 4px solid #d5aa00;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(23,65,43,.05);
+}
+
+#adminRotasLista .rota-admin-item:has(.rota-admin-status.confirmada) {
+  border-left-color: #159447;
+}
+
+#adminRotasLista .rota-admin-status {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+#adminRotasLista .rota-dados {
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+#adminRotasLista .acoes {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px !important;
+  margin-top: 10px !important;
+}
+
+#adminRotasLista .acoes .confirmar-retorno {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-height: 36px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+#adminRotasLista .acoes .editar,
+#adminRotasLista .acoes .excluir {
+  width: 100%;
+  padding: 8px 9px;
+  font-size: 12px;
+}
+
+@media (max-width: 1050px) {
+  #adminRotasLista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 650px) {
+  #adminRotasLista { grid-template-columns: 1fr; }
+}
+
+/* ===== ADMIN: SUGESTÕES ===== */
+.sugestoes-admin-secao { margin-top:32px; padding-top:26px; border-top:1px solid #e2e9e5; }
+.sugestoes-admin-lista { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px; }
+.sugestao-admin-card { padding:16px; border:1px solid #e0e8e3; border-radius:12px; background:#fff; }
+.sugestao-admin-card h4 { margin:0; font-size:15px; }
+.sugestao-admin-card p { margin:12px 0; color:#35433b; font-size:13px; line-height:1.55; white-space:pre-wrap; }
+.sugestao-admin-meta { color:#7a857f; font-size:11px; }
+.sugestao-admin-acoes { display:flex; gap:8px; margin-top:12px; }
+.sugestao-admin-acoes select { flex:1; min-width:0; padding:9px; border:1px solid #d8e1dc; border-radius:8px; background:#fff; }
+.sugestao-admin-acoes button { padding:9px 11px; }
+@media(max-width:800px){ .sugestoes-admin-lista{grid-template-columns:1fr;} }
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1537,6 +1612,10 @@ h1, h2, h3 {
     <h2>Enviar sugestão</h2>
     <div class="modal-sistema-mensagem">
       <p>Escreva uma ideia, melhoria ou ajuste que gostaria de ver no sistema.</p>
+      <div class="campo">
+        <label for="nomeSugestao">Nome</label>
+        <input type="text" id="nomeSugestao" placeholder="Seu nome">
+      </div>
       <textarea id="textoSugestao" class="sugestao-textarea" placeholder="Digite sua sugestão..."></textarea>
     </div>
     <div class="modal-sistema-acoes">
@@ -2027,6 +2106,18 @@ async function mostrarPainelAdmin() {
       <div id="adminSuporteLista" class="suporte-admin-lista"></div>
     </div>
 
+    <div class="admin-lista sugestoes-admin-secao">
+      <div class="suporte-admin-cabecalho">
+        <div>
+          <div class="suporte-kicker">SUGESTÕES</div>
+          <h3>Sugestões recebidas</h3>
+          <p>Ideias e melhorias enviadas pelo formulário do site.</p>
+        </div>
+        <div id="sugestoesResumoAdmin" class="suporte-admin-resumo"></div>
+      </div>
+      <div id="adminSugestoesLista" class="sugestoes-admin-lista"></div>
+    </div>
+
 
   `;
 
@@ -2034,6 +2125,7 @@ async function mostrarPainelAdmin() {
   carregarBairros();
   carregarRotasAdmin();
   carregarChamadosSuporte();
+  carregarSugestoesAdmin();
 
 }
 
@@ -3154,19 +3246,59 @@ function abrirSugestoes() {
   abrirModalCabecalho("modalSugestoes");
 }
 
-function registrarSugestao() {
+async function registrarSugestao() {
+  const campoNome = document.getElementById("nomeSugestao");
   const campo = document.getElementById("textoSugestao");
+  const nome = campoNome?.value.trim() || "";
   const texto = campo?.value.trim() || "";
-  if (!texto) {
-    mostrarToast("Digite sua sugestão antes de enviar.", "erro");
+
+  if (!nome) {
+    mostrarToast("Digite seu nome.", "erro");
+    campoNome?.focus();
     return;
   }
 
-  // Nesta versão o botão e o formulário já estão prontos.
-  // O destino definitivo será conectado quando for definido (banco/e-mail/etc.).
-  fecharModalCabecalho("modalSugestoes");
-  if (campo) campo.value = "";
-  mostrarToast("Sugestão registrada no formulário. Defina o canal de destino para ativar o envio.", "sucesso");
+  if (!texto) {
+    mostrarToast("Digite sua sugestão antes de enviar.", "erro");
+    campo?.focus();
+    return;
+  }
+
+  const botao = document.querySelector('#modalSugestoes .btn-sucesso');
+  if (botao) {
+    botao.disabled = true;
+    botao.textContent = "Enviando...";
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from("sugestoes")
+      .insert({
+        nome,
+        sugestao: texto,
+        status: "Nova",
+        versao_sistema: "1.0.0"
+      });
+
+    if (error) throw error;
+
+    if (campoNome) campoNome.value = "";
+    if (campo) campo.value = "";
+    fecharModalCabecalho("modalSugestoes");
+    mostrarToast("Sugestão enviada com sucesso.", "sucesso");
+  } catch (error) {
+    console.error("Erro ao registrar sugestão:", error);
+    const detalhe = error?.message || error?.details || error?.hint || "";
+    mostrarToast(
+      detalhe ? "Erro ao enviar sugestão: " + detalhe : "Não foi possível enviar a sugestão.",
+      "erro"
+    );
+  } finally {
+    if (botao) {
+      botao.disabled = false;
+      botao.textContent = "Enviar sugestão";
+    }
+  }
 }
 
 document.addEventListener("DOMContentLoaded", atualizarSaudacaoPeriodo);
@@ -3316,6 +3448,107 @@ async function excluirChamadoSuporte(id) {
   }
   mostrarToast("Chamado excluído.", "sucesso");
   carregarChamadosSuporte();
+}
+
+
+async function carregarSugestoesAdmin() {
+  const lista = document.getElementById("adminSugestoesLista");
+  if (!lista) return;
+
+  lista.innerHTML = '<p class="aviso">Carregando sugestões...</p>';
+
+  const { data, error } = await supabaseClient
+    .from("sugestoes")
+    .select("*")
+    .order("criado_em", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao carregar sugestões:", error);
+    const detalhe = error?.message || error?.details || error?.hint || "";
+    lista.innerHTML = `<div class="erro">Não foi possível carregar as sugestões.${detalhe ? "<br><small>" + escapeHtml(detalhe) + "</small>" : ""}</div>`;
+    return;
+  }
+
+  const sugestoes = data || [];
+  const resumo = document.getElementById("sugestoesResumoAdmin");
+  if (resumo) {
+    const novas = sugestoes.filter(s => (s.status || "Nova") === "Nova").length;
+    const analise = sugestoes.filter(s => s.status === "Em análise").length;
+    const implementadas = sugestoes.filter(s => s.status === "Implementada").length;
+    resumo.innerHTML = `<span><strong>${novas}</strong> novas</span>
+      <span><strong>${analise}</strong> em análise</span>
+      <span><strong>${implementadas}</strong> implementadas</span>`;
+  }
+
+  if (!sugestoes.length) {
+    lista.innerHTML = '<p class="aviso">Nenhuma sugestão registrada.</p>';
+    return;
+  }
+
+  lista.innerHTML = sugestoes.map(item => {
+    const dataHora = item.criado_em
+      ? new Date(item.criado_em).toLocaleString("pt-BR")
+      : "—";
+    const status = item.status || "Nova";
+
+    return `
+      <article class="sugestao-admin-card">
+        <h4>${escapeHtml(item.nome || "Sem nome")}</h4>
+        <p>${escapeHtml(item.sugestao || "")}</p>
+        <div class="sugestao-admin-meta">${escapeHtml(dataHora)} · v${escapeHtml(item.versao_sistema || "1.0.0")}</div>
+        <div class="sugestao-admin-acoes">
+          <select onchange="alterarStatusSugestao(${item.id}, this.value)">
+            <option value="Nova" ${status === "Nova" ? "selected" : ""}>Nova</option>
+            <option value="Em análise" ${status === "Em análise" ? "selected" : ""}>Em análise</option>
+            <option value="Implementada" ${status === "Implementada" ? "selected" : ""}>Implementada</option>
+            <option value="Recusada" ${status === "Recusada" ? "selected" : ""}>Recusada</option>
+          </select>
+          <button type="button" class="excluir" onclick="excluirSugestao(${item.id})">Excluir</button>
+        </div>
+      </article>`;
+  }).join("");
+}
+
+async function alterarStatusSugestao(id, status) {
+  const { error } = await supabaseClient
+    .from("sugestoes")
+    .update({ status, atualizado_em: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Erro ao atualizar sugestão:", error);
+    mostrarToast("Não foi possível atualizar a sugestão.", "erro");
+    carregarSugestoesAdmin();
+    return;
+  }
+
+  mostrarToast("Status da sugestão atualizado.", "sucesso");
+  carregarSugestoesAdmin();
+}
+
+async function excluirSugestao(id) {
+  const confirmar = await confirmarNoSite({
+    titulo: "Excluir sugestão",
+    mensagem: "Deseja excluir esta sugestão?",
+    textoConfirmar: "Excluir",
+    tipo: "perigo"
+  });
+
+  if (!confirmar) return;
+
+  const { error } = await supabaseClient
+    .from("sugestoes")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Erro ao excluir sugestão:", error);
+    mostrarToast("Não foi possível excluir a sugestão.", "erro");
+    return;
+  }
+
+  mostrarToast("Sugestão excluída.", "sucesso");
+  carregarSugestoesAdmin();
 }
 
 </script>
