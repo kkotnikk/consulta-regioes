@@ -2187,6 +2187,114 @@ body.login-overlay-ativo::before {
 #admin.admin-login-popup { z-index: 13000 !important; }
 @keyframes loginOverlayEntrada { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { body.login-overlay-ativo::before { animation: none; } }
+
+
+/* ===== RELÓGIO ANALÓGICO MINIMALISTA — OPÇÃO 7 ===== */
+.header-relogio {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:15px;
+  flex:0 0 auto;
+  margin:0 24px;
+  color:var(--solidez);
+}
+.relogio-analogico {
+  position:relative;
+  width:82px;
+  height:82px;
+  flex:0 0 82px;
+}
+.relogio-marcador {
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:2px;
+  height:7px;
+  margin-left:-1px;
+  margin-top:-39px;
+  border-radius:999px;
+  background:#78ad90;
+  transform-origin:1px 39px;
+}
+.relogio-marcador.principal {
+  width:3px;
+  height:9px;
+  margin-left:-1.5px;
+  background:var(--solidez);
+}
+.relogio-ponteiro {
+  position:absolute;
+  left:50%;
+  bottom:50%;
+  transform-origin:50% 100%;
+  border-radius:999px;
+}
+.relogio-hora {
+  width:4px;
+  height:24px;
+  margin-left:-2px;
+  background:#123b28;
+}
+.relogio-minuto {
+  width:3px;
+  height:31px;
+  margin-left:-1.5px;
+  background:var(--solidez);
+}
+.relogio-segundo {
+  width:1px;
+  height:34px;
+  margin-left:-.5px;
+  background:#35a86a;
+}
+.relogio-centro {
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:7px;
+  height:7px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:var(--solidez);
+  box-shadow:0 0 0 2px #fff;
+}
+.relogio-data {
+  min-width:49px;
+  padding-left:14px;
+  border-left:1px solid #cfe3d8;
+  line-height:1;
+}
+.relogio-dia-semana {
+  margin-bottom:5px;
+  color:#6f7d75;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+}
+.relogio-dia-mes {
+  color:#123b28;
+  font-size:21px;
+  font-weight:800;
+}
+@media (max-width:1100px) {
+  .header-relogio { margin:0 10px; }
+  .relogio-analogico { width:68px; height:68px; flex-basis:68px; transform:scale(.86); }
+  .relogio-data { padding-left:10px; }
+}
+@media (max-width:900px) {
+  .header-relogio {
+    order:2;
+    margin:8px auto;
+  }
+}
+@media (max-width:520px) {
+  .header-relogio { gap:8px; }
+  .relogio-data { min-width:42px; padding-left:8px; }
+  .relogio-dia-mes { font-size:18px; }
+}
+
 </style>
 </head>
 
@@ -2200,6 +2308,13 @@ body.login-overlay-ativo::before {
       <div class="presenca-item"><span class="presenca-icone visitante"></span><div><div id="presencaVisitantes" class="presenca-numero">—</div><div class="presenca-label">Não cadastrados</div></div></div>
       <div class="presenca-item"><span class="presenca-icone offline"></span><div><div id="presencaOffline" class="presenca-numero">—</div><div class="presenca-label">Offline</div></div></div>
       <div class="presenca-item"><span class="presenca-icone total"></span><div><div id="presencaTotal" class="presenca-numero">—</div><div class="presenca-label">Cadastros</div></div></div>
+    </div>
+    <div class="header-relogio" aria-label="Relógio e data atuais">
+      <div id="relogioAnalogico" class="relogio-analogico" aria-hidden="true"></div>
+      <div class="relogio-data">
+        <div id="relogioDiaSemana" class="relogio-dia-semana">---</div>
+        <div id="relogioDiaMes" class="relogio-dia-mes">--</div>
+      </div>
     </div>
     <div class="solidez-saudacao">
       <strong id="saudacaoPeriodo">Bem-vindo!</strong>
@@ -4798,5 +4913,52 @@ setTimeout(async()=>{await atualizarInterfaceSessao();await iniciarPresencaSiste
 
 <div id="toastArea" class="toast-area" aria-live="polite"></div>
 
+
+<script>
+
+/* ===== RELÓGIO ANALÓGICO MINIMALISTA ===== */
+(function iniciarRelogioCabecalho() {
+  const mostrador = document.getElementById("relogioAnalogico");
+  const diaSemana = document.getElementById("relogioDiaSemana");
+  const diaMes = document.getElementById("relogioDiaMes");
+  if (!mostrador || !diaSemana || !diaMes) return;
+
+  for (let i = 0; i < 12; i++) {
+    const marcador = document.createElement("span");
+    marcador.className = "relogio-marcador" + (i % 3 === 0 ? " principal" : "");
+    marcador.style.transform = `rotate(${i * 30}deg)`;
+    mostrador.appendChild(marcador);
+  }
+
+  const hora = document.createElement("span");
+  hora.className = "relogio-ponteiro relogio-hora";
+  const minuto = document.createElement("span");
+  minuto.className = "relogio-ponteiro relogio-minuto";
+  const segundo = document.createElement("span");
+  segundo.className = "relogio-ponteiro relogio-segundo";
+  const centro = document.createElement("span");
+  centro.className = "relogio-centro";
+  mostrador.append(hora, minuto, segundo, centro);
+
+  const dias = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+
+  function atualizarRelogio() {
+    const agora = new Date();
+    const s = agora.getSeconds() + agora.getMilliseconds() / 1000;
+    const m = agora.getMinutes() + s / 60;
+    const h = (agora.getHours() % 12) + m / 60;
+
+    hora.style.transform = `rotate(${h * 30}deg)`;
+    minuto.style.transform = `rotate(${m * 6}deg)`;
+    segundo.style.transform = `rotate(${s * 6}deg)`;
+    diaSemana.textContent = dias[agora.getDay()];
+    diaMes.textContent = String(agora.getDate()).padStart(2, "0");
+  }
+
+  atualizarRelogio();
+  setInterval(atualizarRelogio, 1000);
+})();
+
+</script>
 </body>
 </html>
