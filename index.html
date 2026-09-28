@@ -4050,7 +4050,145 @@ async function excluirSugestao(id) {
   carregarSugestoesAdmin();
 }
 
-\n\n/* =========================================================\n   PERFIS DE ACESSO / AUDITORIA — v1.1\n   ========================================================= */\nlet usuarioAtualSistema = null;\n\nasync function obterUsuarioAtualSistema() {\n  const { data: { session } } = await supabaseClient.auth.getSession();\n  if (!session?.user) { usuarioAtualSistema = null; return null; }\n  const { data, error } = await supabaseClient.from("usuarios").select("id,nome,perfil,ativo").eq("id", session.user.id).maybeSingle();\n  if (error || !data || !data.ativo) { usuarioAtualSistema = null; return null; }\n  usuarioAtualSistema = data;\n  return data;\n}\n\nasync function atualizarInterfaceSessao() {\n  const usuario = await obterUsuarioAtualSistema();\n  const area = document.getElementById("usuarioSessao");\n  const btnAdmin = document.querySelector(".admin-btn");\n  if (!usuario) {\n    if (area) { area.classList.remove("ativo"); area.innerHTML = ""; }\n    if (btnAdmin) { btnAdmin.style.display = "block"; btnAdmin.textContent = "🔐 Acessar sistema"; }\n    return;\n  }\n  if (area) {\n    area.classList.add("ativo");\n    area.innerHTML = `${escapeHtml(usuario.nome)} · ${usuario.perfil === "admin" ? "Administrador" : "Operacional"} <button type="button" onclick="sairSistema()">Sair</button>`;\n  }\n  if (btnAdmin) {\n    if (usuario.perfil === "admin") { btnAdmin.style.display = "block"; btnAdmin.textContent = "⚙️ Gerenciar sistema"; }\n    else btnAdmin.style.display = "none";\n  }\n}\n\nasync function sairSistema(){\n  await supabaseClient.auth.signOut();\n  usuarioAtualSistema = null;\n  const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}\n  await atualizarInterfaceSessao();\n  await carregarRotasPublicas();\n  mostrarToast("Sessão encerrada.","sucesso");\n}\n\nasync function abrirAdmin() {\n  const usuario = await obterUsuarioAtualSistema();\n  if (!usuario) { abrirLoginAdminPopup(); return; }\n  if (usuario.perfil !== "admin") {\n    mostrarToast("Seu perfil é Operacional. Você pode acompanhar as rotas e confirmar retornos.", "sucesso");\n    return;\n  }\n  fecharLoginAdminPopup();\n  await mostrarPainelAdmin();\n  irParaCadastroAdministrativo();\n}\n\nasync function login() {\n  const email = document.getElementById("adminEmail")?.value?.trim();\n  const senha = document.getElementById("adminSenha")?.value || "";\n  const erro = document.getElementById("loginErro");\n  if (erro) erro.innerHTML = "";\n  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });\n  if (error) { if (erro) erro.innerHTML='<p class="erro">E-mail ou senha incorretos.</p>'; return; }\n  const usuario = await obterUsuarioAtualSistema();\n  if (!usuario) { await supabaseClient.auth.signOut(); if(erro) erro.innerHTML='<p class="erro">Usuário sem acesso ativo ao sistema.</p>'; return; }\n  fecharLoginAdminPopup();\n  await atualizarInterfaceSessao();\n  await carregarRotasPublicas();\n  if (usuario.perfil === "admin") { await mostrarPainelAdmin(); irParaCadastroAdministrativo(); }\n  else {\n    const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}\n    mostrarToast(`Bem-vindo, ${usuario.nome}. Acesso operacional liberado.`,"sucesso");\n    document.querySelector(".rotas-section")?.scrollIntoView({behavior:"smooth",block:"start"});\n  }\n}\n\nasync function carregarRotasPublicas() {\n  const container = document.getElementById("rotasPublicas"); if (!container) return;\n  const usuario = await obterUsuarioAtualSistema();\n  if (!usuario) {\n    rotasPublicasCache=[];\n    container.innerHTML='<div class="acesso-necessario"><strong>🔐 Acesso ao acompanhamento de rotas</strong><br><span>Entre no sistema para visualizar as rotas e confirmar retornos.</span><br><button type="button" style="margin-top:12px" onclick="abrirLoginAdminPopup()">Entrar</button></div>';\n    const resumo=document.getElementById("resumoRotas"); if(resumo) resumo.innerHTML="";\n    return;\n  }\n  const { data, error } = await supabaseClient.from("rotas").select("*");\n  if (error) { console.error(error); container.innerHTML='<div class="card erro">Erro ao carregar as rotas.</div>'; return; }\n  rotasPublicasCache=data||[]; renderizarRotasPublicas();\n}\n\nasync function executarConfirmacaoRetornoPublico() {\n  const id=Number(rotaDetalhesAtualId); const rota=rotasPublicasCache.find(r=>Number(r.id)===id); if(!id||!rota)return;\n  const usuario=await obterUsuarioAtualSistema();\n  if(!usuario){ fecharConfirmacaoRetornoPublico(); abrirLoginAdminPopup(); mostrarToast("Entre no sistema para confirmar o retorno.","erro"); return; }\n  const botao=document.getElementById("btnSegundaConfirmacaoRetorno"); botao.disabled=true; botao.textContent="Confirmando...";\n  const { error }=await supabaseClient.rpc("confirmar_retorno_rota", { rota_id:id });\n  botao.disabled=false; botao.textContent="Sim, confirmar retorno";\n  if(error){ console.error(error); mostrarToast(error.message || "Não foi possível confirmar o retorno.","erro"); return; }\n  const modal=document.getElementById("modalConfirmarRetornoPublico"); modal.classList.remove("ativo"); modal.setAttribute("aria-hidden","true"); document.body.style.overflow="";\n  mostrarToast(`Retorno de ${rota.motorista||"motorista"} confirmado por ${usuario.nome}.`,"sucesso");\n  await carregarRotasPublicas(); if(document.getElementById("adminRotasLista")) { carregarRotasAdmin(); carregarHistoricoRotas(); }\n}\n\nasync function carregarHistoricoRotas(){\n  const lista=document.getElementById("adminHistoricoRotas"); if(!lista)return;\n  lista.innerHTML='<p class="aviso">Carregando histórico...</p>';\n  const {data,error}=await supabaseClient.from("historico_rotas").select("*").order("criado_em",{ascending:false}).limit(50);\n  if(error){console.error(error);lista.innerHTML=`<div class="erro">Não foi possível carregar o histórico.<br><small>${escapeHtml(error.message||"")}</small></div>`;return;}\n  if(!data?.length){lista.innerHTML='<p class="aviso">Nenhuma alteração registrada ainda.</p>';return;}\n  const nomes={rota_criada:"Rota criada",rota_editada:"Rota editada",retorno_confirmado:"Retorno confirmado",rota_excluida:"Rota excluída"};\n  lista.innerHTML=data.map(h=>`<div class="historico-item"><div class="historico-topo"><strong>${escapeHtml(nomes[h.acao]||h.acao)}</strong><span>${h.criado_em?new Date(h.criado_em).toLocaleString("pt-BR"):"—"}</span></div><div>${escapeHtml(h.motorista||"—")} · ${escapeHtml(h.placa||"—")} · ${escapeHtml(h.regiao||"—")}</div><div class="historico-meta">Alterado por <strong>${escapeHtml(h.usuario_nome||"—")}</strong></div></div>`).join("");\n}\n\nasync function carregarUsuariosAdmin(){\n  const lista=document.getElementById("adminUsuarios"); if(!lista)return;\n  lista.innerHTML='<p class="aviso">Carregando usuários...</p>';\n  const {data,error}=await supabaseClient.from("usuarios").select("id,nome,perfil,ativo").order("nome");\n  if(error){console.error(error);lista.innerHTML=`<div class="erro">Não foi possível carregar os usuários.<br><small>${escapeHtml(error.message||"")}</small></div>`;return;}\n  lista.innerHTML=(data||[]).map(u=>`<div class="usuario-item"><div class="usuario-topo"><strong>${escapeHtml(u.nome||"Sem nome")}</strong><span class="perfil-badge">${escapeHtml(u.perfil||"—")}</span></div><div class="usuario-meta">${u.ativo?"🟢 Acesso ativo":"⚪ Acesso desativado"}</div></div>`).join("") || '<p class="aviso">Nenhum usuário cadastrado.</p>';\n}\n\n// Acrescenta o responsável nos cards sem alterar o layout aprovado.\nconst _renderizarRotasPublicasBase = renderizarRotasPublicas;\nrenderizarRotasPublicas = function(){\n  _renderizarRotasPublicasBase();\n  const cards=document.querySelectorAll("#rotasPublicas .rota-card");\n  const filtradas=(rotasPublicasCache||[]).filter(r=>{\n    const termo=normalizar(document.getElementById("buscaRotas")?.value||"");\n    const filtro=(typeof filtroRotasAtual!=="undefined"?filtroRotasAtual:"todas");\n    const bateFiltro=filtro==="todas"||r.status===filtro;\n    const alvo=normalizar(`${r.motorista||""} ${r.placa||""} ${r.regiao||""}`);\n    return bateFiltro&&(!termo||alvo.includes(termo));\n  });\n  cards.forEach((card,i)=>{const r=filtradas[i];if(r?.status==="retorno_confirmado"&&r.retorno_confirmado_por_nome){const el=document.createElement("div");el.className="rota-alterado-por";el.textContent=`Alterado por ${r.retorno_confirmado_por_nome}`;card.appendChild(el);}});\n};\n\nsupabaseClient.auth.onAuthStateChange(()=>setTimeout(()=>atualizarInterfaceSessao(),0));\nsetTimeout(async()=>{await atualizarInterfaceSessao();await carregarRotasPublicas();},0);\n
+
+
+/* =========================================================
+   PERFIS DE ACESSO / AUDITORIA — v1.1
+   ========================================================= */
+let usuarioAtualSistema = null;
+
+async function obterUsuarioAtualSistema() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session?.user) { usuarioAtualSistema = null; return null; }
+  const { data, error } = await supabaseClient.from("usuarios").select("id,nome,perfil,ativo").eq("id", session.user.id).maybeSingle();
+  if (error || !data || !data.ativo) { usuarioAtualSistema = null; return null; }
+  usuarioAtualSistema = data;
+  return data;
+}
+
+async function atualizarInterfaceSessao() {
+  const usuario = await obterUsuarioAtualSistema();
+  const area = document.getElementById("usuarioSessao");
+  const btnAdmin = document.querySelector(".admin-btn");
+  if (!usuario) {
+    if (area) { area.classList.remove("ativo"); area.innerHTML = ""; }
+    if (btnAdmin) { btnAdmin.style.display = "block"; btnAdmin.textContent = "🔐 Acessar sistema"; }
+    return;
+  }
+  if (area) {
+    area.classList.add("ativo");
+    area.innerHTML = `${escapeHtml(usuario.nome)} · ${usuario.perfil === "admin" ? "Administrador" : "Operacional"} <button type="button" onclick="sairSistema()">Sair</button>`;
+  }
+  if (btnAdmin) {
+    if (usuario.perfil === "admin") { btnAdmin.style.display = "block"; btnAdmin.textContent = "⚙️ Gerenciar sistema"; }
+    else btnAdmin.style.display = "none";
+  }
+}
+
+async function sairSistema(){
+  await supabaseClient.auth.signOut();
+  usuarioAtualSistema = null;
+  const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}
+  await atualizarInterfaceSessao();
+  await carregarRotasPublicas();
+  mostrarToast("Sessão encerrada.","sucesso");
+}
+
+async function abrirAdmin() {
+  const usuario = await obterUsuarioAtualSistema();
+  if (!usuario) { abrirLoginAdminPopup(); return; }
+  if (usuario.perfil !== "admin") {
+    mostrarToast("Seu perfil é Operacional. Você pode acompanhar as rotas e confirmar retornos.", "sucesso");
+    return;
+  }
+  fecharLoginAdminPopup();
+  await mostrarPainelAdmin();
+  irParaCadastroAdministrativo();
+}
+
+async function login() {
+  const email = document.getElementById("adminEmail")?.value?.trim();
+  const senha = document.getElementById("adminSenha")?.value || "";
+  const erro = document.getElementById("loginErro");
+  if (erro) erro.innerHTML = "";
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+  if (error) { if (erro) erro.innerHTML='<p class="erro">E-mail ou senha incorretos.</p>'; return; }
+  const usuario = await obterUsuarioAtualSistema();
+  if (!usuario) { await supabaseClient.auth.signOut(); if(erro) erro.innerHTML='<p class="erro">Usuário sem acesso ativo ao sistema.</p>'; return; }
+  fecharLoginAdminPopup();
+  await atualizarInterfaceSessao();
+  await carregarRotasPublicas();
+  if (usuario.perfil === "admin") { await mostrarPainelAdmin(); irParaCadastroAdministrativo(); }
+  else {
+    const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}
+    mostrarToast(`Bem-vindo, ${usuario.nome}. Acesso operacional liberado.`,"sucesso");
+    document.querySelector(".rotas-section")?.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+}
+
+async function carregarRotasPublicas() {
+  const container = document.getElementById("rotasPublicas"); if (!container) return;
+  const usuario = await obterUsuarioAtualSistema();
+  if (!usuario) {
+    rotasPublicasCache=[];
+    container.innerHTML='<div class="acesso-necessario"><strong>🔐 Acesso ao acompanhamento de rotas</strong><br><span>Entre no sistema para visualizar as rotas e confirmar retornos.</span><br><button type="button" style="margin-top:12px" onclick="abrirLoginAdminPopup()">Entrar</button></div>';
+    const resumo=document.getElementById("resumoRotas"); if(resumo) resumo.innerHTML="";
+    return;
+  }
+  const { data, error } = await supabaseClient.from("rotas").select("*");
+  if (error) { console.error(error); container.innerHTML='<div class="card erro">Erro ao carregar as rotas.</div>'; return; }
+  rotasPublicasCache=data||[]; renderizarRotasPublicas();
+}
+
+async function executarConfirmacaoRetornoPublico() {
+  const id=Number(rotaDetalhesAtualId); const rota=rotasPublicasCache.find(r=>Number(r.id)===id); if(!id||!rota)return;
+  const usuario=await obterUsuarioAtualSistema();
+  if(!usuario){ fecharConfirmacaoRetornoPublico(); abrirLoginAdminPopup(); mostrarToast("Entre no sistema para confirmar o retorno.","erro"); return; }
+  const botao=document.getElementById("btnSegundaConfirmacaoRetorno"); botao.disabled=true; botao.textContent="Confirmando...";
+  const { error }=await supabaseClient.rpc("confirmar_retorno_rota", { rota_id:id });
+  botao.disabled=false; botao.textContent="Sim, confirmar retorno";
+  if(error){ console.error(error); mostrarToast(error.message || "Não foi possível confirmar o retorno.","erro"); return; }
+  const modal=document.getElementById("modalConfirmarRetornoPublico"); modal.classList.remove("ativo"); modal.setAttribute("aria-hidden","true"); document.body.style.overflow="";
+  mostrarToast(`Retorno de ${rota.motorista||"motorista"} confirmado por ${usuario.nome}.`,"sucesso");
+  await carregarRotasPublicas(); if(document.getElementById("adminRotasLista")) { carregarRotasAdmin(); carregarHistoricoRotas(); }
+}
+
+async function carregarHistoricoRotas(){
+  const lista=document.getElementById("adminHistoricoRotas"); if(!lista)return;
+  lista.innerHTML='<p class="aviso">Carregando histórico...</p>';
+  const {data,error}=await supabaseClient.from("historico_rotas").select("*").order("criado_em",{ascending:false}).limit(50);
+  if(error){console.error(error);lista.innerHTML=`<div class="erro">Não foi possível carregar o histórico.<br><small>${escapeHtml(error.message||"")}</small></div>`;return;}
+  if(!data?.length){lista.innerHTML='<p class="aviso">Nenhuma alteração registrada ainda.</p>';return;}
+  const nomes={rota_criada:"Rota criada",rota_editada:"Rota editada",retorno_confirmado:"Retorno confirmado",rota_excluida:"Rota excluída"};
+  lista.innerHTML=data.map(h=>`<div class="historico-item"><div class="historico-topo"><strong>${escapeHtml(nomes[h.acao]||h.acao)}</strong><span>${h.criado_em?new Date(h.criado_em).toLocaleString("pt-BR"):"—"}</span></div><div>${escapeHtml(h.motorista||"—")} · ${escapeHtml(h.placa||"—")} · ${escapeHtml(h.regiao||"—")}</div><div class="historico-meta">Alterado por <strong>${escapeHtml(h.usuario_nome||"—")}</strong></div></div>`).join("");
+}
+
+async function carregarUsuariosAdmin(){
+  const lista=document.getElementById("adminUsuarios"); if(!lista)return;
+  lista.innerHTML='<p class="aviso">Carregando usuários...</p>';
+  const {data,error}=await supabaseClient.from("usuarios").select("id,nome,perfil,ativo").order("nome");
+  if(error){console.error(error);lista.innerHTML=`<div class="erro">Não foi possível carregar os usuários.<br><small>${escapeHtml(error.message||"")}</small></div>`;return;}
+  lista.innerHTML=(data||[]).map(u=>`<div class="usuario-item"><div class="usuario-topo"><strong>${escapeHtml(u.nome||"Sem nome")}</strong><span class="perfil-badge">${escapeHtml(u.perfil||"—")}</span></div><div class="usuario-meta">${u.ativo?"🟢 Acesso ativo":"⚪ Acesso desativado"}</div></div>`).join("") || '<p class="aviso">Nenhum usuário cadastrado.</p>';
+}
+
+// Acrescenta o responsável nos cards sem alterar o layout aprovado.
+const _renderizarRotasPublicasBase = renderizarRotasPublicas;
+renderizarRotasPublicas = function(){
+  _renderizarRotasPublicasBase();
+  const cards=document.querySelectorAll("#rotasPublicas .rota-card");
+  const filtradas=(rotasPublicasCache||[]).filter(r=>{
+    const termo=normalizar(document.getElementById("buscaRotas")?.value||"");
+    const filtro=(typeof filtroRotasAtual!=="undefined"?filtroRotasAtual:"todas");
+    const bateFiltro=filtro==="todas"||r.status===filtro;
+    const alvo=normalizar(`${r.motorista||""} ${r.placa||""} ${r.regiao||""}`);
+    return bateFiltro&&(!termo||alvo.includes(termo));
+  });
+  cards.forEach((card,i)=>{const r=filtradas[i];if(r?.status==="retorno_confirmado"&&r.retorno_confirmado_por_nome){const el=document.createElement("div");el.className="rota-alterado-por";el.textContent=`Alterado por ${r.retorno_confirmado_por_nome}`;card.appendChild(el);}});
+};
+
+supabaseClient.auth.onAuthStateChange(()=>setTimeout(()=>atualizarInterfaceSessao(),0));
+setTimeout(async()=>{await atualizarInterfaceSessao();await carregarRotasPublicas();},0);
+
 </script>
 
 
