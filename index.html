@@ -2447,66 +2447,6 @@ textarea,
 }
 </style>
 
-
-<style id="ajuste-final-alinhamento-header">
-@media (min-width: 901px) {
-  /* Relógio permanece onde foi aprovado */
-  .header-relogio {
-    left: calc(43% - 35px) !important;
-  }
-
-  /* Puxa o bloco de boas-vindas e ações um pouco para a direita */
-  .solidez-saudacao {
-    transform: translateX(38px) !important;
-  }
-
-  /* A versão fica ligeiramente abaixo da linha principal */
-  .solidez-header-tools .solidez-versao,
-  .solidez-versao {
-    position: relative !important;
-    top: 13px !important;
-  }
-}
-
-/* Evita deslocamento excessivo quando o desktop estiver mais estreito */
-@media (min-width: 901px) and (max-width: 1180px) {
-  .solidez-saudacao {
-    transform: translateX(18px) !important;
-  }
-}
-</style>
-
-
-<style id="ajuste-versao-abaixo-e-botoes-direita">
-@media (min-width: 901px) {
-  .solidez-header-tools {
-    position: relative !important;
-    padding-bottom: 18px !important;
-  }
-
-  /* A versão sai do fluxo da linha principal e desce */
-  .solidez-versao,
-  .solidez-header-tools .solidez-versao {
-    position: absolute !important;
-    right: 0 !important;
-    top: calc(50% + 18px) !important;
-    transform: none !important;
-    margin: 0 !important;
-  }
-
-  /* Agora o espaço horizontal liberado é usado pelos demais itens */
-  .solidez-saudacao {
-    transform: translateX(72px) !important;
-  }
-}
-
-@media (min-width: 901px) and (max-width: 1180px) {
-  .solidez-saudacao {
-    transform: translateX(42px) !important;
-  }
-}
-</style>
-
 </head>
 
 <body>
