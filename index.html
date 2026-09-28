@@ -2647,6 +2647,36 @@ textarea,
 }
 </style>
 
+
+<style id="ajuste-cores-resumo-filtros">
+/* Resumo das rotas: sem blocos brancos; usa o mesmo fundo verde da seção */
+.rotas-resumo span {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.rotas-resumo span + span {
+  border-left: 1px solid rgba(0,107,56,.16) !important;
+}
+
+/* Filtros inativos: mesmo branco esverdeado dos demais cards */
+.rotas-filtros button {
+  background: #f5faf7 !important;
+  color: #315241 !important;
+  border: 1px solid #dce9e2 !important;
+  box-shadow: none !important;
+}
+
+/* Mantém o filtro selecionado destacado em verde */
+.rotas-filtros button.ativo {
+  background: var(--solidez) !important;
+  color: #ffffff !important;
+  border-color: var(--solidez) !important;
+}
+</style>
+
 </head>
 
 <body>
