@@ -1480,6 +1480,12 @@ h1, h2, h3 {
   margin: 0 !important;
 }
 
+
+.admin-btn {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1917,24 +1923,31 @@ function rolarParaAreaAdministrativa() {
 }
 
 async function abrirAdmin() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
+  const { data: { session }, error } = await supabaseClient.auth.getSession();
 
-  if (session) {
-    const admin = document.getElementById("admin");
-    if (admin) admin.style.display = "block";
-
-    const botaoAdmin = document.querySelector(".admin-btn");
-    if (botaoAdmin) botaoAdmin.style.display = "none";
-
-    carregarBairrosAdmin();
-    carregarRotasAdmin();
-    carregarChamadosSuporte();
-    carregarSugestoesAdmin();
-    irParaCadastroAdministrativo();
+  if (error) {
+    console.error("Erro ao verificar sessão:", error);
+    mostrarToast("Não foi possível verificar o acesso administrativo.", "erro");
     return;
   }
 
-  abrirLoginAdminPopup();
+  if (!session) {
+    abrirLoginAdminPopup();
+    return;
+  }
+
+  const admin = document.getElementById("admin");
+  if (admin) admin.style.display = "block";
+
+  const botaoAdmin = document.querySelector(".admin-btn");
+  if (botaoAdmin) botaoAdmin.style.display = "none";
+
+  if (typeof carregarBairrosAdmin === "function") carregarBairrosAdmin();
+  if (typeof carregarRotasAdmin === "function") carregarRotasAdmin();
+  if (typeof carregarChamadosSuporte === "function") carregarChamadosSuporte();
+  if (typeof carregarSugestoesAdmin === "function") carregarSugestoesAdmin();
+
+  irParaCadastroAdministrativo();
 }
 
 
