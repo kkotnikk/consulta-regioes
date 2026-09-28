@@ -1676,6 +1676,205 @@ button:not(.excluir):not(.btn-perigo),
   scrollbar-color:#9bc8ae #edf5f0;
 }
 
+
+/* =========================================================
+   CARDS DE ROTAS — MODELO COMPACTO DA REFERÊNCIA
+   ========================================================= */
+.rota-card,
+.card-rota,
+#rotasContainer > *,
+#listaRotas > * {
+  position: relative;
+  padding: 15px 16px 14px !important;
+  border: 1px solid #e6ece8 !important;
+  border-left: 4px solid #e7b900 !important;
+  border-radius: 13px !important;
+  background: #fff !important;
+  box-shadow: 0 5px 16px rgba(31,66,47,.07) !important;
+  overflow: hidden;
+}
+
+/* Retorno confirmado */
+.rota-card:has(.retorno-confirmado),
+.rota-card:has(.status-confirmado),
+.card-rota:has(.retorno-confirmado),
+.card-rota:has(.status-confirmado) {
+  border-left-color: #10a44f !important;
+}
+
+/* Linha do status */
+.rota-card .status,
+.card-rota .status,
+.status-rota {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  width: fit-content;
+  margin-bottom: 6px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+/* Bolinhas */
+.rota-card .status::before,
+.card-rota .status::before,
+.status-rota::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: #e7b900;
+}
+
+.rota-card .retorno-confirmado::before,
+.rota-card .status-confirmado::before,
+.card-rota .retorno-confirmado::before,
+.card-rota .status-confirmado::before {
+  background: #10a44f !important;
+}
+
+/* Nome do motorista em destaque */
+.rota-card h3,
+.rota-card .motorista,
+.card-rota h3,
+.card-rota .motorista {
+  margin: 2px 0 5px !important;
+  font-size: 16px !important;
+  line-height: 1.15 !important;
+  font-weight: 750 !important;
+  color: #17231d !important;
+}
+
+/* Informações principais */
+.rota-card p,
+.card-rota p,
+.rota-card .rota-info,
+.card-rota .rota-info {
+  margin: 3px 0 !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  color: #536159 !important;
+}
+
+/* Separador antes dos detalhes */
+.rota-card hr,
+.card-rota hr {
+  margin: 9px 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #edf1ef !important;
+}
+
+/* Etiqueta de horário no canto superior direito */
+.rota-card .horario-retorno,
+.rota-card .hora-retorno,
+.card-rota .horario-retorno,
+.card-rota .hora-retorno {
+  position: absolute !important;
+  top: 13px !important;
+  right: 13px !important;
+  padding: 4px 8px !important;
+  border-radius: 7px !important;
+  background: #c9f3d9 !important;
+  color: #08783c !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+  font-weight: 750 !important;
+}
+
+/* Badge "Em rota" no canto superior direito, quando houver elemento próprio */
+.rota-card .badge-em-rota,
+.card-rota .badge-em-rota {
+  position: absolute !important;
+  top: 13px !important;
+  right: 13px !important;
+  padding: 4px 8px !important;
+  border-radius: 7px !important;
+  background: #fff2bd !important;
+  color: #876700 !important;
+  font-size: 10px !important;
+  font-weight: 750 !important;
+}
+
+/* Grade com mais respiro, mantendo cards compactos */
+#rotasContainer,
+#listaRotas {
+  gap: 14px !important;
+}
+
+/* Administração: segue a mesma linguagem visual */
+#adminRotasLista .rota-admin-item {
+  border-left: 4px solid #e7b900 !important;
+  border-radius: 13px !important;
+  padding: 13px !important;
+}
+#adminRotasLista .rota-admin-item:has(.confirmada) {
+  border-left-color: #10a44f !important;
+}
+
+
+/* ===== AJUSTE DE MARGENS — CONTROLE DE ROTAS CADASTRADAS ===== */
+#admin .admin-lista {
+  padding: 22px 24px !important;
+}
+
+#admin .admin-lista > h3,
+#admin .admin-lista > h2 {
+  margin: 0 0 18px 0 !important;
+  padding: 0 !important;
+  line-height: 1.25 !important;
+}
+
+#adminRotasLista {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 650px) {
+  #admin .admin-lista {
+    padding: 18px 16px !important;
+  }
+}
+
+
+/* ===== MARGENS — CENTRAL DE SUPORTE E SUGESTÕES ===== */
+#admin .suporte-admin-secao,
+#admin .sugestoes-admin-secao {
+  padding: 22px 24px !important;
+  margin-top: 22px !important;
+}
+
+#admin .suporte-admin-cabecalho {
+  margin: 0 0 16px 0 !important;
+  padding: 0 !important;
+}
+
+#admin .suporte-kicker {
+  margin: 0 0 5px 0 !important;
+}
+
+#admin .suporte-admin-cabecalho h3,
+#admin .sugestoes-admin-secao h3 {
+  margin: 0 0 4px 0 !important;
+  line-height: 1.2 !important;
+}
+
+#admin .suporte-admin-cabecalho p,
+#admin .sugestoes-admin-secao p {
+  margin-top: 0 !important;
+}
+
+#adminSuporteLista,
+#adminSugestoesLista {
+  margin-top: 14px !important;
+}
+
+@media (max-width:650px) {
+  #admin .suporte-admin-secao,
+  #admin .sugestoes-admin-secao {
+    padding: 18px 16px !important;
+  }
+}
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
