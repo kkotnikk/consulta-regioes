@@ -2113,6 +2113,34 @@ button:not(.excluir):not(.btn-perigo),
 }
 </style>
 
+
+<style id="correcao-animacao-login-v2">
+/* Animação do popup de identificação sem conflitar com o translate de centralização */
+@keyframes loginIdentificacaoEntrar {
+  0% {
+    opacity: 0;
+    clip-path: inset(7% 5% 7% 5% round 24px);
+    filter: blur(1.5px);
+  }
+  60% { opacity: 1; }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 round 18px);
+    filter: blur(0);
+  }
+}
+
+#admin.admin-login-popup {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf9 100%) !important;
+  animation: loginIdentificacaoEntrar .28s cubic-bezier(.2,.8,.2,1) both !important;
+  will-change: opacity, clip-path, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #admin.admin-login-popup { animation: none !important; }
+}
+</style>
+
 </head>
 
 <body>
