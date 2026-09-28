@@ -1942,7 +1942,8 @@ button:not(.excluir):not(.btn-perigo),
   <div class="solidez-header-tools">
     <div id="usuariosPresenca" class="usuarios-presenca" aria-label="Usuários do sistema">
       <div class="presenca-item"><span class="presenca-icone total"></span><div><div id="presencaTotal" class="presenca-numero">—</div><div class="presenca-label">Cadastrados</div></div></div>
-      <div class="presenca-item"><span class="presenca-icone online"></span><div><div id="presencaOnline" class="presenca-numero">—</div><div class="presenca-label">Online</div></div></div>
+      <div class="presenca-item"><span class="presenca-icone online"></span><div><div id="presencaOnline" class="presenca-numero">—</div><div class="presenca-label">Online cadastrados</div></div></div>
+      <div class="presenca-item"><span class="presenca-icone visitante"></span><div><div id="presencaVisitantes" class="presenca-numero">—</div><div class="presenca-label">Visitantes online</div></div></div>
       <div class="presenca-item"><span class="presenca-icone offline"></span><div><div id="presencaOffline" class="presenca-numero">—</div><div class="presenca-label">Offline</div></div></div>
     </div>
     <div class="solidez-saudacao">
@@ -4243,40 +4244,50 @@ let totalUsuariosSistema = 0;
 function renderizarPresencaSistema() {
   const painel = document.getElementById("usuariosPresenca");
   if (!painel) return;
-  if (!usuarioAtualSistema || usuarioAtualSistema.perfil !== "admin") {
-    painel.classList.remove("ativo");
-    return;
-  }
   painel.classList.add("ativo");
-  let online = 0;
+
+  let onlineCadastrados = 0;
+  let visitantesOnline = 0;
   if (canalPresencaSistema) {
     const estado = canalPresencaSistema.presenceState() || {};
-    online = Object.keys(estado).length;
+    Object.values(estado).forEach((presencas) => {
+      const lista = Array.isArray(presencas) ? presencas : [];
+      const p = lista[0] || {};
+      if (p.cadastrado === true) onlineCadastrados++;
+      else visitantesOnline++;
+    });
   }
-  const offline = Math.max(0, totalUsuariosSistema - online);
+
+  const offline = Math.max(0, totalUsuariosSistema - onlineCadastrados);
   const elTotal = document.getElementById("presencaTotal");
   const elOnline = document.getElementById("presencaOnline");
+  const elVisitantes = document.getElementById("presencaVisitantes");
   const elOffline = document.getElementById("presencaOffline");
   if (elTotal) elTotal.textContent = totalUsuariosSistema;
-  if (elOnline) elOnline.textContent = online;
+  if (elOnline) elOnline.textContent = onlineCadastrados;
+  if (elVisitantes) elVisitantes.textContent = visitantesOnline;
   if (elOffline) elOffline.textContent = offline;
 }
 
 async function carregarTotalUsuariosSistema() {
-  if (!usuarioAtualSistema || usuarioAtualSistema.perfil !== "admin") {
-    totalUsuariosSistema = 0;
-    renderizarPresencaSistema();
-    return;
-  }
-  const { count, error } = await supabaseClient
-    .from("usuarios")
-    .select("id", { count: "exact", head: true });
+  // RPC segura: permite exibir somente a contagem, sem expor a lista de usuários.
+  const { data, error } = await supabaseClient.rpc("total_usuarios_sistema");
   if (error) {
     console.error("Erro ao contar usuários:", error);
-    return;
+    totalUsuariosSistema = 0;
+  } else {
+    totalUsuariosSistema = Number(data) || 0;
   }
-  totalUsuariosSistema = count || 0;
   renderizarPresencaSistema();
+}
+
+function obterIdVisitantePresenca() {
+  let id = sessionStorage.getItem("solidez_visitante_presenca");
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    sessionStorage.setItem("solidez_visitante_presenca", id);
+  }
+  return id;
 }
 
 async function iniciarPresencaSistema() {
@@ -4285,14 +4296,11 @@ async function iniciarPresencaSistema() {
     try { await supabaseClient.removeChannel(canalPresencaSistema); } catch (_) {}
     canalPresencaSistema = null;
   }
-  if (!usuario) {
-    totalUsuariosSistema = 0;
-    renderizarPresencaSistema();
-    return;
-  }
 
+  // Usuário autenticado é contado pelo ID da conta; visitante recebe ID temporário da aba.
+  const chavePresenca = usuario ? `user:${usuario.id}` : `visitante:${obterIdVisitantePresenca()}`;
   canalPresencaSistema = supabaseClient.channel("usuarios-online-sistema-coletas", {
-    config: { presence: { key: usuario.id } }
+    config: { presence: { key: chavePresenca } }
   });
 
   canalPresencaSistema
@@ -4301,10 +4309,15 @@ async function iniciarPresencaSistema() {
     .on("presence", { event: "leave" }, renderizarPresencaSistema)
     .subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await canalPresencaSistema.track({
+        await canalPresencaSistema.track(usuario ? {
+          cadastrado: true,
           user_id: usuario.id,
           nome: usuario.nome,
           perfil: usuario.perfil,
+          online_em: new Date().toISOString()
+        } : {
+          cadastrado: false,
+          visitante: true,
           online_em: new Date().toISOString()
         });
         renderizarPresencaSistema();
