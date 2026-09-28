@@ -2569,6 +2569,27 @@ textarea,
 }
 </style>
 
+
+<style id="centralizar-relogio-no-espaco">
+@media (min-width: 901px) {
+  /* Centraliza o conjunto relógio + data no espaço livre entre
+     o painel de usuários (esquerda) e a saudação (direita). */
+  .header-relogio {
+    left: 27% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1180px) {
+  .header-relogio {
+    left: 29% !important;
+    transform: translate(-50%, -50%) scale(.88) !important;
+  }
+}
+</style>
+
 </head>
 
 <body>
