@@ -1486,6 +1486,34 @@ h1, h2, h3 {
   cursor: pointer !important;
 }
 
+
+/* ===== POPUP DE LOGIN ADMINISTRATIVO (CORRIGIDO) ===== */
+#admin.admin-login-popup {
+  position: fixed !important;
+  z-index: 13000 !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(92vw, 420px) !important;
+  max-height: 90vh !important;
+  overflow: auto !important;
+  margin: 0 !important;
+  padding: 24px !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.28) !important;
+}
+#admin.admin-login-popup::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(14,25,19,.58);
+}
+#admin.admin-login-popup h2 { margin-top: 0; }
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1875,21 +1903,22 @@ function escapeHtml(texto) {
 
 
 function abrirLoginAdminPopup() {
-  const login = document.getElementById("loginAdmin");
-  if (!login) return;
-  login.classList.add("login-admin-popup-ativo");
-  login.style.display = "flex";
+  mostrarLogin();
+
+  const admin = document.getElementById("admin");
+  if (!admin) return;
+
+  admin.classList.add("admin-login-popup");
   document.body.style.overflow = "hidden";
 
-  const primeiroCampo = login.querySelector('input[type="email"], input[type="text"], input');
-  setTimeout(() => primeiroCampo?.focus(), 80);
+  setTimeout(() => {
+    document.getElementById("adminEmail")?.focus();
+  }, 80);
 }
 
 function fecharLoginAdminPopup() {
-  const login = document.getElementById("loginAdmin");
-  if (!login) return;
-  login.classList.remove("login-admin-popup-ativo");
-  login.style.display = "none";
+  const admin = document.getElementById("admin");
+  if (admin) admin.classList.remove("admin-login-popup");
   document.body.style.overflow = "";
 }
 
@@ -1936,16 +1965,11 @@ async function abrirAdmin() {
     return;
   }
 
-  const admin = document.getElementById("admin");
-  if (admin) admin.style.display = "block";
+  fecharLoginAdminPopup();
+  await mostrarPainelAdmin();
 
   const botaoAdmin = document.querySelector(".admin-btn");
   if (botaoAdmin) botaoAdmin.style.display = "none";
-
-  if (typeof carregarBairrosAdmin === "function") carregarBairrosAdmin();
-  if (typeof carregarRotasAdmin === "function") carregarRotasAdmin();
-  if (typeof carregarChamadosSuporte === "function") carregarChamadosSuporte();
-  if (typeof carregarSugestoesAdmin === "function") carregarSugestoesAdmin();
 
   irParaCadastroAdministrativo();
 }
@@ -2040,7 +2064,13 @@ async function login() {
   }
 
 
-  mostrarPainelAdmin();
+  fecharLoginAdminPopup();
+  await mostrarPainelAdmin();
+
+  const botaoAdmin = document.querySelector(".admin-btn");
+  if (botaoAdmin) botaoAdmin.style.display = "none";
+
+  irParaCadastroAdministrativo();
 
 }
 
