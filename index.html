@@ -2171,6 +2171,23 @@ button:not(.excluir):not(.btn-perigo),
   border:1px solid #cfe3d8 !important;
 }
 </style>
+
+<style id="ajuste-overlay-login-20260928">
+/* Contraste do login: escurece somente o site atrás da janela */
+#admin.admin-login-popup::before { content: none !important; display: none !important; }
+body.login-overlay-ativo::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 12990;
+  background: rgba(9, 24, 16, .38);
+  animation: loginOverlayEntrada .22s ease-out both;
+  pointer-events: auto;
+}
+#admin.admin-login-popup { z-index: 13000 !important; }
+@keyframes loginOverlayEntrada { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { body.login-overlay-ativo::before { animation: none; } }
+</style>
 </head>
 
 <body>
@@ -2566,6 +2583,7 @@ function abrirLoginAdminPopup() {
   const admin = document.getElementById("admin");
   if (!admin) return;
 
+  document.body.classList.add("login-overlay-ativo");
   admin.classList.add("admin-login-popup");
   document.body.style.overflow = "hidden";
 
@@ -2581,6 +2599,7 @@ function fecharLoginAdminPopup() {
     admin.style.display = "none";
     admin.innerHTML = "";
   }
+  document.body.classList.remove("login-overlay-ativo");
   document.body.style.overflow = "";
 }
 
