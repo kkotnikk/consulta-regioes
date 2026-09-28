@@ -850,7 +850,7 @@
       --solidez-escuro: #004f2a;
       --solidez-claro: #eaf5ef;
       --solidez-borda: #cfe3d8;
-      --fundo: #edf4f0;
+      --fundo: #e2eee7;
       --texto: #17221c;
       --texto-suave: #66736c;
     }
@@ -1929,6 +1929,100 @@ button:not(.excluir):not(.btn-perigo),
   .usuarios-presenca.ativo { width:100%; justify-content:space-between; order:20; margin-top:8px; }
 }
 
+
+
+/* ===== AJUSTES FINAIS: LOGIN + ANIMAÇÕES DE POPUP ===== */
+#admin.admin-login-popup {
+  background: linear-gradient(180deg,#ffffff 0%,#f7fbf9 100%) !important;
+  border: 1px solid #d9e9e0 !important;
+  color: #173d2a !important;
+  animation: solidezPopupEntrada .22s cubic-bezier(.2,.8,.2,1) both;
+  transform-origin: center;
+}
+#admin.admin-login-popup::before {
+  animation: solidezOverlayEntrada .20s ease-out both;
+}
+#admin.admin-login-popup h2 {
+  color:#173d2a !important;
+  padding-right:42px;
+  margin-bottom:5px !important;
+}
+#admin.admin-login-popup .login-subtitulo {
+  margin:0 0 20px;
+  color:#718078;
+  font-size:13px;
+  line-height:1.45;
+}
+#admin.admin-login-popup .campo label { color:#35433b; }
+#admin.admin-login-popup .campo input {
+  background:#fff !important;
+  border:1px solid #d9e9e0 !important;
+}
+#admin.admin-login-popup > button:not(.login-fechar-x) {
+  background:#086b3a !important;
+}
+.login-fechar-x {
+  position:absolute !important;
+  top:13px !important;
+  right:14px !important;
+  width:34px !important;
+  height:34px !important;
+  min-width:34px !important;
+  padding:0 !important;
+  border-radius:50% !important;
+  background:#eef6f2 !important;
+  color:#086b3a !important;
+  border:1px solid #d9e9e0 !important;
+  font-size:23px !important;
+  line-height:30px !important;
+  font-weight:500 !important;
+  cursor:pointer !important;
+}
+.login-fechar-x:hover { background:#e2f0e8 !important; opacity:1 !important; }
+
+@keyframes solidezPopupEntrada {
+  from { opacity:0; transform:translateY(10px) scale(.975); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes solidezOverlayEntrada {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+
+/* Modais centrais existentes: animação curta ao aparecer */
+.modal-sistema.ativo .modal-sistema-conteudo,
+.modal-edicao-rota.ativo .modal-edicao-conteudo,
+.modal-detalhes-rota.ativo .detalhes-rota-conteudo,
+.modal-detalhes-rota.ativo .modal-detalhes-conteudo,
+[aria-hidden="false"] .modal-conteudo,
+[aria-hidden="false"] .modal-cabecalho-conteudo {
+  animation: solidezPopupEntrada .22s cubic-bezier(.2,.8,.2,1) both;
+}
+.modal-sistema.ativo,
+.modal-edicao-rota.ativo,
+.modal-detalhes-rota.ativo,
+[aria-hidden="false"].modal-sistema,
+[aria-hidden="false"].modal-edicao-rota,
+[aria-hidden="false"].modal-detalhes-rota {
+  animation: solidezOverlayEntrada .18s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #admin.admin-login-popup,
+  #admin.admin-login-popup::before,
+  .modal-sistema.ativo,
+  .modal-edicao-rota.ativo,
+  .modal-detalhes-rota.ativo,
+  .modal-sistema.ativo .modal-sistema-conteudo,
+  .modal-edicao-rota.ativo .modal-edicao-conteudo,
+  .modal-detalhes-rota.ativo .detalhes-rota-conteudo,
+  .modal-detalhes-rota.ativo .modal-detalhes-conteudo,
+  [aria-hidden="false"] .modal-conteudo,
+  [aria-hidden="false"] .modal-cabecalho-conteudo {
+    animation:none !important;
+  }
+}
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1941,10 +2035,10 @@ button:not(.excluir):not(.btn-perigo),
 <header class="solidez-cabecalho">
   <div class="solidez-header-tools">
     <div id="usuariosPresenca" class="usuarios-presenca" aria-label="Usuários do sistema">
-      <div class="presenca-item"><span class="presenca-icone total"></span><div><div id="presencaTotal" class="presenca-numero">—</div><div class="presenca-label">Cadastrados</div></div></div>
-      <div class="presenca-item"><span class="presenca-icone online"></span><div><div id="presencaOnline" class="presenca-numero">—</div><div class="presenca-label">Online cadastrados</div></div></div>
-      <div class="presenca-item"><span class="presenca-icone visitante"></span><div><div id="presencaVisitantes" class="presenca-numero">—</div><div class="presenca-label">Visitantes online</div></div></div>
+      <div class="presenca-item"><span class="presenca-icone online"></span><div><div id="presencaOnline" class="presenca-numero">—</div><div class="presenca-label">Cadastrados</div></div></div>
+      <div class="presenca-item"><span class="presenca-icone visitante"></span><div><div id="presencaVisitantes" class="presenca-numero">—</div><div class="presenca-label">Não cadastrados</div></div></div>
       <div class="presenca-item"><span class="presenca-icone offline"></span><div><div id="presencaOffline" class="presenca-numero">—</div><div class="presenca-label">Offline</div></div></div>
+      <div class="presenca-item"><span class="presenca-icone total"></span><div><div id="presencaTotal" class="presenca-numero">—</div><div class="presenca-label">Cadastros</div></div></div>
     </div>
     <div class="solidez-saudacao">
       <strong id="saudacaoPeriodo">Bem-vindo!</strong>
@@ -2408,7 +2502,9 @@ function mostrarLogin() {
 
   admin.innerHTML = `
 
-    <h2>Área administrativa</h2>
+    <button type="button" class="login-fechar-x" onclick="fecharLoginAdminPopup()" aria-label="Fechar login">×</button>
+    <h2>Identificação de acesso</h2>
+    <p class="login-subtitulo">Entre com suas credenciais para acessar o sistema.</p>
 
     <div class="campo">
 
