@@ -1531,12 +1531,6 @@ h1, h2, h3 {
   </div>
 </div>
 
-    </div>
-    <div class="modal-sistema-acoes">
-      <button type="button" class="btn-cancelar" onclick="fecharModalCabecalho('modalSuporte')">Fechar</button>
-    </div>
-  </div>
-</div>
 
 <div id="modalSugestoes" class="modal-sistema" aria-hidden="true">
   <div class="modal-sistema-conteudo">
@@ -2452,18 +2446,16 @@ async function confirmarRetorno(id) {
 
   if (!confirmar) return;
 
-  const { error } =
-    await supabaseClient
-      .from("rotas")
-      .update({
-        status: "retorno_confirmado",
-        retorno_confirmado_em: new Date().toISOString()
-      })
-      .eq("id", id);
+  const { error } = await supabaseClient
+    .rpc("confirmar_retorno_rota", { rota_id: id });
 
   if (error) {
-    console.error(error);
-    mostrarToast("Não foi possível confirmar o retorno.", "erro");
+    console.error("Erro ao confirmar retorno:", error);
+    const detalhe = error?.message || error?.details || error?.hint || "";
+    mostrarToast(
+      detalhe ? "Não foi possível confirmar o retorno: " + detalhe : "Não foi possível confirmar o retorno.",
+      "erro"
+    );
     return;
   }
 
