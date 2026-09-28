@@ -2141,6 +2141,36 @@ button:not(.excluir):not(.btn-perigo),
 }
 </style>
 
+
+<style id="correcao-final-login-claro">
+/* Correção final: o escurecimento fica atrás do card, nunca sobre ele */
+#admin.admin-login-popup {
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #17221c !important;
+  opacity: 1 !important;
+  filter: none !important;
+  border: 1px solid #d9e9e0 !important;
+  box-shadow:
+    0 24px 70px rgba(15,55,35,.22),
+    0 0 0 100vmax rgba(14,25,19,.38) !important;
+  isolation: isolate !important;
+}
+#admin.admin-login-popup::before,
+#admin.admin-login-popup::after {
+  display: none !important;
+  content: none !important;
+}
+#admin.admin-login-popup h2 { color:#173d2a !important; }
+#admin.admin-login-popup .login-subtitulo { color:#66736c !important; opacity:1 !important; }
+#admin.admin-login-popup .campo label { color:#35433b !important; opacity:1 !important; }
+#admin.admin-login-popup .campo input {
+  background:#ffffff !important;
+  color:#17221c !important;
+  opacity:1 !important;
+  border:1px solid #cfe3d8 !important;
+}
+</style>
 </head>
 
 <body>
