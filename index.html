@@ -1844,6 +1844,21 @@ function escapeHtml(texto) {
    ADMIN
    ========================================================= */
 
+
+function rolarParaAreaAdministrativa() {
+  const admin = document.getElementById("admin");
+  if (!admin || admin.style.display === "none") return;
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      admin.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 120);
+  });
+}
+
 async function abrirAdmin() {
 
   const botaoAdmin = document.querySelector(".admin-btn");
@@ -2126,6 +2141,7 @@ async function mostrarPainelAdmin() {
   carregarRotasAdmin();
   carregarChamadosSuporte();
   carregarSugestoesAdmin();
+  rolarParaAreaAdministrativa();
 
 }
 
