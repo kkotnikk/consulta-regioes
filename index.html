@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Consulta de Regiões</title>
+  <title>Sistema de Coletas</title>
+  <!-- Ícone oficial do Sistema de Coletas -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2716%27 fill=%27%23006b38%27/%3E%3Cpath d=%27M15 18h25l-5-5 4-4 12 12-12 12-4-4 5-5H15zM49 46H24l5 5-4 4-12-12 12-12 4 4-5 5h25z%27 fill=%27white%27/%3E%3Ccircle cx=%2715%27 cy=%2721%27 r=%275%27 fill=%27%23a9d8bd%27/%3E%3Ccircle cx=%2749%27 cy=%2743%27 r=%275%27 fill=%27%23a9d8bd%27/%3E%3C/svg%3E">
+
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -847,11 +850,25 @@
       --solidez-escuro: #004f2a;
       --solidez-claro: #eaf5ef;
       --solidez-borda: #cfe3d8;
-      --fundo: #f5f7f6;
+      --fundo: #edf4f0;
       --texto: #17221c;
       --texto-suave: #66736c;
     }
     body { background: var(--fundo); color: var(--texto); }
+
+    /* Barra de rolagem no verde da identidade visual */
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--solidez) #dfece5;
+    }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #dfece5; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--solidez);
+      border-radius: 999px;
+      border: 2px solid #dfece5;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--solidez-escuro); }
     .container { width:min(96%, 1540px); max-width:1540px; padding-top:22px; }
     .brand-header { display:flex; align-items:center; gap:18px; margin-bottom:26px; padding:15px 20px; background:#fff; border:1px solid #e4ebe7; border-radius:16px; box-shadow:0 4px 18px rgba(0,79,42,.06); }
     .brand-mark { width:58px; height:58px; flex:0 0 58px; display:grid; place-items:center; border-radius:14px; background:var(--solidez); color:#fff; font-size:30px; font-weight:900; letter-spacing:-4px; }
@@ -1882,6 +1899,36 @@ button:not(.excluir):not(.btn-perigo),
 .admin-extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}.historico-lista,.usuarios-lista{display:grid;gap:9px;margin-top:12px}.historico-item,.usuario-item{padding:12px 14px;border:1px solid #e1e9e4;border-radius:11px;background:#fbfdfc}.historico-topo,.usuario-topo{display:flex;justify-content:space-between;gap:10px;align-items:center}.historico-meta,.usuario-meta{margin-top:5px;color:#6c7771;font-size:12px}.perfil-badge{padding:5px 8px;border-radius:999px;background:#eaf5ef;color:#006b38;font-size:10px;font-weight:800;text-transform:uppercase}.rota-alterado-por{margin-top:5px;color:#66736c;font-size:11px}.acesso-necessario{grid-column:1/-1;padding:24px;text-align:center;border:1px dashed #cfe3d8;border-radius:12px;background:#fbfdfc;color:#53645b}
 @media(max-width:800px){.admin-extra-grid{grid-template-columns:1fr}}
 
+
+
+/* ===== INDICADOR DE USUÁRIOS ONLINE ===== */
+.usuarios-presenca {
+  display:none;
+  align-items:center;
+  gap:16px;
+  padding:10px 16px;
+  border:1px solid rgba(0,107,56,.12);
+  border-radius:14px;
+  background:rgba(247,252,249,.92);
+  box-shadow:0 4px 16px rgba(0,79,42,.05);
+  white-space:nowrap;
+}
+.usuarios-presenca.ativo { display:flex; }
+.presenca-item { display:flex; align-items:center; gap:7px; }
+.presenca-icone { width:9px; height:9px; border-radius:50%; flex:0 0 9px; }
+.presenca-icone.total { background:#006b38; }
+.presenca-icone.online { background:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.10); }
+.presenca-icone.offline { background:#aeb9b3; }
+.presenca-numero { color:#173d2a; font-size:15px; font-weight:800; line-height:1; }
+.presenca-label { color:#718078; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+@media (min-width:901px) {
+  .usuarios-presenca { margin-right:auto; }
+  .solidez-cabecalho > .solidez-header-tools { width:100% !important; }
+}
+@media (max-width:900px) {
+  .usuarios-presenca.ativo { width:100%; justify-content:space-between; order:20; margin-top:8px; }
+}
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1893,7 +1940,11 @@ button:not(.excluir):not(.btn-perigo),
   
 <header class="solidez-cabecalho">
   <div class="solidez-header-tools">
-  <div class="solidez-header-tools">
+    <div id="usuariosPresenca" class="usuarios-presenca" aria-label="Usuários do sistema">
+      <div class="presenca-item"><span class="presenca-icone total"></span><div><div id="presencaTotal" class="presenca-numero">—</div><div class="presenca-label">Cadastrados</div></div></div>
+      <div class="presenca-item"><span class="presenca-icone online"></span><div><div id="presencaOnline" class="presenca-numero">—</div><div class="presenca-label">Online</div></div></div>
+      <div class="presenca-item"><span class="presenca-icone offline"></span><div><div id="presencaOffline" class="presenca-numero">—</div><div class="presenca-label">Offline</div></div></div>
+    </div>
     <div class="solidez-saudacao">
       <strong id="saudacaoPeriodo">Bem-vindo!</strong>
       <span>Sistema de Consulta e Acompanhamento de Rotas</span>
@@ -1903,7 +1954,6 @@ button:not(.excluir):not(.btn-perigo),
     <div id="usuarioSessao" class="usuario-sessao"></div>
     <span class="sistema-versao">v1.0.0</span>
   </div>
-</div>
 </header>
 
 <div class="container">
@@ -4086,6 +4136,7 @@ async function atualizarInterfaceSessao() {
 }
 
 async function sairSistema(){
+  if (canalPresencaSistema) { try { await supabaseClient.removeChannel(canalPresencaSistema); } catch (_) {} canalPresencaSistema = null; }
   await supabaseClient.auth.signOut();
   usuarioAtualSistema = null;
   const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}
@@ -4186,8 +4237,85 @@ renderizarRotasPublicas = function(){
   cards.forEach((card,i)=>{const r=filtradas[i];if(r?.status==="retorno_confirmado"&&r.retorno_confirmado_por_nome){const el=document.createElement("div");el.className="rota-alterado-por";el.textContent=`Alterado por ${r.retorno_confirmado_por_nome}`;card.appendChild(el);}});
 };
 
-supabaseClient.auth.onAuthStateChange(()=>setTimeout(()=>atualizarInterfaceSessao(),0));
-setTimeout(async()=>{await atualizarInterfaceSessao();await carregarRotasPublicas();},0);
+let canalPresencaSistema = null;
+let totalUsuariosSistema = 0;
+
+function renderizarPresencaSistema() {
+  const painel = document.getElementById("usuariosPresenca");
+  if (!painel) return;
+  if (!usuarioAtualSistema || usuarioAtualSistema.perfil !== "admin") {
+    painel.classList.remove("ativo");
+    return;
+  }
+  painel.classList.add("ativo");
+  let online = 0;
+  if (canalPresencaSistema) {
+    const estado = canalPresencaSistema.presenceState() || {};
+    online = Object.keys(estado).length;
+  }
+  const offline = Math.max(0, totalUsuariosSistema - online);
+  const elTotal = document.getElementById("presencaTotal");
+  const elOnline = document.getElementById("presencaOnline");
+  const elOffline = document.getElementById("presencaOffline");
+  if (elTotal) elTotal.textContent = totalUsuariosSistema;
+  if (elOnline) elOnline.textContent = online;
+  if (elOffline) elOffline.textContent = offline;
+}
+
+async function carregarTotalUsuariosSistema() {
+  if (!usuarioAtualSistema || usuarioAtualSistema.perfil !== "admin") {
+    totalUsuariosSistema = 0;
+    renderizarPresencaSistema();
+    return;
+  }
+  const { count, error } = await supabaseClient
+    .from("usuarios")
+    .select("id", { count: "exact", head: true });
+  if (error) {
+    console.error("Erro ao contar usuários:", error);
+    return;
+  }
+  totalUsuariosSistema = count || 0;
+  renderizarPresencaSistema();
+}
+
+async function iniciarPresencaSistema() {
+  const usuario = await obterUsuarioAtualSistema();
+  if (canalPresencaSistema) {
+    try { await supabaseClient.removeChannel(canalPresencaSistema); } catch (_) {}
+    canalPresencaSistema = null;
+  }
+  if (!usuario) {
+    totalUsuariosSistema = 0;
+    renderizarPresencaSistema();
+    return;
+  }
+
+  canalPresencaSistema = supabaseClient.channel("usuarios-online-sistema-coletas", {
+    config: { presence: { key: usuario.id } }
+  });
+
+  canalPresencaSistema
+    .on("presence", { event: "sync" }, renderizarPresencaSistema)
+    .on("presence", { event: "join" }, renderizarPresencaSistema)
+    .on("presence", { event: "leave" }, renderizarPresencaSistema)
+    .subscribe(async (status) => {
+      if (status === "SUBSCRIBED") {
+        await canalPresencaSistema.track({
+          user_id: usuario.id,
+          nome: usuario.nome,
+          perfil: usuario.perfil,
+          online_em: new Date().toISOString()
+        });
+        renderizarPresencaSistema();
+      }
+    });
+
+  await carregarTotalUsuariosSistema();
+}
+
+supabaseClient.auth.onAuthStateChange(()=>setTimeout(async()=>{await atualizarInterfaceSessao();await iniciarPresencaSistema();},0));
+setTimeout(async()=>{await atualizarInterfaceSessao();await iniciarPresencaSistema();await carregarRotasPublicas();},0);
 
 </script>
 
