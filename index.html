@@ -2590,6 +2590,63 @@ textarea,
 }
 </style>
 
+
+<style id="corrige-relogio-sem-sobreposicao">
+@media (min-width: 901px) {
+  /* O cabeçalho vira uma linha flexível real:
+     painel à esquerda, relógio ocupando o espaço livre e ações à direita. */
+  .solidez-header-tools {
+    position: relative !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .usuarios-presenca {
+    flex: 0 0 auto !important;
+    margin-right: 0 !important;
+  }
+
+  /* Remove TODAS as posições absolutas anteriores do relógio.
+     Ele passa a ocupar e se centralizar somente no espaço disponível. */
+  .header-relogio {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    flex: 1 1 180px !important;
+    min-width: 150px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .solidez-saudacao {
+    position: static !important;
+    left: auto !important;
+    transform: none !important;
+    margin-left: 0 !important;
+    flex: 0 0 auto !important;
+    text-align: center !important;
+  }
+}
+
+/* Em desktop mais estreito, reduz só o conjunto do relógio sem invadir ninguém */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .header-relogio {
+    min-width: 125px !important;
+  }
+
+  .relogio-analogico {
+    transform: scale(.86) !important;
+    transform-origin: center !important;
+  }
+}
+</style>
+
 </head>
 
 <body>
