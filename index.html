@@ -1458,6 +1458,28 @@ h1, h2, h3 {
 .sugestao-admin-acoes button { padding:9px 11px; }
 @media(max-width:800px){ .sugestoes-admin-lista{grid-template-columns:1fr;} }
 
+
+/* ===== LOGIN ADMINISTRATIVO EM POPUP ===== */
+#loginAdmin.login-admin-popup-ativo {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 12000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 18px !important;
+  background: rgba(14, 25, 19, .56) !important;
+  backdrop-filter: blur(2px);
+}
+#loginAdmin.login-admin-popup-ativo > * {
+  max-width: 100%;
+}
+#loginAdmin.login-admin-popup-ativo .login-card,
+#loginAdmin.login-admin-popup-ativo > div {
+  width: min(92vw, 420px) !important;
+  margin: 0 !important;
+}
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1845,6 +1867,41 @@ function escapeHtml(texto) {
    ========================================================= */
 
 
+
+function abrirLoginAdminPopup() {
+  const login = document.getElementById("loginAdmin");
+  if (!login) return;
+  login.classList.add("login-admin-popup-ativo");
+  login.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  const primeiroCampo = login.querySelector('input[type="email"], input[type="text"], input');
+  setTimeout(() => primeiroCampo?.focus(), 80);
+}
+
+function fecharLoginAdminPopup() {
+  const login = document.getElementById("loginAdmin");
+  if (!login) return;
+  login.classList.remove("login-admin-popup-ativo");
+  login.style.display = "none";
+  document.body.style.overflow = "";
+}
+
+function irParaCadastroAdministrativo() {
+  const alvo =
+    document.querySelector("#admin .admin-grid") ||
+    document.querySelector("#admin .admin-box") ||
+    document.getElementById("admin");
+
+  if (!alvo) return;
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      alvo.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 160);
+  });
+}
+
 function rolarParaAreaAdministrativa() {
   const admin = document.getElementById("admin");
   if (!admin || admin.style.display === "none") return;
@@ -1860,27 +1917,24 @@ function rolarParaAreaAdministrativa() {
 }
 
 async function abrirAdmin() {
-
-  const botaoAdmin = document.querySelector(".admin-btn");
-  if (botaoAdmin) botaoAdmin.style.display = "none";
-
-  const {
-    data: {
-      session
-    }
-  } = await supabaseClient.auth.getSession();
-
+  const { data: { session } } = await supabaseClient.auth.getSession();
 
   if (session) {
+    const admin = document.getElementById("admin");
+    if (admin) admin.style.display = "block";
 
-    mostrarPainelAdmin();
+    const botaoAdmin = document.querySelector(".admin-btn");
+    if (botaoAdmin) botaoAdmin.style.display = "none";
 
-  } else {
-
-    mostrarLogin();
-
+    carregarBairrosAdmin();
+    carregarRotasAdmin();
+    carregarChamadosSuporte();
+    carregarSugestoesAdmin();
+    irParaCadastroAdministrativo();
+    return;
   }
 
+  abrirLoginAdminPopup();
 }
 
 
