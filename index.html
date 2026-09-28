@@ -2041,46 +2041,75 @@ button:not(.excluir):not(.btn-perigo),
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<style id="correcao-login-popup-v2">
-/* ===== CORREÇÃO DEFINITIVA: LOGIN CLARO + ANIMAÇÃO ===== */
+<style id="ajustes-finais-interface">
+/* ===== AJUSTES FINAIS: LOGIN, CARDS ADMIN E ANIMAÇÕES ===== */
+
+/* Login existe somente como popup; nunca fica como formulário solto na página. */
 #admin.admin-login-popup {
-  position: fixed !important;
-  top: 50% !important; left: 50% !important; right: auto !important; bottom: auto !important;
-  z-index: 13000 !important;
   display: block !important;
-  width: min(92vw, 420px) !important;
-  max-height: 90vh !important; overflow: auto !important;
-  margin: 0 !important; padding: 24px !important;
-  border: 1px solid #cfe3d8 !important;
-  border-radius: 18px !important;
   background: #ffffff !important;
-  background-image: linear-gradient(180deg,#ffffff 0%,#f8fcfa 100%) !important;
+  border: 1px solid #d9e9e0 !important;
   color: #17221c !important;
-  box-shadow: 0 0 0 100vmax rgba(14,25,19,.54), 0 24px 70px rgba(0,79,42,.20) !important;
-  transform: translate(-50%,-50%);
-  animation: loginSolidezAbrir .24s cubic-bezier(.2,.8,.2,1) both !important;
+  animation: solidezPopupEntrar .22s cubic-bezier(.2,.8,.2,1) both !important;
+  transform-origin: center center;
 }
-#admin.admin-login-popup::before { content:none !important; display:none !important; }
-#admin.admin-login-popup h2 { color:#173d2a !important; }
+#admin.admin-login-popup::before {
+  animation: solidezOverlayEntrar .20s ease-out both;
+}
 #admin.admin-login-popup .login-subtitulo { color:#66736c !important; }
-#admin.admin-login-popup .campo label { color:#35433b !important; }
-#admin.admin-login-popup .campo input { background:#fff !important; color:#17221c !important; border:1px solid #cfe3d8 !important; }
-#admin.admin-login-popup.login-fechando { animation: loginSolidezFechar .18s ease-in both !important; pointer-events:none; }
-@keyframes loginSolidezAbrir {
-  from { opacity:0; transform:translate(-50%,calc(-50% + 14px)) scale(.97); }
-  to { opacity:1; transform:translate(-50%,-50%) scale(1); }
+#admin.admin-login-popup .login-fechar-x {
+  position:absolute !important; top:14px !important; right:14px !important;
+  width:36px !important; height:36px !important; padding:0 !important;
+  border-radius:50% !important; background:#edf6f1 !important;
+  color:#006b38 !important; font-size:25px !important; line-height:1 !important;
 }
-@keyframes loginSolidezFechar {
-  from { opacity:1; transform:translate(-50%,-50%) scale(1); }
-  to { opacity:0; transform:translate(-50%,calc(-50% + 8px)) scale(.985); }
+
+/* Texto um pouco maior nos cards de rotas da área administrativa. */
+#adminRotasLista .rota-admin-status { font-size:14px !important; }
+#adminRotasLista .rota-dados { font-size:15px !important; line-height:1.42 !important; }
+#adminRotasLista .acoes .confirmar-retorno,
+#adminRotasLista .acoes .editar,
+#adminRotasLista .acoes .excluir { font-size:14px !important; }
+
+/* Entrada suave dos popups existentes do sistema. */
+@keyframes solidezPopupEntrar {
+  from { opacity:0; transform:translate(-50%,-47%) scale(.975); }
+  to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
 }
-/* Entrada suave dos demais pop-ups */
-.modal-sistema.ativo > *, .modal-edicao-rota.ativo > *, .modal-detalhes-rota.ativo > *,
-.modal-suporte.ativo > *, .modal-sugestoes.ativo > *, .modal-confirmacao.ativo > *, .popup.ativo > *,
-[role="dialog"] { animation: popupSolidezAbrir .24s cubic-bezier(.2,.8,.2,1) both !important; }
-@keyframes popupSolidezAbrir { from{opacity:0;transform:translateY(12px) scale(.975)} to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes solidezConteudoEntrar {
+  from { opacity:0; transform:translateY(10px) scale(.975); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes solidezOverlayEntrar {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+
+.modal-edicao-rota.ativo,
+.modal-sistema.ativo,
+.modal-detalhes-rota.ativo {
+  animation: solidezOverlayEntrar .18s ease-out both;
+}
+.modal-edicao-rota.ativo .modal-edicao-conteudo,
+.modal-sistema.ativo .modal-sistema-conteudo,
+.modal-detalhes-rota.ativo .detalhes-rota-conteudo {
+  animation: solidezConteudoEntrar .22s cubic-bezier(.2,.8,.2,1) both;
+}
+
+/* Abrange outros overlays/modais que usam a classe ativo. */
+[class*="modal"].ativo > [class*="conteudo"] {
+  animation: solidezConteudoEntrar .22s cubic-bezier(.2,.8,.2,1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
- #admin.admin-login-popup,#admin.admin-login-popup.login-fechando,.modal-sistema.ativo > *,.modal-edicao-rota.ativo > *,.modal-detalhes-rota.ativo > *,.modal-suporte.ativo > *,.modal-sugestoes.ativo > *,.modal-confirmacao.ativo > *,.popup.ativo > *,[role="dialog"] { animation:none !important; }
+  #admin.admin-login-popup,
+  #admin.admin-login-popup::before,
+  .modal-edicao-rota.ativo,
+  .modal-sistema.ativo,
+  .modal-detalhes-rota.ativo,
+  [class*="modal"].ativo > [class*="conteudo"] {
+    animation:none !important;
+  }
 }
 </style>
 
@@ -2479,7 +2508,6 @@ function abrirLoginAdminPopup() {
   const admin = document.getElementById("admin");
   if (!admin) return;
 
-  admin.classList.remove("login-fechando");
   admin.classList.add("admin-login-popup");
   document.body.style.overflow = "hidden";
 
@@ -2490,20 +2518,12 @@ function abrirLoginAdminPopup() {
 
 function fecharLoginAdminPopup() {
   const admin = document.getElementById("admin");
-  if (!admin || !admin.classList.contains("admin-login-popup")) {
-    document.body.style.overflow = "";
-    return;
+  if (admin && admin.classList.contains("admin-login-popup")) {
+    admin.classList.remove("admin-login-popup");
+    admin.style.display = "none";
+    admin.innerHTML = "";
   }
-  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    admin.classList.remove("admin-login-popup", "login-fechando");
-    document.body.style.overflow = "";
-    return;
-  }
-  admin.classList.add("login-fechando");
-  setTimeout(() => {
-    admin.classList.remove("admin-login-popup", "login-fechando");
-    document.body.style.overflow = "";
-  }, 180);
+  document.body.style.overflow = "";
 }
 
 function irParaCadastroAdministrativo() {
