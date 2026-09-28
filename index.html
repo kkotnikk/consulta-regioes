@@ -2408,6 +2408,45 @@ textarea,
 }
 </style>
 
+
+<style id="ajuste-header-login-relogio">
+/* Mantém o relógio no espaço central e impede que a área do usuário invada-o */
+@media (min-width: 901px) {
+  .solidez-header-tools {
+    min-width: 0 !important;
+  }
+
+  .solidez-saudacao {
+    margin-left: auto !important;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  /* Depois do login, os controles da direita ficam mais compactos */
+  #usuarioLogado,
+  .usuario-logado,
+  .user-logado,
+  .usuario-info {
+    white-space: nowrap !important;
+    flex-shrink: 1 !important;
+  }
+
+  /* Reserva uma faixa limpa para o relógio */
+  .header-relogio {
+    left: calc(43% - 35px) !important;
+    z-index: 5 !important;
+  }
+}
+
+/* Em larguras em que o cabeçalho começa a apertar, reduzimos apenas o relógio */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .header-relogio {
+    transform: translate(-50%, -50%) scale(.88) !important;
+    transform-origin: center !important;
+  }
+}
+</style>
+
 </head>
 
 <body>
