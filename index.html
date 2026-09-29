@@ -3112,32 +3112,11 @@ function fecharLoginAdminPopup() {
 }
 
 function irParaCadastroAdministrativo() {
-  const alvo =
-    document.querySelector("#admin .admin-grid") ||
-    document.querySelector("#admin .admin-box") ||
-    document.getElementById("admin");
-
-  if (!alvo) return;
-
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      alvo.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 160);
-  });
+  // Desativado: manter a página na posição atual.
 }
 
 function rolarParaAreaAdministrativa() {
-  const admin = document.getElementById("admin");
-  if (!admin || admin.style.display === "none") return;
-
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      admin.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-    }, 120);
-  });
+  // Desativado: manter a página na posição atual.
 }
 
 async function abrirAdmin() {
@@ -3452,7 +3431,7 @@ async function mostrarPainelAdmin() {
   carregarHistoricoRotas();
   carregarUsuariosAdmin();
   atualizarInterfaceSessao();
-  rolarParaAreaAdministrativa();
+  /* rolagem automática do painel administrativo desativada */
 
 }
 
