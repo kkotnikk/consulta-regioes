@@ -2728,7 +2728,13 @@ textarea,
       <input
         type="text"
         id="campoBusca"
+        name="consulta_bairro"
         placeholder="Ex.: Vila Mariana"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+        readonly
+        onfocus="this.removeAttribute('readonly')"
         onkeydown="if(event.key === 'Enter') pesquisar()"
       >
 
@@ -2748,8 +2754,14 @@ textarea,
       <div class="rotas-subtitulo">Acompanhamento das rotas em andamento</div>
       <div class="rotas-painel-topo">
         <input id="buscaRotas" class="rotas-busca" type="search"
+          name="filtro_rotas"
           placeholder="Pesquisar motorista, placa ou região..."
-          autocomplete="off" oninput="renderizarRotasPublicas()">
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          readonly
+          onfocus="this.removeAttribute('readonly')"
+          oninput="renderizarRotasPublicas()">
 
         <div id="resumoRotas" class="rotas-resumo"></div>
 
@@ -3176,7 +3188,11 @@ function mostrarLogin() {
       <input
         type="email"
         id="adminEmail"
+        name="username"
         placeholder="Seu e-mail"
+        autocomplete="username"
+        autocapitalize="none"
+        spellcheck="false"
       >
 
     </div>
@@ -3189,7 +3205,9 @@ function mostrarLogin() {
       <input
         type="password"
         id="adminSenha"
+        name="password"
         placeholder="Sua senha"
+        autocomplete="current-password"
       >
 
     </div>
@@ -4929,11 +4947,11 @@ async function login() {
   fecharLoginAdminPopup();
   await atualizarInterfaceSessao();
   await carregarRotasPublicas();
-  if (usuario.perfil === "admin") { await mostrarPainelAdmin(); irParaCadastroAdministrativo(); }
+  if (usuario.perfil === "admin") { await mostrarPainelAdmin(); }
   else {
     const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}
     mostrarToast(`Bem-vindo, ${usuario.nome}. Acesso operacional liberado.`,"sucesso");
-    document.querySelector(".rotas-section")?.scrollIntoView({behavior:"smooth",block:"start"});
+    /* Mantém a página na posição atual após o login. */
   }
 }
 
