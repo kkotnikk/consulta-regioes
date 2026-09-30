@@ -294,6 +294,24 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
 .registrar-retornando{width:100%;margin-top:16px;background:#217687;color:#fff8e9;border:1px solid #1c6777;font-size:12px;min-height:42px}
 .registrar-retornando:hover{background:#1c6777}
 @media(max-width:760px){.rotas-resumo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Pesquisa e cards compactos no controle de rotas cadastradas. */
+.admin-rotas-pesquisa{max-width:520px;margin-top:16px}
+.admin-rotas-pesquisa label{display:block;font-size:12px;font-weight:600;color:#81613d;margin-bottom:7px}
+.admin-rotas-pesquisa input{width:100%;background:#fffaf0;border:1px solid #ccb28d;font-size:14px;padding:12px 14px}
+.admin-rotas-contagem{font-size:12px;color:#81613e;margin:9px 0 0}
+#adminRotasLista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;margin-top:14px}
+#adminRotasLista>p,#adminRotasLista>.erro{grid-column:1/-1}
+#adminRotasLista .rota-admin-item{min-width:0;margin-bottom:0;padding:16px}
+#adminRotasLista .rota-admin-status{margin-bottom:12px}
+#adminRotasLista .rota-dados{gap:8px 10px}
+#adminRotasLista .rota-dados>div{min-width:0;overflow-wrap:anywhere}
+#adminRotasLista .rota-dados>div:first-child{font-size:18px;margin-bottom:4px}
+#adminRotasLista .rota-dados>div:not(:first-child){padding:8px}
+#adminRotasLista .acoes{margin-top:12px!important;padding-top:10px;gap:6px}
+#adminRotasLista .acoes button{padding:8px 10px;min-height:36px}
+#adminRotasLista .acoes .registrar-retornando{width:auto;margin-top:0}
+@media(max-width:1100px){#adminRotasLista{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 
@@ -1000,8 +1018,16 @@ async function mostrarPainelAdmin() {
 
     </div>
 
-    <div class="admin-lista">
+    <div class="admin-lista controle-rotas-admin">
       <h3>Controle de Rotas cadastradas</h3>
+      <div class="admin-rotas-pesquisa">
+        <label for="buscaRotasAdmin">Pesquisar rotas cadastradas</label>
+        <input id="buscaRotasAdmin" type="search" name="filtro-rotas-cadastradas"
+          placeholder="Motorista, placa, região, ajudante ou status"
+          autocomplete="off" oninput="renderizarRotasAdmin()"
+          aria-controls="adminRotasLista">
+      </div>
+      <p id="resumoBuscaRotasAdmin" class="admin-rotas-contagem" role="status" aria-live="polite"></p>
       <div id="adminRotasLista"></div>
     </div>
 
@@ -1288,8 +1314,7 @@ function renderizarRotasPublicas() {
       : retornando
         ? `● Retornando à base${rota.retornando_base_em ? " às " + formatarHora(rota.retornando_base_em) : ""}`
         : "● Em rota";
-    const podeRegistrarRetornando = usuarioAtualSistema?.ativo === true &&
-      String(usuarioAtualSistema.perfil).toLowerCase() === "operacional" &&
+    const podeRegistrarRetornando = usuarioTemPermissao(["operacional"]) &&
       (!rota.status || rota.status === "em_rota");
 
     return `
@@ -1379,6 +1404,8 @@ async function adicionarRota() {
 }
 
 
+let rotasAdminCache = [];
+
 async function carregarRotasAdmin() {
 
   const lista = document.getElementById("adminRotasLista");
@@ -1394,17 +1421,54 @@ async function carregarRotasAdmin() {
 
   if (error) {
     console.error(error);
+    rotasAdminCache = [];
+    const resumo = document.getElementById("resumoBuscaRotasAdmin");
+    if (resumo) resumo.textContent = "";
     lista.innerHTML =
       '<div class="erro">Erro ao carregar rotas.</div>';
     return;
   }
 
-  if (!data || data.length === 0) {
+  rotasAdminCache = data || [];
+  renderizarRotasAdmin();
+}
+
+function renderizarRotasAdmin() {
+  const lista = document.getElementById("adminRotasLista");
+  if (!lista) return;
+
+  const prepararBusca = valor => normalizar(String(valor ?? "")).replace(/[-–]/g, "");
+  const busca = prepararBusca(document.getElementById("buscaRotasAdmin")?.value || "");
+  const termos = busca.split(" ").filter(Boolean);
+  const statusNomes = {
+    em_rota: "Em rota",
+    retornando_base: "Retornando à base",
+    retorno_confirmado: "Retorno confirmado retornou à base"
+  };
+  const rotas = rotasAdminCache.filter(rota => {
+    const texto = prepararBusca([
+      rota.motorista, rota.placa, rota.regiao, rota.ajudante,
+      rota.observacao, statusNomes[rota.status || "em_rota"]
+    ].filter(Boolean).join(" "));
+    return termos.every(termo => texto.includes(termo));
+  });
+
+  const resumo = document.getElementById("resumoBuscaRotasAdmin");
+  if (resumo) resumo.textContent = busca
+    ? `${rotas.length} de ${rotasAdminCache.length} rotas encontradas`
+    : `${rotasAdminCache.length} ${rotasAdminCache.length === 1 ? "rota cadastrada" : "rotas cadastradas"}`;
+
+  if (!rotasAdminCache.length) {
     lista.innerHTML = "<p>Nenhuma rota cadastrada.</p>";
     return;
   }
 
-  lista.innerHTML = data.map(rota => {
+  if (!rotas.length) {
+    lista.innerHTML = '<p class="aviso">Nenhuma rota encontrada para esta pesquisa.</p>';
+    return;
+  }
+
+  lista.innerHTML = rotas.map(rota => {
 
     const confirmada = rota.status === "retorno_confirmado";
     const retornando = rota.status === "retornando_base";
@@ -1440,6 +1504,10 @@ async function carregarRotasAdmin() {
         </div>
 
         <div class="acoes" style="margin-top:10px; flex-wrap:wrap;">
+
+          ${(!rota.status || rota.status === "em_rota") && usuarioTemPermissao(["operacional"])
+            ? `<button type="button" class="registrar-retornando" onclick="registrarRetornandoBase(${Number(rota.id)}, this)">Retornando à base</button>`
+            : ""}
 
           ${
             !confirmada
@@ -2074,7 +2142,7 @@ function abrirDetalhesRota(id) {
   document.getElementById("detalhesObservacao").textContent = rota.observacao || "Sem observações.";
   document.getElementById("areaConfirmarRetornoPublico").style.display = confirmada ? "none" : "block";
   const areaRetornando = document.getElementById("areaRegistrarRetornandoBase");
-  const podeRegistrarRetornando = usuarioAtualSistema?.ativo === true && String(usuarioAtualSistema.perfil).toLowerCase() === "operacional" && (!rota.status || rota.status === "em_rota");
+  const podeRegistrarRetornando = usuarioTemPermissao(["operacional"]) && (!rota.status || rota.status === "em_rota");
   areaRetornando.style.display = podeRegistrarRetornando ? "block" : "none";
   document.getElementById("detalhesRetornandoBase").textContent = rota.retornando_base_em
     ? `${formatarHora(rota.retornando_base_em)}${rota.retornando_base_por_nome ? " · " + rota.retornando_base_por_nome : ""}`
@@ -2513,6 +2581,15 @@ async function excluirSugestao(id) {
    ========================================================= */
 let usuarioAtualSistema = null;
 
+// Administrativo ativo recebe todas as permissões presentes e futuras.
+function usuarioTemPermissao(perfisPermitidos = [], usuario = usuarioAtualSistema) {
+  if (!usuario || usuario.ativo !== true) return false;
+  const perfil = String(usuario.perfil || "").toLowerCase();
+  return perfil === "admin" || perfisPermitidos.some(permitido =>
+    String(permitido).toLowerCase() === perfil
+  );
+}
+
 async function obterUsuarioAtualSistema() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session?.user) { usuarioAtualSistema = null; return null; }
@@ -2533,10 +2610,10 @@ async function atualizarInterfaceSessao() {
   }
   if (area) {
     area.classList.add("ativo");
-    area.innerHTML = `${escapeHtml(usuario.nome)} · ${usuario.perfil === "admin" ? "Administrador" : "Operacional"} <button type="button" onclick="sairSistema()">Sair</button>`;
+    area.innerHTML = `${escapeHtml(usuario.nome)} · ${usuarioTemPermissao([], usuario) ? "Administrador" : "Operacional"} <button type="button" onclick="sairSistema()">Sair</button>`;
   }
   if (btnAdmin) {
-    if (usuario.perfil === "admin") { btnAdmin.style.display = "block"; btnAdmin.textContent = "Gerenciar sistema"; }
+    if (usuarioTemPermissao([], usuario)) { btnAdmin.style.display = "block"; btnAdmin.textContent = "Gerenciar sistema"; }
     else btnAdmin.style.display = "none";
   }
 }
@@ -2554,7 +2631,7 @@ async function sairSistema(){
 async function abrirAdmin() {
   const usuario = await obterUsuarioAtualSistema();
   if (!usuario) { abrirLoginAdminPopup(); return; }
-  if (usuario.perfil !== "admin") {
+  if (!usuarioTemPermissao([], usuario)) {
     mostrarToast("Seu perfil é Operacional. Você pode acompanhar as rotas e confirmar retornos.", "sucesso");
     return;
   }
@@ -2575,7 +2652,7 @@ async function login() {
   fecharLoginAdminPopup();
   await atualizarInterfaceSessao();
   await carregarRotasPublicas();
-  if (usuario.perfil === "admin") { await mostrarPainelAdmin(); }
+  if (usuarioTemPermissao([], usuario)) { await mostrarPainelAdmin(); }
   else {
     const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}
     mostrarToast(`Bem-vindo, ${usuario.nome}. Acesso operacional liberado.`,"sucesso");
@@ -2603,12 +2680,12 @@ async function registrarRetornandoBase(id, botao) {
   if (botao) { botao.disabled = true; botao.textContent = "Registrando..."; }
   try {
     const usuario = await obterUsuarioAtualSistema();
-    if (!usuario || usuario.ativo !== true || String(usuario.perfil).toLowerCase() !== "operacional") {
-      mostrarToast("Somente usuários do tipo Operacional podem registrar o retorno à base.", "erro");
+    if (!usuarioTemPermissao(["operacional"], usuario)) {
+      mostrarToast("Somente usuários Operacional ou Administrativo ativos podem registrar o retorno à base.", "erro");
       return;
     }
     const rotaId = Number(id);
-    const rota = rotasPublicasCache.find(r => Number(r.id) === rotaId);
+    const rota = rotasPublicasCache.find(r => Number(r.id) === rotaId) || rotasAdminCache.find(r => Number(r.id) === rotaId);
     if (!rotaId || !rota || (rota.status && rota.status !== "em_rota")) {
       mostrarToast("Esta rota já saiu do status Em rota. Atualize o acompanhamento.", "erro");
       return;
@@ -2862,7 +2939,7 @@ setTimeout(async()=>{await atualizarInterfaceSessao();await iniciarPresencaSiste
       <label>Status</label>
       <select id="editarStatusRota">
         <option value="em_rota">● Em rota</option>
-        <option value="retornando_base" disabled>● Retornando à base (registro Operacional)</option>
+        <option value="retornando_base">● Retornando à base</option>
         <option value="retorno_confirmado">● Retorno confirmado</option>
       </select>
     </div>
