@@ -36,7 +36,7 @@
 
 /* Interface Solidez — consulta e acompanhamento de coletas */
 :root{--solidez:#006b38;--solidez-escuro:#034b30;--solidez-claro:#edf6f0;--solidez-borda:#dbe7de;--fundo:#f4f5f2;--texto:#202b26;--texto-suave:#6b7770;--line:#e2e7e1;--white:#fff;--amber:#96680b;--red:#b13340;--radius:18px}
-*{box-sizing:border-box}html{scroll-padding-top:28px;scrollbar-width:thin;scrollbar-color:#8bad98 var(--fundo)}body{margin:0;background:var(--fundo);color:var(--texto);font-family:"Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.5}button,input,select,textarea{font:inherit}button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}a{color:inherit}button{border:0;border-radius:10px;padding:12px 18px;min-height:44px;background:var(--solidez);color:white;font-weight:600;cursor:pointer;transition:background .18s,box-shadow .18s,transform .18s}button:hover{background:#005a30}button:active{transform:translateY(1px)}button:disabled{opacity:.55;cursor:wait}button:focus-visible,a:focus-visible,[role=button]:focus-visible{outline:3px solid #56b482;outline-offset:4px}input,select,textarea{width:100%;min-width:0;padding:13px 14px;border:1px solid #d6dfd7;border-radius:10px;background:white;color:var(--texto);outline:none;transition:border-color .18s,box-shadow .18s}input::placeholder,textarea::placeholder{color:#89928d}input:focus,select:focus,textarea:focus{border-color:var(--solidez);box-shadow:0 0 0 3px #006b3812}input[type=hidden]{display:none}input[type=number]{appearance:textfield}h1,h2,h3,p{margin-top:0}h2{font-size:25px;line-height:1.25;letter-spacing:-.7px}h3{font-size:18px;letter-spacing:-.35px}svg.icon{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.skip-link{position:fixed;left:16px;top:-100px;z-index:15000;background:white;padding:12px;border-radius:8px}.skip-link:focus{top:12px}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:28px;scrollbar-width:thin;scrollbar-color:#8bad98 var(--fundo)}body{margin:0;background:var(--fundo);color:var(--texto);font-family:"Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.5}button,input,select,textarea{font:inherit}button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}a{color:inherit}button{border:0;border-radius:10px;padding:12px 18px;min-height:44px;background:var(--solidez);color:white;font-weight:600;cursor:pointer;transition:background .18s,box-shadow .18s,transform .18s}button:hover{background:#005a30}button:active{transform:translateY(1px)}button:disabled{opacity:.55;cursor:wait}button:focus-visible,a:focus-visible,[role=button]:focus-visible{outline:3px solid #56b482;outline-offset:4px}input,select,textarea{width:100%;min-width:0;padding:13px 14px;border:1px solid #d6dfd7;border-radius:10px;background:white;color:var(--texto);outline:none;transition:border-color .18s,box-shadow .18s}input::placeholder,textarea::placeholder{color:#89928d}input:focus,select:focus,textarea:focus{border-color:var(--solidez);box-shadow:0 0 0 3px #006b3812}input[type=hidden]{display:none}input[type=number]{appearance:textfield}h1,h2,h3,p{margin-top:0}h2{font-size:25px;line-height:1.25;letter-spacing:-.7px}h3{font-size:18px;letter-spacing:-.35px}svg.icon{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.skip-link{position:fixed;left:16px;top:-100px;z-index:15000;background:white;padding:12px;border-radius:8px}.skip-link:focus{top:12px}
 /* Navegação */
 .sidebar{position:fixed;inset:0 auto 0 0;width:224px;background:white;border-right:1px solid var(--line);display:flex;flex-direction:column;padding:32px 20px 22px;z-index:40}.brand-header{display:flex;flex-direction:column;align-items:flex-start;padding:0 12px 32px;border-bottom:1px solid var(--line)}.solidez-logo-oficial{display:block;width:96px;height:auto;object-fit:contain;margin-bottom:18px}.brand-copy{padding:0}.brand-name{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#839087}.brand-title{font-size:17px;font-weight:650;color:#223c2d;letter-spacing:-.3px;margin-top:4px}.nav-label{font-size:10px;font-weight:700;letter-spacing:1.6px;color:#929b94;margin:27px 12px 12px}.side-nav{display:grid;gap:7px}.nav-link{display:flex;align-items:center;gap:11px;width:100%;min-height:47px;padding:12px;border-radius:10px;text-decoration:none;color:#67746b;font-weight:600;font-size:13px;border:0;background:transparent;text-align:left}.nav-link:hover{background:#f1f6f1;color:var(--solidez)}.nav-link.ativo{background:var(--solidez-claro);color:var(--solidez)}.nav-link.ativo::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--solidez);margin-left:auto}.admin-btn{margin:0;background:#f7f8f5;color:#415b49;text-align:left;font-size:13px;line-height:1.4;padding:14px 12px;border:1px solid var(--line);width:100%;min-height:47px}.admin-btn:hover{background:#e9f3ec;color:var(--solidez)}.sidebar-footer{margin-top:auto;padding:24px 12px 0}.sidebar-note{padding:16px;background:#073f2d;border-radius:13px;color:#e8f3ec}.sidebar-note .icon{color:#98d4af;margin-bottom:8px}.sidebar-note strong{display:block;font-size:12px;font-weight:600}.sidebar-note p{font-size:11px;line-height:1.65;color:#a9c6b5;margin:6px 0 0}.sistema-versao{display:block;margin-top:17px;font-size:10px;color:#909a93}.app-shell{margin-left:224px}.container{width:100%;max-width:1352px;margin:0 auto;padding:28px 40px 30px}
 /* Cabeçalho */
@@ -3166,10 +3166,10 @@ document.addEventListener('click', event => {
     const from=scrollY;
     const destination=()=>Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24,document.documentElement.scrollHeight-innerHeight));
     const distance=destination()-from;
-    const duration=Math.min(1150,650+Math.abs(distance)*.23);
+    const duration=motion.matches?280:Math.min(1650,950+Math.abs(distance)*.32);
     const start=performance.now();
     const focus=()=>{target.setAttribute('tabindex','-1');target.focus({preventScroll:true});if(hash&&location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}};
-    if(motion.matches||document.hidden){window.scrollTo({top:destination(),behavior:'instant'});focus();return;}
+    if(Math.abs(distance)<2){focus();return;}
     const step=now=>{
       const t=Math.min(1,(now-start)/duration);
       const eased=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
@@ -3179,10 +3179,13 @@ document.addEventListener('click', event => {
     scrollFrame=requestAnimationFrame(step);
   }
   window.solidezSoft.navigate=navigate;
-  document.querySelectorAll('.nav-link[href^="#"]').forEach(link=>link.addEventListener('click',event=>{
+  // Interceptar a navegação antes da âncora para evitar o salto nativo.
+  document.addEventListener('click',event=>{
+    const link=event.target.closest?.('.nav-link[href^="#"]');
+    if(!link||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
     const hash=link.getAttribute('href');const target=document.getElementById(hash.slice(1));
     if(!target)return;event.preventDefault();navigate(target,hash);
-  }));
+  },true);
   window.addEventListener('wheel',cancelScroll,{passive:true});
   window.addEventListener('touchstart',cancelScroll,{passive:true});
   window.addEventListener('keydown',event=>{if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key))cancelScroll();});
