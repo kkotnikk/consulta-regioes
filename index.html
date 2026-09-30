@@ -285,6 +285,15 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
 @keyframes soft-click-feedback{0%{transform:translate(-50%,-50%) scale(1);opacity:.2}100%{transform:translate(-50%,-50%) scale(16);opacity:0}}
 @media(prefers-reduced-motion:reduce){.presenca-item:hover,.rotas-resumo>span[role=button]:hover{transform:none}.soft-map-route,.soft-map-beacon,.soft-click-ring{animation:none!important}}
 
+/* Terceiro status de acompanhamento das rotas. */
+.rotas-resumo{grid-template-columns:repeat(4,minmax(0,1fr))}
+.rotas-resumo>span:nth-child(3){color:#217687}
+.rotas-resumo>span:nth-child(4){color:#006b38}
+.rota-card.retornando{border-top-color:#217687}
+.rota-status.retornando,.rota-admin-status.retornando{color:#217687}
+.registrar-retornando{width:100%;margin-top:16px;background:#217687;color:#fff8e9;border:1px solid #1c6777;font-size:12px;min-height:42px}
+.registrar-retornando:hover{background:#1c6777}
+@media(max-width:760px){.rotas-resumo{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 
@@ -388,6 +397,7 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
       <div class="rotas-filtros" aria-label="Filtrar rotas por status">
         <button type="button" id="filtroTodas" class="ativo" onclick="definirFiltroRotas('todas')">Todas</button>
         <button type="button" id="filtroEmRota" onclick="definirFiltroRotas('em_rota')">Em rota</button>
+        <button type="button" id="filtroRetornando" onclick="definirFiltroRotas('retornando_base')">Retornando à base</button>
         <button type="button" id="filtroRetorno" onclick="definirFiltroRotas('retorno_confirmado')">Retorno confirmado</button>
       </div>
     </div>
@@ -1224,6 +1234,7 @@ function definirFiltroRotas(filtro) {
   filtroRotasAtual = filtro;
   document.getElementById("filtroTodas")?.classList.toggle("ativo", filtro === "todas");
   document.getElementById("filtroEmRota")?.classList.toggle("ativo", filtro === "em_rota");
+  document.getElementById("filtroRetornando")?.classList.toggle("ativo", filtro === "retornando_base");
   document.getElementById("filtroRetorno")?.classList.toggle("ativo", filtro === "retorno_confirmado");
   renderizarRotasPublicas();
 }
@@ -1234,18 +1245,21 @@ function renderizarRotasPublicas() {
 
   const busca = normalizar(document.getElementById("buscaRotas")?.value || "");
   const total = rotasPublicasCache.length;
-  const emRota = rotasPublicasCache.filter(r => r.status !== "retorno_confirmado").length;
-  const retornos = total - emRota;
+  const emRota = rotasPublicasCache.filter(r => !r.status || r.status === "em_rota").length;
+  const retornando = rotasPublicasCache.filter(r => r.status === "retornando_base").length;
+  const retornos = rotasPublicasCache.filter(r => r.status === "retorno_confirmado").length;
 
   const resumo = document.getElementById("resumoRotas");
   if (resumo) resumo.innerHTML = `
     <span><strong>${total}</strong><small>Rota${total === 1 ? "" : "s"} cadastrada${total === 1 ? "" : "s"}</small></span>
     <span><strong>${emRota}</strong><small>Em rota</small></span>
+    <span><strong>${retornando}</strong><small>Retornando à base</small></span>
     <span><strong>${retornos}</strong><small>Retorno${retornos === 1 ? "" : "s"} confirmado${retornos === 1 ? "" : "s"}</small></span>`;
 
   const rotas = rotasPublicasCache.filter(rota => {
     const confirmada = rota.status === "retorno_confirmado";
-    if (filtroRotasAtual === "em_rota" && confirmada) return false;
+    if (filtroRotasAtual === "em_rota" && (rota.status || "em_rota") !== "em_rota") return false;
+    if (filtroRotasAtual === "retornando_base" && rota.status !== "retornando_base") return false;
     if (filtroRotasAtual === "retorno_confirmado" && !confirmada) return false;
     if (!busca) return true;
 
@@ -1254,8 +1268,9 @@ function renderizarRotasPublicas() {
     ].filter(Boolean).join(" "));
     return texto.includes(busca);
   }).sort((a,b) => {
-    const sa = a.status === "retorno_confirmado" ? 1 : 0;
-    const sb = b.status === "retorno_confirmado" ? 1 : 0;
+    const ordem = { em_rota: 0, retornando_base: 1, retorno_confirmado: 2 };
+    const sa = ordem[a.status || "em_rota"] ?? 0;
+    const sb = ordem[b.status || "em_rota"] ?? 0;
     if (sa !== sb) return sa - sb;
     return (a.motorista || "").localeCompare(b.motorista || "", "pt-BR", {sensitivity:"base"});
   });
@@ -1267,13 +1282,19 @@ function renderizarRotasPublicas() {
 
   container.innerHTML = rotas.map(rota => {
     const confirmada = rota.status === "retorno_confirmado";
+    const retornando = rota.status === "retornando_base";
     const statusHtml = confirmada
       ? `● Retorno confirmado às ${formatarHora(rota.retorno_confirmado_em)}`
-      : "● Em rota";
+      : retornando
+        ? `● Retornando à base${rota.retornando_base_em ? " às " + formatarHora(rota.retornando_base_em) : ""}`
+        : "● Em rota";
+    const podeRegistrarRetornando = usuarioAtualSistema?.ativo === true &&
+      String(usuarioAtualSistema.perfil).toLowerCase() === "operacional" &&
+      (!rota.status || rota.status === "em_rota");
 
     return `
-      <div class="rota-card ${confirmada ? "confirmada" : ""}" onclick="abrirDetalhesRota(${rota.id})" role="button" tabindex="0">
-        <div class="rota-status ${confirmada ? "confirmada" : "em-rota"}">${statusHtml}</div>
+      <div class="rota-card ${confirmada ? "confirmada" : retornando ? "retornando" : ""}" onclick="abrirDetalhesRota(${rota.id})" role="button" tabindex="0">
+        <div class="rota-status ${confirmada ? "confirmada" : retornando ? "retornando" : "em-rota"}">${statusHtml}</div>
         <div class="rota-dados">
           <div><strong>Motorista:</strong><span class="motorista-iniciais" aria-hidden="true">${escapeHtml(String(rota.motorista || "").trim().split(/\s+/).filter(Boolean).slice(0,2).map(parte => parte[0]).join("").toUpperCase())}</span><span class="motorista-nome">${escapeHtml(rota.motorista)}</span></div>
           <div><strong>Placa:</strong> ${escapeHtml(rota.placa)}</div>
@@ -1283,6 +1304,8 @@ function renderizarRotasPublicas() {
         </div>
         ${rota.observacao ? `<div class="rota-observacao"><strong>Observação:</strong> ${escapeHtml(rota.observacao)}</div>` : ""}
         ${confirmada && rota.retorno_confirmado_por_nome ? `<div class="rota-alterado-por">Alterado por ${escapeHtml(rota.retorno_confirmado_por_nome)}</div>` : ""}
+        ${retornando && rota.retornando_base_por_nome ? `<div class="rota-alterado-por">Registrado por ${escapeHtml(rota.retornando_base_por_nome)}</div>` : ""}
+        ${podeRegistrarRetornando ? `<button type="button" class="registrar-retornando" onclick="event.stopPropagation(); registrarRetornandoBase(${Number(rota.id)}, this)">Marcar retornando à base</button>` : ""}
       </div>`;
   }).join("");
 }
@@ -1384,15 +1407,18 @@ async function carregarRotasAdmin() {
   lista.innerHTML = data.map(rota => {
 
     const confirmada = rota.status === "retorno_confirmado";
+    const retornando = rota.status === "retornando_base";
 
     return `
-      <div class="rota-admin-item ${confirmada ? "confirmada" : ""}">
+      <div class="rota-admin-item ${confirmada ? "confirmada" : retornando ? "retornando" : ""}">
 
-        <div class="rota-admin-status ${confirmada ? "confirmada" : "em-rota"}">
+        <div class="rota-admin-status ${confirmada ? "confirmada" : retornando ? "retornando" : "em-rota"}">
           ${
             confirmada
               ? `● Retorno confirmado às ${formatarHora(rota.retorno_confirmado_em)}`
-              : "● Em rota"
+              : retornando
+                ? `● Retornando à base${rota.retornando_base_em ? " às " + formatarHora(rota.retornando_base_em) : ""}`
+                : "● Em rota"
           }
         </div>
 
@@ -1497,7 +1523,7 @@ async function editarRota(id) {
   document.getElementById("editarRegiao").value = data.regiao || "";
   document.getElementById("editarAjudante").value = data.ajudante || "";
   document.getElementById("editarNumeroColetas").value = data.numero_coletas ?? "";
-  document.getElementById("editarStatusRota").value = data.status === "retorno_confirmado" ? "retorno_confirmado" : "em_rota";
+  document.getElementById("editarStatusRota").value = ["em_rota", "retornando_base", "retorno_confirmado"].includes(data.status) ? data.status : "em_rota";
   document.getElementById("editarObservacao").value = data.observacao || "";
 
   const modal = document.getElementById("modalEditarRota");
@@ -2031,8 +2057,9 @@ function abrirDetalhesRota(id) {
   const confirmada = rota.status === "retorno_confirmado";
 
   const statusTopo = document.getElementById("detalhesRotaStatus");
-  statusTopo.textContent = confirmada ? "● Retorno confirmado" : "● Em rota";
-  statusTopo.style.color = confirmada ? "#006b38" : "#986332";
+  const retornando = rota.status === "retornando_base";
+  statusTopo.textContent = confirmada ? "● Retorno confirmado" : retornando ? "● Retornando à base" : "● Em rota";
+  statusTopo.style.color = confirmada ? "#006b38" : retornando ? "#217687" : "#986332";
   statusTopo.classList.toggle("confirmada", confirmada);
 
   document.getElementById("detalhesRotaMotorista").textContent = rota.motorista || "Detalhes da rota";
@@ -2041,11 +2068,17 @@ function abrirDetalhesRota(id) {
   document.getElementById("detalhesRegiao").textContent = rota.regiao || "—";
   document.getElementById("detalhesAjudante").textContent = rota.ajudante || "—";
   document.getElementById("detalhesNumeroColetas").textContent = rota.numero_coletas ?? "—";
-  document.getElementById("detalhesStatusTexto").textContent = confirmada ? "Retorno confirmado" : "Em rota";
+  document.getElementById("detalhesStatusTexto").textContent = confirmada ? "Retorno confirmado" : retornando ? "Retornando à base" : "Em rota";
   document.getElementById("detalhesRetorno").textContent =
     confirmada ? formatarHora(rota.retorno_confirmado_em) : "Ainda não confirmado";
   document.getElementById("detalhesObservacao").textContent = rota.observacao || "Sem observações.";
   document.getElementById("areaConfirmarRetornoPublico").style.display = confirmada ? "none" : "block";
+  const areaRetornando = document.getElementById("areaRegistrarRetornandoBase");
+  const podeRegistrarRetornando = usuarioAtualSistema?.ativo === true && String(usuarioAtualSistema.perfil).toLowerCase() === "operacional" && (!rota.status || rota.status === "em_rota");
+  areaRetornando.style.display = podeRegistrarRetornando ? "block" : "none";
+  document.getElementById("detalhesRetornandoBase").textContent = rota.retornando_base_em
+    ? `${formatarHora(rota.retornando_base_em)}${rota.retornando_base_por_nome ? " · " + rota.retornando_base_por_nome : ""}`
+    : "Ainda não registrado";
 
   const modal = document.getElementById("modalDetalhesRota");
   modal.classList.add("ativo");
@@ -2564,6 +2597,42 @@ async function carregarRotasPublicas() {
   rotasPublicasCache=data||[]; renderizarRotasPublicas();
 }
 
+async function registrarRetornandoBase(id, botao) {
+  if (botao?.disabled) return;
+  const texto = botao?.textContent;
+  if (botao) { botao.disabled = true; botao.textContent = "Registrando..."; }
+  try {
+    const usuario = await obterUsuarioAtualSistema();
+    if (!usuario || usuario.ativo !== true || String(usuario.perfil).toLowerCase() !== "operacional") {
+      mostrarToast("Somente usuários do tipo Operacional podem registrar o retorno à base.", "erro");
+      return;
+    }
+    const rotaId = Number(id);
+    const rota = rotasPublicasCache.find(r => Number(r.id) === rotaId);
+    if (!rotaId || !rota || (rota.status && rota.status !== "em_rota")) {
+      mostrarToast("Esta rota já saiu do status Em rota. Atualize o acompanhamento.", "erro");
+      return;
+    }
+    const { error } = await supabaseClient.rpc("registrar_retornando_base", { rota_id: rotaId });
+    if (error) {
+      console.error("Erro ao registrar retorno à base:", error);
+      const faltaConfiguracao = error.code === "PGRST202" || error.code === "42883";
+      mostrarToast(faltaConfiguracao ? "O registro de retorno à base aguarda ativação no sistema." : (error.message || "Não foi possível registrar o retorno à base."), "erro");
+      return;
+    }
+    mostrarToast(`${rota.motorista || "Motorista"} está retornando à base. Registrado por ${usuario.nome}.`, "sucesso");
+    await carregarRotasPublicas();
+    if (document.getElementById("modalDetalhesRota")?.classList.contains("ativo") && Number(rotaDetalhesAtualId) === rotaId) abrirDetalhesRota(rotaId);
+    if (document.getElementById("adminRotasLista")) await carregarRotasAdmin();
+    if (document.getElementById("adminHistoricoRotas")) await carregarHistoricoRotas();
+  } catch (error) {
+    console.error("Erro ao registrar retorno à base:", error);
+    mostrarToast("Não foi possível registrar o retorno à base. Tente novamente.", "erro");
+  } finally {
+    if (botao) { botao.disabled = false; botao.textContent = texto; }
+  }
+}
+
 async function executarConfirmacaoRetornoPublico() {
   const id=Number(rotaDetalhesAtualId); const rota=rotasPublicasCache.find(r=>Number(r.id)===id); if(!id||!rota)return;
   const usuario=await obterUsuarioAtualSistema();
@@ -2793,6 +2862,7 @@ setTimeout(async()=>{await atualizarInterfaceSessao();await iniciarPresencaSiste
       <label>Status</label>
       <select id="editarStatusRota">
         <option value="em_rota">● Em rota</option>
+        <option value="retornando_base" disabled>● Retornando à base (registro Operacional)</option>
         <option value="retorno_confirmado">● Retorno confirmado</option>
       </select>
     </div>
@@ -2859,6 +2929,10 @@ setTimeout(async()=>{await atualizarInterfaceSessao();await iniciarPresencaSiste
     <div class="detalhe-rota-observacao">
       <span class="detalhe-rota-label">Observação</span>
       <div id="detalhesObservacao" class="detalhe-rota-valor">—</div>
+    </div>
+    <div class="detalhe-rota-item"><span class="detalhe-rota-label">Início do retorno à base</span><span id="detalhesRetornandoBase" class="detalhe-rota-valor">—</span></div>
+    <div id="areaRegistrarRetornandoBase" style="display:none">
+      <button type="button" class="registrar-retornando" onclick="registrarRetornandoBase(rotaDetalhesAtualId, this)">Marcar retornando à base</button>
     </div>
     <div id="areaConfirmarRetornoPublico">
       <button type="button" class="btn-confirmar-retorno-publico" onclick="iniciarConfirmacaoRetornoPublico()">✓ Confirmar retorno</button>
@@ -2949,7 +3023,7 @@ document.querySelectorAll('.nav-link').forEach(link => {
 });
 document.addEventListener('keydown', event => {
   const card = event.target.closest?.('#rotasPublicas .rota-card');
-  if (card && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); card.click(); }
+  if (card && !event.target.closest('button') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); card.click(); }
   if (event.key === 'Enter' && event.target.id === 'adminSenha') { event.preventDefault(); login(); }
   if (event.key === 'Escape' && document.body.classList.contains('login-overlay-ativo')) fecharLoginAdminPopup();
 });
@@ -3226,7 +3300,7 @@ document.addEventListener('click', event => {
 
   // Summary tiles are shortcuts to the existing status filters.
   const summary=document.getElementById('resumoRotas');
-  const summaryFilters=['todas','em_rota','retorno_confirmado'];
+  const summaryFilters=['todas','em_rota','retornando_base','retorno_confirmado'];
   function setupSummary(){
     summary?.querySelectorAll(':scope > span').forEach((tile,i)=>{
       tile.setAttribute('role','button');tile.tabIndex=0;
@@ -3337,6 +3411,7 @@ document.addEventListener('click', event => {
     const ids = {
       todas: 'filtroTodas',
       em_rota: 'filtroEmRota',
+      retornando_base: 'filtroRetornando',
       retorno_confirmado: 'filtroRetorno'
     };
 
