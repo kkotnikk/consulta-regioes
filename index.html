@@ -275,7 +275,6 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
 .soft-feedback-button:not(.floating-support):not(.login-fechar-x){position:relative}
 .soft-click-ring{position:absolute;left:var(--soft-x);top:var(--soft-y);width:12px;height:12px;border-radius:50%;background:currentColor;opacity:0;pointer-events:none;z-index:-1;animation:soft-click-feedback .65s var(--soft-out) both}
 .rota-card,.rota-admin-item{--soft-x:50%;--soft-y:50%}
-.rota-admin-item{position:relative}
 @media(hover:hover) and (pointer:fine){.rota-card::before,.rota-admin-item::before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(200px circle at var(--soft-x) var(--soft-y),#fff7df26,transparent 75%);opacity:0;pointer-events:none;transition:opacity .3s ease}.rota-card:hover::before,.rota-admin-item:hover::before{opacity:1}}
 .soft-map-route{animation:soft-route-travel 18s linear infinite}
 .soft-map-beacon{transform-box:fill-box;transform-origin:center;animation:soft-map-breathe 4s var(--soft-ease) infinite}
@@ -1239,25 +1238,10 @@ function renderizarRotasPublicas() {
   const retornos = total - emRota;
 
   const resumo = document.getElementById("resumoRotas");
-  if (resumo) {
-    // Preserva os atalhos e o foco ao filtrar ou atualizar as rotas.
-    const dadosResumo = [
-      [total, `Rota${total === 1 ? "" : "s"} cadastrada${total === 1 ? "" : "s"}`],
-      [emRota, "Em rota"],
-      [retornos, `Retorno${retornos === 1 ? "" : "s"} confirmado${retornos === 1 ? "" : "s"}`]
-    ];
-    if (resumo.children.length !== 3) {
-      resumo.innerHTML = "<span><strong></strong><small></small></span>".repeat(3);
-    }
-    dadosResumo.forEach(([numero, texto], indice) => {
-      const item = resumo.children[indice];
-      const valor = item.querySelector("strong");
-      const legenda = item.querySelector("small");
-      if (valor.textContent !== String(numero)) valor.textContent = numero;
-      if (legenda.textContent !== texto) legenda.textContent = texto;
-      if (item.hasAttribute("role")) item.setAttribute("aria-label", `Mostrar ${texto.toLowerCase()}`);
-    });
-  }
+  if (resumo) resumo.innerHTML = `
+    <span><strong>${total}</strong><small>Rota${total === 1 ? "" : "s"} cadastrada${total === 1 ? "" : "s"}</small></span>
+    <span><strong>${emRota}</strong><small>Em rota</small></span>
+    <span><strong>${retornos}</strong><small>Retorno${retornos === 1 ? "" : "s"} confirmado${retornos === 1 ? "" : "s"}</small></span>`;
 
   const rotas = rotasPublicasCache.filter(rota => {
     const confirmada = rota.status === "retorno_confirmado";
@@ -2542,10 +2526,8 @@ async function abrirAdmin() {
     return;
   }
   fecharLoginAdminPopup();
-  const painel = document.getElementById("admin");
-  if (!painel.querySelector(".admin-formularios")) await mostrarPainelAdmin();
-  painel.style.display = "block";
-  window.solidezSoft?.navigate(painel, "#admin");
+  await mostrarPainelAdmin();
+  window.solidezSoft?.navigate(document.getElementById("admin"), "#admin");
 }
 
 async function login() {
@@ -2992,7 +2974,6 @@ document.addEventListener('click', event => {
   const previousCards = new Map();
   const activeAnimations = new Set();
   function softAnimate(el,frames,options){
-    if(typeof el.animate!=='function')return {finished:Promise.resolve(),cancel(){},finish(){}};
     const animation=el.animate(frames,options);activeAnimations.add(animation);
     animation.finished.then(()=>activeAnimations.delete(animation),()=>activeAnimations.delete(animation));
     return animation;
@@ -3145,7 +3126,6 @@ document.addEventListener('click', event => {
   }
   if(typeof originalFilter==='function'){
     window.definirFiltroRotas=async function(filtro){
-      if(filtro===filtroRotasAtual){updateIndicator();return;}
       const token=++filterToken;
       const before=stage?.getBoundingClientRect().height||0;
       const computed=routeGrid?getComputedStyle(routeGrid):null;
@@ -3169,7 +3149,7 @@ document.addEventListener('click', event => {
       const height=softAnimate(stage,[{height:`${before}px`},{height:`${after}px`}],{duration:720,easing:out});
       const incoming=softAnimate(routeGrid,[{opacity:0,transform:'translateY(26px)'},{opacity:1,transform:'translateY(0)'}],{duration:620,delay:100,easing:out,fill:'both'});
       filterEffects=[outgoing,height,incoming];
-      await Promise.allSettled([outgoing.finished,height.finished,incoming.finished]);
+      try{await incoming.finished;}catch(_){}
       if(token===filterToken)clearFilterEffects();
     };
   }
@@ -3186,10 +3166,9 @@ document.addEventListener('click', event => {
     const from=scrollY;
     const destination=()=>Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24,document.documentElement.scrollHeight-innerHeight));
     const distance=destination()-from;
-    const duration=Math.min(1650,950+Math.abs(distance)*.32);
+    const duration=motion.matches?280:Math.min(1650,950+Math.abs(distance)*.32);
     const start=performance.now();
     const focus=()=>{target.setAttribute('tabindex','-1');target.focus({preventScroll:true});if(hash&&location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}};
-    if(motion.matches){window.scrollTo({top:destination(),behavior:'instant'});focus();return;}
     if(Math.abs(distance)<2){focus();return;}
     const step=now=>{
       const t=Math.min(1,(now-start)/duration);
@@ -3202,7 +3181,7 @@ document.addEventListener('click', event => {
   window.solidezSoft.navigate=navigate;
   // Interceptar a navegação antes da âncora para evitar o salto nativo.
   document.addEventListener('click',event=>{
-    const link=event.target.closest?.('.nav-link[href^="#"],.skip-link[href^="#"]');
+    const link=event.target.closest?.('.nav-link[href^="#"]');
     if(!link||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
     const hash=link.getAttribute('href');const target=document.getElementById(hash.slice(1));
     if(!target)return;event.preventDefault();navigate(target,hash);
