@@ -2652,7 +2652,7 @@ async function carregarHistoricoRotas(){
   const {data,error}=await supabaseClient.from("historico_rotas").select("*").order("criado_em",{ascending:false}).limit(50);
   if(error){console.error(error);lista.innerHTML=`<div class="erro">Não foi possível carregar o histórico.<br><small>${escapeHtml(error.message||"")}</small></div>`;return;}
   if(!data?.length){lista.innerHTML='<p class="aviso">Nenhuma alteração registrada ainda.</p>';return;}
-  const nomes={rota_criada:"Rota criada",rota_editada:"Rota editada",retorno_confirmado:"Retorno confirmado",rota_excluida:"Rota excluída"};
+  const nomes={rota_criada:"Rota criada",rota_editada:"Rota editada",retornando_base:"Retornando à base",retorno_confirmado:"Retorno confirmado",rota_excluida:"Rota excluída"};
   lista.innerHTML=data.map(h=>`<div class="historico-item"><div class="historico-topo"><strong>${escapeHtml(nomes[h.acao]||h.acao)}</strong><span>${h.criado_em?new Date(h.criado_em).toLocaleString("pt-BR"):"—"}</span></div><div>${escapeHtml(h.motorista||"—")} · ${escapeHtml(h.placa||"—")} · ${escapeHtml(h.regiao||"—")}</div><div class="historico-meta">Alterado por <strong>${escapeHtml(h.usuario_nome||"—")}</strong></div></div>`).join("");
 }
 
