@@ -3284,5 +3284,132 @@ document.addEventListener('click', event => {
 })();
 
 </script>
+<script>
+(() => {
+  const original = window.definirFiltroRotas;
+  const grid = document.getElementById('rotasPublicas');
+  if (typeof original !== 'function' || !grid) return;
+
+  const stage = grid.parentElement;
+  if (!stage.classList.contains('soft-grid-stage')) return;
+
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let current = null;
+
+  function finish() {
+    if (!current) return;
+    const run = current;
+    current = null;
+    run.animations.forEach(animation => animation.cancel());
+    run.ghost.remove();
+    stage.classList.remove('soft-changing');
+    grid.removeAttribute('aria-busy');
+    delete grid.dataset.softFiltering;
+  }
+
+  window.definirFiltroRotas = function (filter) {
+    finish();
+
+    if (grid.querySelector('.acesso-necessario')) {
+      original(filter);
+      return;
+    }
+
+    const previousHeight = grid.getBoundingClientRect().height;
+    const styles = getComputedStyle(grid);
+    const ghost = grid.cloneNode(true);
+    ghost.removeAttribute('id');
+    ghost.className = 'soft-route-ghost';
+    ghost.inert = true;
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+    ghost.querySelectorAll('.soft-reveal').forEach(node =>
+      node.classList.remove('soft-reveal', 'soft-visible')
+    );
+
+    Object.assign(ghost.style, {
+      display: 'grid',
+      gridTemplateColumns: styles.gridTemplateColumns,
+      gap: styles.gap
+    });
+
+    filtroRotasAtual = filter;
+    const ids = {
+      todas: 'filtroTodas',
+      em_rota: 'filtroEmRota',
+      retorno_confirmado: 'filtroRetorno'
+    };
+
+    Object.values(ids).forEach(id =>
+      document.getElementById(id)?.classList.toggle('ativo', id === ids[filter])
+    );
+
+    const active = document.getElementById(ids[filter]);
+    const indicator = document.querySelector('.soft-filter-indicator');
+    if (active && indicator) {
+      indicator.style.width = active.offsetWidth + 'px';
+      indicator.style.height = active.offsetHeight + 'px';
+      indicator.style.transform =
+        'translate(' + active.offsetLeft + 'px,' + active.offsetTop + 'px)';
+    }
+
+    grid.dataset.softFiltering = '1';
+    renderizarRotasPublicas();
+
+    if (document.hidden) {
+      delete grid.dataset.softFiltering;
+      return;
+    }
+
+    const nextHeight = grid.getBoundingClientRect().height;
+    stage.insertBefore(ghost, grid);
+    stage.classList.add('soft-changing');
+    grid.setAttribute('aria-busy', 'true');
+
+    const short = reduced.matches;
+    const ease = 'cubic-bezier(.22,1,.36,1)';
+    const animations = [
+      ghost.animate(
+        [
+          { opacity: 1, transform: 'translateY(0)' },
+          { opacity: 0, transform: 'translateY(-18px)' }
+        ],
+        { duration: short ? 160 : 390, easing: ease, fill: 'forwards' }
+      ),
+      grid.animate(
+        [
+          { opacity: 0, transform: 'translateY(26px)' },
+          { opacity: 1, transform: 'translateY(0)' }
+        ],
+        {
+          duration: short ? 230 : 650,
+          delay: short ? 0 : 80,
+          easing: ease,
+          fill: 'both'
+        }
+      )
+    ];
+
+    if (Math.abs(previousHeight - nextHeight) > 1) {
+      animations.push(stage.animate(
+        [
+          { height: previousHeight + 'px' },
+          { height: nextHeight + 'px' }
+        ],
+        { duration: short ? 230 : 730, easing: ease, fill: 'both' }
+      ));
+    }
+
+    const run = { ghost, animations };
+    current = run;
+    Promise.allSettled(animations.map(animation => animation.finished))
+      .then(() => { if (current === run) finish(); });
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) finish();
+  });
+})();
+</script>
 </body>
 </html>
