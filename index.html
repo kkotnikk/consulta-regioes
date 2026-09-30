@@ -92,6 +92,80 @@ body.login-overlay-ativo::before{background:#2c251bc2;backdrop-filter:blur(7px)}
 
 
 .detalhes-status.confirmada{color:#006b38!important;background:#e1ecd5;border:1px solid #c7d9b6}
+/* Cartões de rotas com contraste e cor por status */
+.rota-card{
+  background:linear-gradient(135deg,#fff2dc 0%,#f1dcbc 100%);
+  border:2px solid #b77a42;
+  border-top:7px solid #9b5d2b;
+  border-radius:13px;
+  box-shadow:0 7px 19px #73471920,0 2px 0 #b5834b12;
+  padding:20px 20px 18px;
+}
+.rota-card:hover{
+  border-color:#895024;
+  box-shadow:0 14px 29px #633b202a;
+  transform:translateY(-4px);
+}
+.rota-card .rota-status{
+  background:#8b5029;color:#fff0d9;
+  border:1px solid #784021;
+  padding:6px 11px;border-radius:6px;
+  font-size:11px;letter-spacing:.2px;
+  box-shadow:0 3px 7px #6e391317;
+}
+.rota-card .motorista-iniciais{
+  background:#8e5b34;color:#fff0d9;border-color:#754322;
+  width:40px;height:40px;min-width:40px;border-radius:9px;
+  font-size:13px;box-shadow:0 3px 8px #713f1720;
+}
+.rota-card .motorista-nome{font-size:20px;font-weight:600;color:#4a2e18}
+.rota-card .rota-dados{font-size:14px;color:#644020;gap:9px 12px}
+.rota-card .rota-dados>div:first-child{margin-bottom:8px;gap:11px}
+.rota-card .rota-dados>div:not(:first-child){
+  padding:10px;border:1px solid #c49c6540;
+  background:#ffffff52;border-radius:7px;
+}
+.rota-card .rota-dados strong{color:#8b603b;font-size:9px;font-weight:600;letter-spacing:.6px;margin-bottom:5px}
+.rota-card .rota-dados>div:last-child{font-size:17px;font-weight:600;color:#75461f}
+.rota-card .rota-observacao{
+  background:#d8b88745;border-color:#bd905848;
+  color:#75502b;border-radius:7px;font-size:12px;
+}
+.rota-card::after{color:#8b5029;font-size:11px;font-weight:600;border-color:#c5985f99;margin-top:17px;padding-top:13px}
+.rota-card.confirmada{
+  background:linear-gradient(135deg,#076b41 0%,#064d34 100%);
+  border-color:#126e45;border-top-color:#8aba89;
+  box-shadow:0 8px 21px #08422d2b,0 2px 0 #004b2621;
+}
+.rota-card.confirmada:hover{border-color:#9ac794;box-shadow:0 15px 30px #0a402d3b}
+.rota-card.confirmada .rota-status{
+  background:#d9eacb;color:#105030;border-color:#b2d1a0;
+  box-shadow:0 3px 7px #002e191c;
+}
+.rota-card.confirmada .motorista-iniciais{
+  background:#e6d7b5;color:#24543a;border-color:#c8bd97;
+  box-shadow:0 3px 9px #00331d26;
+}
+.rota-card.confirmada .motorista-nome,.rota-card.confirmada .rota-dados>div:first-child{color:#fff3dc}
+.rota-card.confirmada .rota-dados{color:#f0efda}
+.rota-card.confirmada .rota-dados strong{color:#b9d5bc}
+.rota-card.confirmada .rota-dados>div:not(:first-child){background:#ffffff0a;border-color:#b8d8b825}
+.rota-card.confirmada .rota-dados>div:last-child{color:#ecdbac}
+.rota-card.confirmada .rota-observacao{background:#ffffff0d;border-color:#bbd8b52e;color:#dce8ce}
+.rota-card.confirmada .rota-alterado-por{color:#c1d8b9;font-size:11px}
+.rota-card.confirmada::after{color:#e6c896;border-color:#a8c9a440}
+@media(max-width:1040px){.rota-card .motorista-nome{font-size:19px}}
+@media(max-width:480px){
+  .rota-card{padding:20px 18px 18px;border-radius:12px}
+  .rota-card .rota-status{font-size:10px;padding:6px 10px}
+  .rota-card .motorista-nome{font-size:20px}
+  .rota-card .rota-dados{font-size:14px;gap:9px 12px}
+  .rota-card .rota-dados>div:not(:first-child){padding:11px 10px}
+  .rota-card .rota-dados strong{font-size:8px;letter-spacing:.5px}
+  .rota-card .rota-observacao{font-size:11px;padding:11px}
+}
+@media(max-width:350px){.rota-card .motorista-nome{font-size:18px}.rota-card .rota-dados{gap:8px 9px}.rota-card .rota-dados>div:not(:first-child){padding:10px 8px}}
+
 </style>
 </head>
 
