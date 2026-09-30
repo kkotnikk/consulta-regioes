@@ -312,6 +312,26 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
 #adminRotasLista .acoes button{padding:8px 10px;min-height:36px}
 #adminRotasLista .acoes .registrar-retornando{width:auto;margin-top:0}
 @media(max-width:1100px){#adminRotasLista{grid-template-columns:minmax(0,1fr)}}
+
+/* Cards com altura uniforme e status de retorno com contraste. */
+#rotasPublicas,#adminRotasLista{grid-auto-rows:1fr;align-items:stretch}
+.soft-route-ghost{grid-auto-rows:1fr;align-items:stretch}
+#rotasPublicas>.rota-card,.soft-route-ghost>.rota-card,#adminRotasLista>.rota-admin-item{display:flex;flex-direction:column;height:100%;min-width:0}
+#adminRotasLista>.rota-admin-item{cursor:pointer}
+:is(.rota-card,.rota-admin-item):focus-visible{outline:3px solid #217687;outline-offset:3px}
+:is(.rota-card,.rota-admin-item).retornando{border-top-color:#217687}
+.rota-status.retornando,.rota-admin-status.retornando{background:#e3f4f1;color:#175c59;border-color:#8dc4bc;box-shadow:0 3px 7px #165b5710}
+:is(.rota-status,.rota-admin-status){align-self:flex-start;max-width:100%;line-height:1.4}
+:is(.rota-card,.rota-admin-item) .motorista-nome{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;line-height:1.35}
+#adminRotasLista .motorista-nome{font-size:18px}
+:is(.rota-card,.rota-admin-item) .rota-dados>div:first-child{min-height:44px}
+:is(.rota-card,.rota-admin-item) .rota-dados>div:not(:first-child){min-height:60px;min-width:0;overflow-wrap:anywhere}
+.rota-observacao-texto{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;line-height:1.5;min-height:3em}
+.rota-card .rota-observacao{margin-top:12px}
+.rota-card .rota-observacao strong{display:block;font-size:10px;margin-bottom:4px}
+.rota-card .rota-alterado-por{min-height:18px;margin-top:9px}
+.rota-card::after{margin-top:auto;padding-top:13px}
+#adminRotasLista .rota-admin-item .acoes{margin-top:auto!important;min-height:48px}
 </style>
 </head>
 
@@ -1314,9 +1334,6 @@ function renderizarRotasPublicas() {
       : retornando
         ? `● Retornando à base${rota.retornando_base_em ? " às " + formatarHora(rota.retornando_base_em) : ""}`
         : "● Em rota";
-    const podeRegistrarRetornando = usuarioTemPermissao(["operacional"]) &&
-      (!rota.status || rota.status === "em_rota");
-
     return `
       <div class="rota-card ${confirmada ? "confirmada" : retornando ? "retornando" : ""}" onclick="abrirDetalhesRota(${rota.id})" role="button" tabindex="0">
         <div class="rota-status ${confirmada ? "confirmada" : retornando ? "retornando" : "em-rota"}">${statusHtml}</div>
@@ -1324,13 +1341,11 @@ function renderizarRotasPublicas() {
           <div><strong>Motorista:</strong><span class="motorista-iniciais" aria-hidden="true">${escapeHtml(String(rota.motorista || "").trim().split(/\s+/).filter(Boolean).slice(0,2).map(parte => parte[0]).join("").toUpperCase())}</span><span class="motorista-nome">${escapeHtml(rota.motorista)}</span></div>
           <div><strong>Placa:</strong> ${escapeHtml(rota.placa)}</div>
           <div><strong>Região:</strong> ${escapeHtml(rota.regiao)}</div>
-          ${rota.ajudante ? `<div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante)}</div>` : ""}
+          <div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante || "—")}</div>
           <div><strong>Número de Coletas:</strong> ${rota.numero_coletas ?? "—"}</div>
         </div>
-        ${rota.observacao ? `<div class="rota-observacao"><strong>Observação:</strong> ${escapeHtml(rota.observacao)}</div>` : ""}
-        ${confirmada && rota.retorno_confirmado_por_nome ? `<div class="rota-alterado-por">Alterado por ${escapeHtml(rota.retorno_confirmado_por_nome)}</div>` : ""}
-        ${retornando && rota.retornando_base_por_nome ? `<div class="rota-alterado-por">Registrado por ${escapeHtml(rota.retornando_base_por_nome)}</div>` : ""}
-        ${podeRegistrarRetornando ? `<button type="button" class="registrar-retornando" onclick="event.stopPropagation(); registrarRetornandoBase(${Number(rota.id)}, this)">Marcar retornando à base</button>` : ""}
+        <div class="rota-observacao"><strong>Observação:</strong> <span class="rota-observacao-texto">${escapeHtml(rota.observacao || "Sem observações.")}</span></div>
+        <div class="rota-alterado-por">${confirmada && rota.retorno_confirmado_por_nome ? `Alterado por ${escapeHtml(rota.retorno_confirmado_por_nome)}` : retornando && rota.retornando_base_por_nome ? `Registrado por ${escapeHtml(rota.retornando_base_por_nome)}` : ""}</div>
       </div>`;
   }).join("");
 }
@@ -1474,7 +1489,9 @@ function renderizarRotasAdmin() {
     const retornando = rota.status === "retornando_base";
 
     return `
-      <div class="rota-admin-item ${confirmada ? "confirmada" : retornando ? "retornando" : ""}">
+      <div class="rota-admin-item ${confirmada ? "confirmada" : retornando ? "retornando" : ""}"
+        onclick="if (!event.target.closest('button, a, input, select, textarea')) abrirDetalhesRota(${Number(rota.id)}, 'admin')"
+        role="button" tabindex="0" aria-label="Ver detalhes da rota de ${escapeHtml(rota.motorista || "motorista")}">
 
         <div class="rota-admin-status ${confirmada ? "confirmada" : retornando ? "retornando" : "em-rota"}">
           ${
@@ -1487,27 +1504,15 @@ function renderizarRotasAdmin() {
         </div>
 
         <div class="rota-dados">
-          <div><strong>Motorista:</strong> ${escapeHtml(rota.motorista)}</div>
+          <div><strong>Motorista:</strong> <span class="motorista-nome">${escapeHtml(rota.motorista)}</span></div>
           <div><strong>Placa:</strong> ${escapeHtml(rota.placa)}</div>
           <div><strong>Região:</strong> ${escapeHtml(rota.regiao)}</div>
-          ${
-            rota.ajudante
-              ? `<div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante)}</div>`
-              : ""
-          }
+          <div><strong>Ajudante:</strong> ${escapeHtml(rota.ajudante || "—")}</div>
           <div class="rota-admin-coletas"><strong>Número de Coletas:</strong> <span class="rota-admin-coletas-valor">${escapeHtml(rota.numero_coletas ?? "—")}</span></div>
-          ${
-            rota.observacao
-              ? `<div class="rota-admin-observacao"><strong>Observação:</strong> ${escapeHtml(rota.observacao)}</div>`
-              : ""
-          }
+          <div class="rota-admin-observacao"><strong>Observação:</strong> <span class="rota-observacao-texto">${escapeHtml(rota.observacao || "Sem observações.")}</span></div>
         </div>
 
         <div class="acoes" style="margin-top:10px; flex-wrap:wrap;">
-
-          ${(!rota.status || rota.status === "em_rota") && usuarioTemPermissao(["operacional"])
-            ? `<button type="button" class="registrar-retornando" onclick="registrarRetornandoBase(${Number(rota.id)}, this)">Retornando à base</button>`
-            : ""}
 
           ${
             !confirmada
@@ -2117,8 +2122,9 @@ async function salvarNovoBairroModal() {
 let rotaDetalhesAtualId = null;
 let reabrirDetalhesAoCancelar = false;
 
-function abrirDetalhesRota(id) {
-  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(id));
+function abrirDetalhesRota(id, origem = "publica") {
+  const fontes = origem === "admin" ? [rotasAdminCache, rotasPublicasCache] : [rotasPublicasCache, rotasAdminCache];
+  const rota = fontes.flat().find(r => Number(r.id) === Number(id));
   if (!rota) return;
 
   rotaDetalhesAtualId = Number(rota.id);
@@ -2162,7 +2168,7 @@ function fecharDetalhesRota() {
 }
 
 function iniciarConfirmacaoRetornoPublico() {
-  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId));
+  const rota = rotasPublicasCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId)) || rotasAdminCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId));
   if (!rota || rota.status === "retorno_confirmado") return;
 
   reabrirDetalhesAoCancelar = true;
@@ -2711,7 +2717,7 @@ async function registrarRetornandoBase(id, botao) {
 }
 
 async function executarConfirmacaoRetornoPublico() {
-  const id=Number(rotaDetalhesAtualId); const rota=rotasPublicasCache.find(r=>Number(r.id)===id); if(!id||!rota)return;
+  const id=Number(rotaDetalhesAtualId); const rota=rotasPublicasCache.find(r=>Number(r.id)===id)||rotasAdminCache.find(r=>Number(r.id)===id); if(!id||!rota)return;
   const usuario=await obterUsuarioAtualSistema();
   if(!usuario){ fecharConfirmacaoRetornoPublico(); abrirLoginAdminPopup(); mostrarToast("Entre no sistema para confirmar o retorno.","erro"); return; }
   const botao=document.getElementById("btnSegundaConfirmacaoRetorno"); botao.disabled=true; botao.textContent="Confirmando...";
@@ -3099,8 +3105,8 @@ document.querySelectorAll('.nav-link').forEach(link => {
   });
 });
 document.addEventListener('keydown', event => {
-  const card = event.target.closest?.('#rotasPublicas .rota-card');
-  if (card && !event.target.closest('button') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); card.click(); }
+  const card = event.target.closest?.('#rotasPublicas .rota-card, #adminRotasLista .rota-admin-item');
+  if (card && !event.target.closest('button, a, input, select, textarea') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); card.click(); }
   if (event.key === 'Enter' && event.target.id === 'adminSenha') { event.preventDefault(); login(); }
   if (event.key === 'Escape' && document.body.classList.contains('login-overlay-ativo')) fecharLoginAdminPopup();
 });
