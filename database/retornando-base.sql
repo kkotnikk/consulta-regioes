@@ -18,6 +18,25 @@ create schema if not exists consulta_regioes_private;
 revoke all on schema consulta_regioes_private from public, anon;
 grant usage on schema consulta_regioes_private to authenticated;
 
+create or replace function consulta_regioes_private.usuario_tem_permissao(perfis_permitidos text[])
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select exists (
+    select 1 from public.usuarios u
+    where u.id = auth.uid() and u.ativo is true
+      and (lower(u.perfil) = 'admin' or lower(u.perfil) = any(perfis_permitidos))
+  );
+$function$;
+
+revoke all on function consulta_regioes_private.usuario_tem_permissao(text[])
+  from public, anon, authenticated;
+grant execute on function consulta_regioes_private.usuario_tem_permissao(text[])
+  to authenticated;
+
 -- A proteção também se aplica a alterações diretas pela API.
 create or replace function consulta_regioes_private.proteger_retornando_base()
 returns trigger
@@ -55,9 +74,9 @@ begin
     for share;
 
     if not found or v_ativo is distinct from true
-       or lower(v_perfil) is distinct from 'operacional' then
+       or not consulta_regioes_private.usuario_tem_permissao(array['operacional']::text[]) then
       raise exception using errcode = '42501',
-        message = 'Somente usuários Operacional ativos podem registrar Retornando à base.';
+        message = 'Somente usuários Operacional ou Administrativo ativos podem registrar Retornando à base.';
     end if;
 
     if coalesce(old.status, 'em_rota') <> 'em_rota' then
@@ -123,9 +142,9 @@ begin
   for share;
 
   if not found or v_ativo is distinct from true
-     or lower(v_perfil) is distinct from 'operacional' then
+     or not consulta_regioes_private.usuario_tem_permissao(array['operacional']::text[]) then
     raise exception using errcode = '42501',
-      message = 'Somente usuários Operacional ativos podem registrar Retornando à base.';
+      message = 'Somente usuários Operacional ou Administrativo ativos podem registrar Retornando à base.';
   end if;
 
   select r.status into v_status
