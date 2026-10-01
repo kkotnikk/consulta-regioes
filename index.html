@@ -1514,6 +1514,10 @@ function renderizarRotasAdmin() {
 
         <div class="acoes" style="margin-top:10px; flex-wrap:wrap;">
 
+          ${(!rota.status || rota.status === "em_rota") && usuarioTemPermissao(["operacional"])
+            ? `<button type="button" class="registrar-retornando" onclick="event.stopPropagation(); registrarRetornandoBase(${Number(rota.id)}, this)">Retornando à base</button>`
+            : ""}
+
           ${
             !confirmada
               ? `
