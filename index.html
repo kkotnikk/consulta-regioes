@@ -332,6 +332,31 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
 .rota-card .rota-alterado-por{min-height:18px;margin-top:9px}
 .rota-card::after{margin-top:auto;padding-top:13px}
 #adminRotasLista .rota-admin-item .acoes{margin-top:auto!important;min-height:48px}
+
+/* Retorno à base identificado em azul em todos os lados do card. */
+:is(.rota-card,.rota-admin-item).retornando{border-color:#287fc1;border-top-color:#287fc1}
+:is(.rota-card,.rota-admin-item).retornando:hover{border-color:#1b6096;border-top-color:#1b6096}
+.rota-status.retornando,.rota-admin-status.retornando{background:#e7f2ff;color:#164f80;border-color:#a8cae9;box-shadow:0 3px 7px #164f8010}
+.rotas-resumo>span:nth-child(3){color:#164f80}
+.detalhes-status.retornando{color:#164f80!important;background:#e7f2ff}
+
+/* Gerenciamento em uma tela própria, com rolagem independente. */
+.gerenciamento-tela{position:fixed;inset:0;z-index:100;background:var(--bg,#f2eadb);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable}
+.gerenciamento-tela[hidden],#consultaView[hidden]{display:none!important}
+.gerenciamento-container{max-width:1240px;margin:0 auto;padding:32px 36px 44px}
+.gerenciamento-cabecalho{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:24px}
+.gerenciamento-voltar{display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;padding:10px 14px;background:#e4eedf;border:1px solid #c2d1b9;color:#165331;font-size:12px}
+.gerenciamento-voltar:hover{background:#d5e5ce}
+.gerenciamento-voltar .icon{width:16px;height:16px}
+.gerenciamento-kicker{font-size:10px;font-weight:600;color:#627b59;letter-spacing:1.6px;margin-bottom:8px}
+.gerenciamento-cabecalho h1{font-family:'Solidez Display',Georgia,serif;font-size:36px;line-height:1.15;color:#624523;margin:0 0 9px}
+#tituloGerenciamento:focus{outline:none}
+.gerenciamento-cabecalho p{font-size:13px;color:#81613e;margin:0;line-height:1.6}
+.gerenciamento-conta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:4px;font-size:12px;color:#624523}
+.gerenciamento-conta .sair{margin:0;min-height:38px}
+.gerenciamento-tela #admin{margin-top:0}
+body.gerenciamento-aberto .floating-support{display:none}
+@media(max-width:760px){.gerenciamento-container{padding:22px 16px 30px}.gerenciamento-cabecalho{flex-direction:column;gap:18px}.gerenciamento-cabecalho h1{font-size:29px}.gerenciamento-voltar{margin-bottom:18px}.gerenciamento-conta{padding-top:0}.gerenciamento-tela #admin{padding:18px}}
 </style>
 </head>
 
@@ -345,6 +370,7 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
  <button type="button" id="softIntroSkip" class="soft-intro-skip">Pular abertura · Esc</button>
 </div>
 
+<div id="consultaView">
 <a class="skip-link" href="#consulta">Ir para consulta</a>
 <aside class="sidebar" aria-label="Navegação principal">
   <header class="brand-header">
@@ -355,7 +381,7 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
   <nav class="side-nav">
     <a class="nav-link ativo" href="#consulta"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15m6-12v15"/></svg><span>Consulta</span></a>
     <a class="nav-link" href="#controleRotas"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Rotas</span></a>
-    <button type="button" class="admin-btn" onclick="abrirAdmin()">Gerenciar sistema</button>
+    <button type="button" class="admin-btn" onclick="abrirAdmin()" aria-controls="gerenciamentoView" aria-expanded="false">Gerenciar sistema</button>
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-note"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><strong>Mais clareza na operação.</strong><p>Regiões e rotas reunidas em um só lugar.</p></div>
@@ -441,10 +467,30 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
     </div>
     <div id="rotasPublicas"></div>
   </section>
-  <div id="admin" class="admin"></div>
   <footer class="site-footer"><strong>Solidez Transportes · Sistema de Coletas</strong><span class="footer-mark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15m6-12v15"/></svg>Consulta de regiões e acompanhamento de rotas</span></footer>
 </main>
 </div>
+</div>
+<section id="gerenciamentoView" class="gerenciamento-tela" aria-labelledby="tituloGerenciamento" aria-hidden="true" hidden inert>
+  <div class="gerenciamento-container">
+    <header class="gerenciamento-cabecalho">
+      <div>
+        <button type="button" class="gerenciamento-voltar" onclick="voltarConsulta()">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h13"/></svg>
+          Voltar à consulta
+        </button>
+        <div class="gerenciamento-kicker">ADMINISTRAÇÃO · SOLIDEZ</div>
+        <h1 id="tituloGerenciamento" tabindex="-1">Gerenciar sistema</h1>
+        <p>Bairros, rotas, suporte e usuários em um só lugar.</p>
+      </div>
+      <div class="gerenciamento-conta">
+        <span id="gerenciamentoUsuario"></span>
+        <button type="button" class="sair" onclick="sairSistema()">Sair da conta</button>
+      </div>
+    </header>
+    <div id="gerenciamentoConteudo"><div id="admin" class="admin"></div></div>
+  </div>
+</section>
 <button type="button" class="floating-support" onclick="abrirSuporte()" aria-label="Abrir suporte"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2c-1.4.8-1.6 1-1.6 2m0 3h.01"/></svg><span>Precisa de ajuda?</span></button>
 <div id="modalSuporte" class="modal-sistema" aria-hidden="true">
   <div class="modal-sistema-conteudo suporte-modal">
@@ -813,6 +859,8 @@ function mostrarLogin() {
   const admin =
     document.getElementById("admin");
 
+  alternarTelaSistema("consulta", { imediato: true });
+  document.body.appendChild(admin);
   admin.style.display = "block";
 
   admin.innerHTML = `
@@ -918,18 +966,23 @@ async function login() {
 
 async function mostrarPainelAdmin() {
 
+  const usuario = await obterUsuarioAtualSistema();
+  if (!usuarioTemPermissao([], usuario)) return;
+
   const admin =
     document.getElementById("admin");
 
+  document.getElementById("gerenciamentoConteudo").appendChild(admin);
   admin.style.display = "block";
 
+  if (admin.dataset.usuarioId === usuario.id && admin.querySelector("#adminRotasLista")) {
+    await atualizarInterfaceSessao();
+    await alternarTelaSistema("gerenciamento");
+    return;
+  }
+  admin.dataset.usuarioId = usuario.id;
+
   admin.innerHTML = `
-
-    <h2>Gerenciar sistema</h2>
-
-    <button type="button" class="sair" onclick="sairAdmin()">
-      Sair
-    </button>
 
     <div class="admin-formularios">
 
@@ -1100,7 +1153,7 @@ async function mostrarPainelAdmin() {
   carregarHistoricoRotas();
   carregarUsuariosAdmin();
   atualizarInterfaceSessao();
-  /* rolagem automática do painel administrativo desativada */
+  await alternarTelaSistema("gerenciamento");
 
 }
 
@@ -1519,7 +1572,7 @@ function renderizarRotasAdmin() {
             : ""}
 
           ${
-            !confirmada
+            !confirmada && usuarioPodeConfirmarRetorno()
               ? `
                 <button type="button"
                   class="confirmar-retorno"
@@ -1552,6 +1605,12 @@ function renderizarRotasAdmin() {
 
 
 async function confirmarRetorno(id) {
+
+  const usuario = await obterUsuarioAtualSistema();
+  if (!usuarioPodeConfirmarRetorno(usuario)) {
+    mostrarToast("Somente usuários Operacional ativos podem confirmar retorno.", "erro");
+    return;
+  }
 
   const confirmar = await confirmarNoSite({
     titulo: "Confirmar retorno",
@@ -1862,15 +1921,7 @@ async function excluirBairro(id) {
    ========================================================= */
 
 async function sairAdmin() {
-
-  await supabaseClient.auth.signOut();
-
-  document.getElementById("admin").style.display =
-    "none";
-
-  const botaoAdmin = document.querySelector(".admin-btn");
-  if (botaoAdmin) botaoAdmin.style.display = "";
-
+  return sairSistema();
 }
 
 
@@ -2137,8 +2188,9 @@ function abrirDetalhesRota(id, origem = "publica") {
   const statusTopo = document.getElementById("detalhesRotaStatus");
   const retornando = rota.status === "retornando_base";
   statusTopo.textContent = confirmada ? "● Retorno confirmado" : retornando ? "● Retornando à base" : "● Em rota";
-  statusTopo.style.color = confirmada ? "#006b38" : retornando ? "#217687" : "#986332";
+  statusTopo.style.color = confirmada ? "#006b38" : retornando ? "#164f80" : "#986332";
   statusTopo.classList.toggle("confirmada", confirmada);
+  statusTopo.classList.toggle("retornando", retornando);
 
   document.getElementById("detalhesRotaMotorista").textContent = rota.motorista || "Detalhes da rota";
   document.getElementById("detalhesMotorista").textContent = rota.motorista || "—";
@@ -2150,7 +2202,7 @@ function abrirDetalhesRota(id, origem = "publica") {
   document.getElementById("detalhesRetorno").textContent =
     confirmada ? formatarHora(rota.retorno_confirmado_em) : "Ainda não confirmado";
   document.getElementById("detalhesObservacao").textContent = rota.observacao || "Sem observações.";
-  document.getElementById("areaConfirmarRetornoPublico").style.display = confirmada ? "none" : "block";
+  document.getElementById("areaConfirmarRetornoPublico").style.display = !confirmada && usuarioPodeConfirmarRetorno() ? "block" : "none";
   const areaRetornando = document.getElementById("areaRegistrarRetornandoBase");
   const podeRegistrarRetornando = usuarioTemPermissao(["operacional"]) && (!rota.status || rota.status === "em_rota");
   areaRetornando.style.display = podeRegistrarRetornando ? "block" : "none";
@@ -2172,6 +2224,10 @@ function fecharDetalhesRota() {
 }
 
 function iniciarConfirmacaoRetornoPublico() {
+  if (!usuarioPodeConfirmarRetorno()) {
+    mostrarToast("Somente usuários Operacional ativos podem confirmar retorno.", "erro");
+    return;
+  }
   const rota = rotasPublicasCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId)) || rotasAdminCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId));
   if (!rota || rota.status === "retorno_confirmado") return;
 
@@ -2591,13 +2647,127 @@ async function excluirSugestao(id) {
    ========================================================= */
 let usuarioAtualSistema = null;
 
-// Administrativo ativo recebe todas as permissões presentes e futuras.
+let telaSistemaAtual = "consulta";
+let transicaoTelaSistema = null;
+let posicaoConsulta = 0;
+let posicaoGerenciamento = 0;
+let barraConsulta = 0;
+let focoAntesDoGerenciamento = null;
+const movimentoTelaReduzido = matchMedia("(prefers-reduced-motion: reduce)");
+
+function alternarTelaSistema(destino, { imediato = false } = {}) {
+  if (destino === "gerenciamento" && !usuarioTemPermissao([])) return Promise.resolve(false);
+  if (transicaoTelaSistema) transicaoTelaSistema.finalizar();
+
+  const consulta = document.getElementById("consultaView");
+  const gerenciamento = document.getElementById("gerenciamentoView");
+  if (!consulta || !gerenciamento || destino === telaSistemaAtual) return Promise.resolve(true);
+
+  const abrindo = destino === "gerenciamento";
+  const conteudo = consulta.querySelector(".app-shell");
+  const menu = consulta.querySelector(".sidebar");
+  if (abrindo) {
+    posicaoConsulta = window.scrollY;
+    barraConsulta = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+    focoAntesDoGerenciamento = document.activeElement;
+  } else {
+    posicaoGerenciamento = gerenciamento.scrollTop;
+  }
+
+  const estilos = [consulta, conteudo, menu].map(el => [el, el?.getAttribute("style")]);
+  const overflowAnterior = document.body.style.overflow;
+  const distancia = window.innerWidth;
+  consulta.style.cssText = `position:fixed;top:0;left:0;width:${Math.max(1, distancia - barraConsulta)}px;height:100dvh;overflow:hidden;`;
+  conteudo.style.transform = `translateY(${-posicaoConsulta}px)`;
+  if (matchMedia("(max-width:760px)").matches) menu.style.transform = `translateY(${-posicaoConsulta}px)`;
+  consulta.style.transform = abrindo ? "translateX(0)" : `translateX(${-distancia}px)`;
+  gerenciamento.style.transform = abrindo ? `translateX(${distancia}px)` : "translateX(0)";
+  consulta.hidden = false;
+  gerenciamento.hidden = false;
+  gerenciamento.scrollTop = posicaoGerenciamento;
+  consulta.inert = true;
+  gerenciamento.inert = false;
+  consulta.setAttribute("aria-hidden", abrindo ? "true" : "false");
+  gerenciamento.setAttribute("aria-hidden", abrindo ? "false" : "true");
+  document.body.style.overflow = "hidden";
+  document.body.classList.toggle("gerenciamento-aberto", abrindo);
+  telaSistemaAtual = destino;
+  const botao = document.querySelector(".admin-btn");
+  botao?.classList.toggle("ativo", abrindo);
+  botao?.setAttribute("aria-expanded", String(abrindo));
+
+  return new Promise(resolve => {
+    const run = { animations: [], finalizar: null };
+    run.finalizar = () => {
+      if (transicaoTelaSistema !== run) return;
+      transicaoTelaSistema = null;
+      clearTimeout(run.timer);
+      run.animations.forEach(animation => animation.cancel());
+      estilos.forEach(([el, valor]) => {
+        if (!el) return;
+        if (valor === null) el.removeAttribute("style"); else el.setAttribute("style", valor);
+      });
+      gerenciamento.style.removeProperty("transform");
+      consulta.hidden = abrindo;
+      gerenciamento.hidden = !abrindo;
+      consulta.inert = abrindo;
+      gerenciamento.inert = !abrindo;
+      consulta.setAttribute("aria-hidden", String(abrindo));
+      gerenciamento.setAttribute("aria-hidden", String(!abrindo));
+      document.body.style.overflow = overflowAnterior;
+      window.scrollTo({ top: abrindo ? 0 : posicaoConsulta, behavior: "instant" });
+      if (!document.hidden) {
+        const foco = abrindo ? document.getElementById("tituloGerenciamento") :
+          (focoAntesDoGerenciamento?.isConnected ? focoAntesDoGerenciamento : botao);
+        foco?.focus({ preventScroll: true });
+      }
+      resolve(true);
+    };
+    transicaoTelaSistema = run;
+    if (imediato || document.hidden || typeof consulta.animate !== "function") {
+      run.finalizar();
+      return;
+    }
+    const reduzido = movimentoTelaReduzido.matches;
+    const options = { duration: reduzido ? 130 : 760, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" };
+    run.animations = [
+      consulta.animate(reduzido ? [{ opacity: abrindo ? 1 : 0 }, { opacity: abrindo ? 0 : 1 }] :
+        [{ transform: abrindo ? "translateX(0)" : `translateX(${-distancia}px)` },
+         { transform: abrindo ? `translateX(${-distancia}px)` : "translateX(0)" }], options),
+      gerenciamento.animate(reduzido ? [{ opacity: abrindo ? 0 : 1 }, { opacity: abrindo ? 1 : 0 }] :
+        [{ transform: abrindo ? `translateX(${distancia}px)` : "translateX(0)" },
+         { transform: abrindo ? "translateX(0)" : `translateX(${distancia}px)` }], options)
+    ];
+    // No modo reduzido, a troca usa apenas opacidade.
+    if (reduzido) { consulta.style.transform = "none"; gerenciamento.style.transform = "none"; }
+    run.timer = setTimeout(run.finalizar, options.duration + 250);
+    Promise.allSettled(run.animations.map(animation => animation.finished)).then(run.finalizar);
+  });
+}
+
+function voltarConsulta() {
+  return alternarTelaSistema("consulta");
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) transicaoTelaSistema?.finalizar();
+});
+movimentoTelaReduzido.addEventListener("change", () => {
+  if (movimentoTelaReduzido.matches) transicaoTelaSistema?.finalizar();
+});
+
+// Administrativo recebe as permissões gerais; confirmar retorno é exclusivo do Operacional.
 function usuarioTemPermissao(perfisPermitidos = [], usuario = usuarioAtualSistema) {
   if (!usuario || usuario.ativo !== true) return false;
   const perfil = String(usuario.perfil || "").toLowerCase();
   return perfil === "admin" || perfisPermitidos.some(permitido =>
     String(permitido).toLowerCase() === perfil
   );
+}
+
+function usuarioPodeConfirmarRetorno(usuario = usuarioAtualSistema) {
+  return !!usuario && usuario.ativo === true &&
+    String(usuario.perfil || "").toLowerCase() === "operacional";
 }
 
 async function obterUsuarioAtualSistema() {
@@ -2613,6 +2783,13 @@ async function atualizarInterfaceSessao() {
   const usuario = await obterUsuarioAtualSistema();
   const area = document.getElementById("usuarioSessao");
   const btnAdmin = document.querySelector(".admin-btn");
+  const nomeGerenciamento = document.getElementById("gerenciamentoUsuario");
+  if (nomeGerenciamento) nomeGerenciamento.textContent = usuario?.nome || "";
+  if (!usuarioTemPermissao([], usuario) && telaSistemaAtual === "gerenciamento") {
+    await alternarTelaSistema("consulta", { imediato: true });
+    const painel = document.getElementById("admin");
+    if (painel && !painel.classList.contains("admin-login-popup")) { painel.style.display = "none"; painel.innerHTML = ""; }
+  }
   if (!usuario) {
     if (area) { area.classList.remove("ativo"); area.innerHTML = ""; }
     if (btnAdmin) { btnAdmin.style.display = "block"; btnAdmin.textContent = "Acessar sistema"; }
@@ -2632,6 +2809,7 @@ async function sairSistema(){
   if (canalPresencaSistema) { try { await supabaseClient.removeChannel(canalPresencaSistema); } catch (_) {} canalPresencaSistema = null; }
   await supabaseClient.auth.signOut();
   usuarioAtualSistema = null;
+  await alternarTelaSistema("consulta", { imediato: true });
   const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}
   await atualizarInterfaceSessao();
   await carregarRotasPublicas();
@@ -2645,9 +2823,12 @@ async function abrirAdmin() {
     mostrarToast("Seu perfil é Operacional. Você pode acompanhar as rotas e confirmar retornos.", "sucesso");
     return;
   }
+  if (telaSistemaAtual === "gerenciamento") {
+    document.getElementById("tituloGerenciamento")?.focus({ preventScroll: true });
+    return;
+  }
   fecharLoginAdminPopup();
   await mostrarPainelAdmin();
-  window.solidezSoft?.navigate(document.getElementById("admin"), "#admin");
 }
 
 async function login() {
@@ -2724,6 +2905,7 @@ async function executarConfirmacaoRetornoPublico() {
   const id=Number(rotaDetalhesAtualId); const rota=rotasPublicasCache.find(r=>Number(r.id)===id)||rotasAdminCache.find(r=>Number(r.id)===id); if(!id||!rota)return;
   const usuario=await obterUsuarioAtualSistema();
   if(!usuario){ fecharConfirmacaoRetornoPublico(); abrirLoginAdminPopup(); mostrarToast("Entre no sistema para confirmar o retorno.","erro"); return; }
+  if(!usuarioPodeConfirmarRetorno(usuario)){ fecharConfirmacaoRetornoPublico(); mostrarToast("Somente usuários Operacional ativos podem confirmar retorno.","erro"); return; }
   const botao=document.getElementById("btnSegundaConfirmacaoRetorno"); botao.disabled=true; botao.textContent="Confirmando...";
   const { error }=await supabaseClient.rpc("confirmar_retorno_rota", { rota_id:id });
   botao.disabled=false; botao.textContent="Sim, confirmar retorno";
