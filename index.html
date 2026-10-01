@@ -2688,7 +2688,7 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
   gerenciamento.scrollTop = posicaoGerenciamento;
   consulta.inert = true;
   gerenciamento.inert = true;
-  gerenciamento.style.willChange = "transform, opacity";
+  gerenciamento.style.willChange = "transform";
   consulta.setAttribute("aria-hidden", abrindo ? "true" : "false");
   gerenciamento.setAttribute("aria-hidden", abrindo ? "false" : "true");
   document.body.style.overflow = "hidden";
@@ -2699,12 +2699,11 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
   botao?.setAttribute("aria-expanded", String(abrindo));
 
   return new Promise(resolve => {
-    const run = { animations: [], finalizar: null };
+    const run = { frame: null, finalizar: null };
     run.finalizar = () => {
       if (transicaoTelaSistema !== run) return;
       transicaoTelaSistema = null;
-      clearTimeout(run.timer);
-      run.animations.forEach(animation => animation.cancel());
+      cancelAnimationFrame(run.frame);
       estilos.forEach(([el, valor]) => {
         if (!el) return;
         if (valor === null) el.removeAttribute("style"); else el.setAttribute("style", valor);
@@ -2727,21 +2726,29 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
       resolve(true);
     };
     transicaoTelaSistema = run;
-    if (imediato || document.hidden || typeof consulta.animate !== "function") {
+    if (imediato || document.hidden) {
       run.finalizar();
       return;
     }
-    const reduzido = movimentoTelaReduzido.matches;
-    const options = { duration: reduzido ? 130 : 920, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" };
-    run.animations = [
-      gerenciamento.animate(reduzido ? [{ opacity: abrindo ? 0 : 1 }, { opacity: abrindo ? 1 : 0 }] :
-        [{ transform: abrindo ? `translateX(${distancia}px)` : "translateX(0)", opacity: 1 },
-         { transform: abrindo ? "translateX(0)" : `translateX(${distancia}px)`, opacity: 1 }], options)
-    ];
-    // No modo reduzido, a troca usa apenas opacidade.
-    if (reduzido) { consulta.style.transform = "none"; gerenciamento.style.transform = "none"; }
-    run.timer = setTimeout(run.finalizar, options.duration + 250);
-    Promise.allSettled(run.animations.map(animation => animation.finished)).then(run.finalizar);
+    // Esta navegação foi solicitada como um painel lateral. Mesmo com movimento
+    // reduzido, preserva a direção, com duração menor e sem efeitos extras.
+    const duracao = movimentoTelaReduzido.matches ? 360 : 850;
+    let inicio = null;
+    const desenhar = agora => {
+      if (transicaoTelaSistema !== run) return;
+      if (inicio === null) inicio = agora;
+      const progresso = Math.min(1, (agora - inicio) / duracao);
+      const suave = 1 - Math.pow(1 - progresso, 3);
+      const x = distancia * (abrindo ? 1 - suave : suave);
+      gerenciamento.style.transform = `translate3d(${x}px,0,0)`;
+      if (progresso < 1) run.frame = requestAnimationFrame(desenhar);
+      else run.finalizar();
+    };
+    // Dois quadros separam a exibição do painel do início do movimento, evitando
+    // que a montagem dos formulários consuma a animação antes da primeira pintura.
+    run.frame = requestAnimationFrame(() => {
+      if (transicaoTelaSistema === run) run.frame = requestAnimationFrame(desenhar);
+    });
   });
 }
 
