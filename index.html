@@ -372,24 +372,17 @@ html{scrollbar-gutter:stable}
 .relatorio-cabecalho h1{font-family:'Solidez Display',Georgia,serif;font-size:36px;color:#624523;margin:0 0 9px}
 .relatorio-cabecalho p{font-size:13px;line-height:1.6;color:#81613e;margin:0}
 #tituloRelatorio:focus{outline:none}
-.relatorio-data{font-size:12px;color:#81613e;white-space:nowrap;padding-top:7px}
-.relatorio-resumo{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}
-.relatorio-metrica{background:#fcf6e8;border:1px solid #cbb491;border-radius:12px;padding:20px;color:#624523}
-.relatorio-metrica strong{display:block;font-family:'Solidez Display',Georgia,serif;font-size:34px;margin-bottom:7px}
-.relatorio-metrica span{font-size:12px}
-.relatorio-metrica.retornando{color:#164f80;border-color:#a8cae9;background:#edf5ff}
-.relatorio-metrica.confirmada{color:#006b38;border-color:#a4c6a7;background:#edf5e8}
-.relatorio-lista{background:#fcf6e8;border:1px solid #cbb491;border-radius:13px;overflow:hidden}
-.relatorio-lista h2{font-family:'Solidez Display',Georgia,serif;font-size:24px;color:#624523;margin:0;padding:22px 24px;border-bottom:1px solid #ddccb0}
-.relatorio-tabela-scroll{overflow-x:auto}
-.relatorio-tabela{width:100%;border-collapse:collapse;text-align:left;font-size:12px}
-.relatorio-tabela caption{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-.relatorio-tabela th{color:#81613e;font-size:10px;font-weight:600;letter-spacing:.6px;background:#f4ead7;padding:15px 18px;white-space:nowrap}
-.relatorio-tabela td{padding:17px 18px;border-top:1px solid #e6d7bd;color:#624523;vertical-align:top}
-.relatorio-tabela td:first-child{font-weight:600;min-width:130px}
-.relatorio-tabela .rota-status{display:inline-flex;margin:0;white-space:nowrap;font-size:10px}
-.relatorio-mensagem{padding:24px;color:#81613e;font-size:13px;line-height:1.7}
-.relatorio-mensagem button{margin-top:12px}
+.relatorio-imprimir{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:11px 16px;white-space:nowrap;font-size:12px}
+.relatorio-imprimir .icon{width:17px;height:17px}
+@media print{
+  body.imprimindo-relatorio{background:white!important}
+  body.imprimindo-relatorio>*:not(#relatorioView){display:none!important}
+  body.imprimindo-relatorio #relatorioView{display:block!important;position:static!important;inset:auto!important;width:100%;overflow:visible;box-shadow:none;background:white!important;transform:none!important}
+  body.imprimindo-relatorio .relatorio-container{max-width:none;padding:0}
+  body.imprimindo-relatorio .relatorio-cabecalho{margin-bottom:24px}
+  body.imprimindo-relatorio .relatorio-imprimir{display:none!important}
+  body.imprimindo-relatorio #relatorioView *{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
+}
 @media(max-width:1200px){:root{--menu-width:192px}.relatorio-container{padding:28px}}
 @media(max-width:760px){
   :root{--menu-width:0px;--menu-height:132px}
@@ -401,11 +394,9 @@ html{scrollbar-gutter:stable}
   .side-nav>.nav-link{padding:9px 8px;font-size:11px;gap:5px}
   .side-nav>.admin-btn{margin-left:auto;padding:10px 8px;font-size:10px}
   .relatorio-container{padding:22px 16px 30px}
-  .relatorio-cabecalho{flex-direction:column;gap:9px}
+  .relatorio-cabecalho{flex-direction:row;gap:12px;align-items:center}
   .relatorio-cabecalho h1{font-size:29px}
-  .relatorio-resumo{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .relatorio-metrica{padding:17px}.relatorio-metrica strong{font-size:29px}
-  .relatorio-tabela th,.relatorio-tabela td{padding:14px}
+  .relatorio-imprimir{font-size:11px;padding:10px 12px;gap:6px}
 }
 </style>
 </head>
@@ -545,8 +536,8 @@ html{scrollbar-gutter:stable}
 <section id="relatorioView" class="gerenciamento-tela" aria-labelledby="tituloRelatorio" aria-hidden="true" hidden inert>
   <div class="relatorio-container">
     <div class="relatorio-cabecalho">
-      <div><div class="gerenciamento-kicker">ACOMPANHAMENTO · SOLIDEZ</div><h1 id="tituloRelatorio" tabindex="-1">Relatório</h1><p>Resumo das rotas cadastradas e dos retornos à base.</p></div>
-      <span id="relatorioData" class="relatorio-data"></span>
+      <div><div class="gerenciamento-kicker">SOLIDEZ TRANSPORTES</div><h1 id="tituloRelatorio" tabindex="-1">Relatório</h1></div>
+      <button type="button" class="relatorio-imprimir" onclick="imprimirRelatorio()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6zM17 11h1"/></svg><span>Imprimir relatório</span></button>
     </div>
     <div id="relatorioConteudo" aria-live="polite"></div>
   </div>
@@ -2820,28 +2811,19 @@ function voltarConsulta() {
 }
 
 function renderizarRelatorio() {
-  const container = document.getElementById("relatorioConteudo");
-  if (!container) return;
-  document.getElementById("relatorioData").textContent = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "long", year: "numeric" });
-  if (!usuarioAtualSistema || usuarioAtualSistema.ativo !== true) {
-    container.innerHTML = '<div class="relatorio-lista relatorio-mensagem">Entre no sistema para visualizar o relatório das rotas.<br><button type="button" onclick="abrirLoginAdminPopup()">Entrar</button></div>';
-    return;
-  }
-  const rotas = [...rotasPublicasCache].sort((a, b) => (a.motorista || "").localeCompare(b.motorista || "", "pt-BR"));
-  const nomes = { em_rota: "Em rota", retornando_base: "Retornando à base", retorno_confirmado: "Retorno confirmado" };
-  const metricas = [
-    [rotas.length, "Rotas cadastradas", ""],
-    [rotas.filter(r => !r.status || r.status === "em_rota").length, "Em rota", ""],
-    [rotas.filter(r => r.status === "retornando_base").length, "Retornando à base", "retornando"],
-    [rotas.filter(r => r.status === "retorno_confirmado").length, "Retorno confirmado", "confirmada"]
-  ];
-  const resumo = '<div class="relatorio-resumo">' + metricas.map(([total, nome, classe]) => `<div class="relatorio-metrica ${classe}"><strong>${total}</strong><span>${nome}</span></div>`).join("") + '</div>';
-  if (!rotas.length) { container.innerHTML = resumo + '<div class="relatorio-lista relatorio-mensagem">Nenhuma rota cadastrada.</div>'; return; }
-  container.innerHTML = resumo + `<section class="relatorio-lista" aria-labelledby="relatorioRotasTitulo"><h2 id="relatorioRotasTitulo">Rotas cadastradas</h2><div class="relatorio-tabela-scroll" tabindex="0" role="region" aria-label="Tabela de rotas"><table class="relatorio-tabela"><caption>Relatório das rotas cadastradas e dos retornos à base</caption><thead><tr><th scope="col">Motorista</th><th scope="col">Placa</th><th scope="col">Região</th><th scope="col">Coletas</th><th scope="col">Status</th><th scope="col">Retorno à base</th></tr></thead><tbody>${rotas.map(rota => {
-    const classe = rota.status === "retorno_confirmado" ? "confirmada" : rota.status === "retornando_base" ? "retornando" : "em-rota";
-    return `<tr><td>${escapeHtml(rota.motorista || "—")}</td><td>${escapeHtml(rota.placa || "—")}</td><td>${escapeHtml(rota.regiao || "—")}</td><td>${escapeHtml(rota.numero_coletas ?? "—")}</td><td><span class="rota-status ${classe}">${escapeHtml(nomes[rota.status || "em_rota"] || "—")}</span></td><td>${rota.status === "retorno_confirmado" && rota.retorno_confirmado_em ? escapeHtml(formatarHora(rota.retorno_confirmado_em)) : "—"}</td></tr>`;
-  }).join("")}</tbody></table></div></section>`;
+  // Conteúdo será definido na próxima etapa; a tela permanece vazia por enquanto.
+  document.getElementById("relatorioConteudo")?.replaceChildren();
 }
+
+function imprimirRelatorio() {
+  if (telaSistemaAtual !== "relatorio") return;
+  document.body.classList.add("imprimindo-relatorio");
+  window.print();
+}
+window.addEventListener("beforeprint", () => {
+  document.body.classList.toggle("imprimindo-relatorio", telaSistemaAtual === "relatorio");
+});
+window.addEventListener("afterprint", () => document.body.classList.remove("imprimindo-relatorio"));
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) transicaoTelaSistema?.finalizar();
