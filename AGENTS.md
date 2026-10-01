@@ -14,8 +14,9 @@
 
 ## Relatório e animações
 
-- O relatório fica vazio até o envio de um PDF. Usuários Coleta e Administrador ativos podem enviar/substituir o documento compartilhado, visualizar e imprimir. O visualizador ocupa somente a área de conteúdo, sem cobrir o menu, o cabeçalho ou as ações.
-- PDFs ficam no bucket privado `relatorios` (até 20 MB); o documento atual está em `relatorio_documentos`. Mantenha as políticas de Storage e da tabela restritas a Coleta e Administrador ativos.
+- O relatório possui páginas 1, 2 e 3, correspondentes às até três rotas vinculadas ao usuário. Páginas sem rota ficam desabilitadas. Cada usuário possui um PDF próprio por rota; reenviar substitui somente esse arquivo. O visualizador ocupa somente a área de conteúdo, sem cobrir o menu, o cabeçalho ou as ações.
+- PDFs ficam no bucket privado `relatorios` (até 20 MB), no caminho `usuario_id/rota_id/uuid.pdf`. A tabela `relatorios_por_rota` tem chave composta `(usuario_id,rota_id)`. Coleta ativo só acessa arquivos próprios de rotas atualmente vinculadas; Conferência, visitantes e inativos não acessam. Administrador ativo mantém todas as permissões no banco. A tela normal exibe os relatórios próprios das rotas vinculadas ao perfil.
+- Use `consulta_regioes_private.usuario_pode_acessar_relatorio_rota(uuid,bigint)` nas autorizações por relatório. O relatório global legado está preservado e sem acesso dos clientes. A interface não substitui as políticas de Storage e da tabela.
 - `relatorio-pdf-viewer.html` exibe as páginas com PDF.js, rolagem interna e preparação da impressão. Mantenha biblioteca e worker na mesma versão; não execute scripts embutidos no PDF. Os testes do visualizador aceitam `PDFJS_MODULE_PATH` e `PDFJS_WORKER_PATH` para os módulos de teste.
 - Atalhos administrativos em três pares: Bairros/Nova rota, Suporte/Sugestões, Histórico/Usuários. Abertura animada para baixo; Bairros e Nova rota rolam ao topo do gerenciamento.
 - Preserve animações suaves de entrada, rolagem, modais e transições de tela; o menu permanece fixo.

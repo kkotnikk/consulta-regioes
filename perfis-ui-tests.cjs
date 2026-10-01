@@ -47,9 +47,8 @@ window.supabase={createClient(){
   assert.equal(entered,reportAllowed);
   if(reportAllowed){
    assert.equal(await page.locator('#relatorioConteudo').innerHTML(),'');
-   await page.evaluate(()=>{window.print=()=>window.__printed=true;});
-   await page.locator('.relatorio-imprimir').click();await page.waitForFunction(()=>window.__printed);
-   await page.evaluate(()=>{document.body.classList.remove('imprimindo-relatorio');});
+   assert.equal(await page.locator('.relatorio-imprimir').isDisabled(),true);
+   assert.equal(await page.locator('#relatorioPaginas button').count(),3);
   }
   if(perfil==='admin'){
    await page.evaluate(()=>mostrarPainelAdmin());
@@ -110,4 +109,3 @@ window.supabase={createClient(){
  }
  console.log(JSON.stringify(results));await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
-

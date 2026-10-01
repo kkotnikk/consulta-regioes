@@ -1,19 +1,21 @@
 const {chromium}=require('playwright'),fs=require('fs'),assert=require('node:assert/strict');
 const html=fs.readFileSync(__dirname+'/index.html','utf8');
 const routes=[1,2,3].map(id=>({id,motorista:'Motorista '+id,placa:'ABC1D2'+id,regiao:'Lapa',status:'em_rota',numero_coletas:5}));
-const stub=(perfil,ativo=true)=>'window.__state='+JSON.stringify({routes,user:{id:'test',nome:'Pessoa '+perfil,perfil,ativo,rotas_coleta_ids:perfil==='operador_coleta'?[1,2]:[]},users:[{id:'test',nome:'João',perfil:'admin',ativo:true,rotas_coleta_ids:[]},{id:'coleta',nome:'Ana',perfil:'operador_coleta',ativo:true,rotas_coleta_ids:[1,2]}],signedIn:perfil!=='anon'})+`;
+const stub=(perfil,ativo=true)=>'window.__state='+JSON.stringify({routes,documents:{},files:{},user:{id:'test',nome:'Pessoa '+perfil,perfil,ativo,rotas_coleta_ids:['admin','operador_coleta'].includes(perfil)?[1,2,3]:[]},users:[{id:'test',nome:'João',perfil:'admin',ativo:true,rotas_coleta_ids:[1,2,3]},{id:'coleta',nome:'Ana',perfil:'operador_coleta',ativo:true,rotas_coleta_ids:[1,2,3]}],signedIn:perfil!=='anon'})+`;
 window.supabase={createClient(){
- function query(table){let single=false,filter=null,patch=null;const q=new Proxy({}, {get(_,key){
+ function query(table){let single=false,filters={},patch=null;const q=new Proxy({}, {get(_,key){
   if(key==='then')return resolve=>{
-   let data=table==='relatorio_documentos'?[window.__state.documento].filter(Boolean):table==='rotas'?window.__state.routes:table==='usuarios'?(filter?filter==='test'?[window.__state.user]:window.__state.users.filter(u=>u.id===filter):window.__state.users):[];
-   if(patch){data.forEach(u=>Object.assign(u,patch));window.__lastUpdate={filter,patch};}
+   let data=table==='relatorios_por_rota'?Object.values(window.__state.documents):table==='rotas'?window.__state.routes:table==='usuarios'?filters.id===window.__state.user.id?[window.__state.user]:window.__state.users:[];
+   if(table!=='usuarios')data=data.filter(row=>Object.entries(filters).every(([key,value])=>row[key]===value));
+   else if(filters.id)data=data.filter(u=>u.id===filters.id);
+   if(patch){data.forEach(u=>Object.assign(u,patch));window.__lastUpdate={filters,patch};}
    resolve({data:single?data[0]||null:data,error:null});
   };
   if(key==='single'||key==='maybeSingle')return ()=>{single=true;return q};
-  if(key==='eq')return (name,value)=>{if(name==='id')filter=value;return q};
-  if(key==='upsert')return value=>{window.__state.documento=value;return q};if(key==='update')return value=>{patch=value;return q};return ()=>q;
+  if(key==='eq')return (name,value)=>{filters[name]=value;return q};
+  if(key==='upsert')return value=>{window.__state.documents[value.usuario_id+'|'+value.rota_id]=value;return q};if(key==='update')return value=>{patch=value;return q};return ()=>q;
  }});return q;}
- return {auth:{getSession:async()=>({data:{session:window.__state.signedIn?{user:{id:'test'},access_token:'test-jwt'}:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signOut:async()=>{window.__state.signedIn=false;return {error:null}}},from:query,storage:{from(){return {async upload(path,file){window.__uploads=(window.__uploads||0)+1;window.__pdfFile=file;return {error:null}},async download(){return {data:window.__pdfFile||new Blob(['%PDF-1.4'],{type:'application/pdf'}),error:null}},async remove(){return {error:null}}}}},rpc:async()=>({data:0,error:null}),removeChannel:async()=>{},channel(){const c={on(){return c},subscribe(){return c},presenceState(){return {}},track:async()=>{}};return c;}};
+ return {auth:{getSession:async()=>({data:{session:window.__state.signedIn?{user:{id:window.__state.user.id},access_token:'test-jwt'}:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signOut:async()=>{window.__state.signedIn=false;return {error:null}}},from:query,storage:{from(){return {async upload(path,file){window.__uploads=(window.__uploads||0)+1;window.__state.files[path]=file;return {error:null}},async download(path){window.__downloadStarted=path;if(window.__downloadDelay)await new Promise(r=>setTimeout(r,window.__downloadDelay));return {data:window.__state.files[path],error:null}},async remove(paths){window.__removed=paths;paths.forEach(p=>delete window.__state.files[p]);return {error:null}}}}},rpc:async()=>({data:0,error:null}),removeChannel:async()=>{},channel(){const c={on(){return c},subscribe(){return c},presenceState(){return {}},track:async()=>{}};return c;}};
 }};`;
 
 function pdfFixture() {
@@ -71,15 +73,47 @@ function pdfFixture() {
    assert.equal(await page.evaluate(()=>window.__uploads),1);
    const bounds=await page.evaluate(()=>{const box=el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom}};return {pdf:box(document.getElementById('relatorioPdfViewer')),header:box(document.querySelector('.relatorio-cabecalho')),pane:box(document.getElementById('relatorioView')),menu:box(document.querySelector('.sidebar')),width:innerWidth,scroll:document.documentElement.scrollWidth}});
    assert(bounds.pdf.y>=bounds.header.bottom);assert(bounds.pdf.bottom<=bounds.pane.bottom);assert(bounds.pdf.right<=bounds.pane.right);assert(bounds.scroll<=bounds.width);
-   assert(bounds.pdf.bottom-bounds.pdf.y>450);assert(bounds.pdf.right-bounds.pdf.x>=bounds.pane.right-bounds.pane.x-100,JSON.stringify(bounds));assert(bounds.pane.bottom-bounds.pdf.bottom<40);
+   assert(bounds.pdf.bottom-bounds.pdf.y>350);assert(bounds.pdf.right-bounds.pdf.x>=bounds.pane.right-bounds.pane.x-100,JSON.stringify(bounds));assert(bounds.pane.bottom-bounds.pdf.bottom<40);
    if(width===390)assert(bounds.pdf.y>=bounds.menu.bottom);else assert(bounds.pdf.x>=bounds.menu.right);
    await page.evaluate(()=>{renderizarRelatorio();window.__printed=false;document.getElementById('relatorioPdfViewer').contentWindow.print=()=>window.__printed=true;});
    await page.locator('.relatorio-imprimir').click();await page.waitForFunction(()=>window.__printed);
    assert.equal(await page.frameLocator('#relatorioPdfViewer').locator('canvas').count(),2);
-   await page.evaluate(()=>{relatorioPdfUrl=null;document.getElementById('relatorioConteudo').replaceChildren();return carregarPdfRelatorio();});
-   assert.equal(await page.locator('#relatorioPdfViewer').count(),1);
-   await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer').contentDocument?.body?.dataset.pronto==='true');
+   const originalPath=await page.evaluate(()=>relatorioDocumentoAtual.arquivo_path);
+   for(const slot of [2,3]){
+    await page.locator('#relatorioPagina'+slot).click();
+    await page.waitForFunction(()=>!relatorioPdfCarregando);
+    assert.equal(await page.locator('#relatorioPdfViewer').count(),0);
+    await page.locator('#relatorioArquivoPdf').setInputFiles({name:'Rota'+slot+'.pdf',mimeType:'application/pdf',buffer:pdfFixture()});
+    await page.waitForFunction(()=>!relatorioPdfEnviando);
+    await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer')?.contentDocument?.body?.dataset.pronto==='true');
+    assert.equal(await page.locator('#relatorioPdfStatus').innerText(),'Rota'+slot+'.pdf');
+    assert.equal(await page.evaluate(()=>relatorioDocumentoAtual.rota_id),slot);
+   }
+   assert.equal(await page.evaluate(()=>Object.keys(window.__state.documents).length),3);
+   await page.locator('#relatorioPagina1').click();
+   await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer')?.contentDocument?.body?.dataset.pronto==='true');
+   assert.equal(await page.locator('#relatorioPdfStatus').innerText(),'Relatorio.pdf');
+   await page.locator('#relatorioArquivoPdf').setInputFiles({name:'Rota1-atualizada.pdf',mimeType:'application/pdf',buffer:pdfFixture()});
+   await page.waitForFunction(()=>!relatorioPdfEnviando);
+   assert.equal(await page.evaluate(()=>Object.keys(window.__state.documents).length),3);
+   assert(await page.evaluate(p=>window.__removed.includes(p),originalPath));
+   await page.evaluate(()=>{window.__downloadDelay=250;window.__downloadStarted=null});
+   await page.locator('#relatorioPagina2').click();
+   await page.waitForFunction(()=>window.__downloadStarted);
+   await page.locator('#relatorioPagina3').click();
+   await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer')?.contentDocument?.body?.dataset.pronto==='true');
+   assert.equal(await page.locator('#relatorioPdfStatus').innerText(),'Rota3.pdf');
+   await page.evaluate(()=>{window.__downloadDelay=0});
    if(perfil==='admin'){await page.waitForTimeout(1200);await page.screenshot({path:__dirname+'/relatorio-pdf-'+width+'.png'});}
+   await page.evaluate(()=>{window.__state.user={...window.__state.user,id:'outra-pessoa',perfil:'operador_coleta'};return atualizarInterfaceSessao();});
+   assert.equal(await page.locator('#relatorioPdfViewer').count(),0);
+   await page.evaluate(()=>carregarPdfRelatorio());
+   assert.equal(await page.locator('#relatorioPdfViewer').count(),0);
+   await page.evaluate(()=>{window.__state.user.rotas_coleta_ids=[1];return atualizarInterfaceSessao();});
+   assert.equal(await page.locator('#relatorioPagina2').isDisabled(),true);
+   assert.equal(await page.locator('#relatorioPagina3').isDisabled(),true);
+   await page.evaluate(()=>{window.__state.user.rotas_coleta_ids=[];return atualizarInterfaceSessao();});
+   assert.equal(await page.locator('#relatorioEnviarPdf').isDisabled(),true);
    await page.evaluate(()=>{window.__state.user.perfil='operador_conferencia';return atualizarInterfaceSessao();});
    assert.equal(await page.locator('#relatorioView').isVisible(),false);
    assert.equal(await page.locator('#relatorioPdfViewer').count(),0);

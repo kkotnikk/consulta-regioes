@@ -377,6 +377,12 @@ html{scrollbar-gutter:stable}
 .relatorio-acoes{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
 #relatorioEnviarPdf{min-height:42px;padding:11px 16px;font-size:12px;white-space:nowrap}
 .relatorio-pdf-status{flex:none;margin:0 0 12px;font-size:12px;color:#81613e;overflow-wrap:anywhere}
+.relatorio-paginas{display:flex;align-items:center;gap:7px;flex:none;margin:0 0 10px}
+.relatorio-paginas button{min-height:34px;min-width:38px;padding:7px 12px;font-size:12px;border:1px solid #cbb491;background:transparent;color:#624523;border-radius:6px;box-shadow:none}
+.relatorio-paginas button[aria-selected="true"]{background:#08703f;border-color:#08703f;color:white}
+.relatorio-paginas button:disabled{cursor:default;opacity:.35}
+.relatorio-rota{flex:none;font-size:12px;line-height:1.6;margin:0 0 12px;color:#81613e}
+@media(prefers-reduced-motion:no-preference){#relatorioConteudo iframe{animation:soft-simple-in .35s var(--soft-out) both}}
 #relatorioConteudo{flex:1;min-height:0;display:flex;width:100%}
 #relatorioPdfViewer{display:block;width:100%;height:100%;min-height:200px;border:1px solid #cbb491;border-radius:8px;background:#f4ead8}
 .relatorio-imprimir{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:11px 16px;white-space:nowrap;font-size:12px}
@@ -387,7 +393,7 @@ html{scrollbar-gutter:stable}
   body.imprimindo-relatorio #relatorioView{display:block!important;position:static!important;inset:auto!important;width:100%;overflow:visible;box-shadow:none;background:white!important;transform:none!important}
   body.imprimindo-relatorio .relatorio-container{max-width:none;padding:0}
   body.imprimindo-relatorio .relatorio-cabecalho{margin-bottom:24px}
-  body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-pdf-status{display:none!important}
+  body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-pdf-status,body.imprimindo-relatorio .relatorio-paginas,body.imprimindo-relatorio .relatorio-rota{display:none!important}
   body.imprimindo-relatorio #relatorioView *{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
 }
 @media(max-width:1200px){:root{--menu-width:192px}.relatorio-container{padding:28px}}
@@ -582,8 +588,14 @@ html{scrollbar-gutter:stable}
         <button type="button" class="relatorio-imprimir" onclick="imprimirRelatorio()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6zM17 11h1"/></svg><span>Imprimir relatório</span></button>
       </div>
     </div>
+    <nav id="relatorioPaginas" class="relatorio-paginas" role="tablist" aria-label="Relatórios das suas rotas">
+      <button id="relatorioPagina1" type="button" role="tab" aria-controls="relatorioConteudo" onclick="selecionarPaginaRelatorio(0)">1</button>
+      <button id="relatorioPagina2" type="button" role="tab" aria-controls="relatorioConteudo" onclick="selecionarPaginaRelatorio(1)">2</button>
+      <button id="relatorioPagina3" type="button" role="tab" aria-controls="relatorioConteudo" onclick="selecionarPaginaRelatorio(2)">3</button>
+    </nav>
+    <p id="relatorioRota" class="relatorio-rota" role="status"></p>
     <p id="relatorioPdfStatus" class="relatorio-pdf-status" role="status" hidden></p>
-    <div id="relatorioConteudo" aria-live="polite"></div>
+    <div id="relatorioConteudo" role="tabpanel" aria-live="polite" aria-labelledby="relatorioPagina1"></div>
   </div>
 </section>
 <button type="button" class="floating-support" onclick="abrirSuporte()" aria-label="Abrir suporte"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2c-1.4.8-1.6 1-1.6 2m0 3h.01"/></svg><span>Precisa de ajuda?</span></button>
@@ -2889,6 +2901,17 @@ let relatorioDocumentoAtual = null;
 let relatorioPdfUrl = null;
 let relatorioPdfRequest = 0;
 let relatorioPdfCarregando = false;
+let relatorioPdfEnviando = false;
+let relatorioPaginaAtual = 0;
+let relatorioUsuarioId = null;
+let relatorioRotaId = null;
+
+function rotasRelatorioUsuario(usuario = usuarioAtualSistema) {
+  if (!usuarioPodeAcessarRelatorio(usuario)) return [];
+  return [...new Set(usuario.rotas_coleta_ids || [])].slice(0, 3).map(id =>
+    rotasPublicasCache.find(r => Number(r.id) === Number(id)) || rotasAdminCache.find(r => Number(r.id) === Number(id)) || { id: Number(id) }
+  );
+}
 
 function limparPdfRelatorio() {
   relatorioPdfRequest++;
@@ -2900,20 +2923,37 @@ function limparPdfRelatorio() {
 
 function renderizarRelatorio() {
   const conteudo = document.getElementById("relatorioConteudo");
-  const status = document.getElementById("relatorioPdfStatus");
-  const enviar = document.getElementById("relatorioEnviarPdf");
-  if (enviar) enviar.hidden = !usuarioPodeEditarRelatorio();
   if (!conteudo) return;
-  if (!usuarioPodeAcessarRelatorio()) limparPdfRelatorio();
+  const usuarioId = usuarioPodeAcessarRelatorio() ? usuarioAtualSistema.id : null;
+  if (usuarioId !== relatorioUsuarioId) { limparPdfRelatorio(); relatorioPaginaAtual = 0; relatorioUsuarioId = usuarioId; }
+  const rotas = rotasRelatorioUsuario();
+  if (!rotas[relatorioPaginaAtual]) relatorioPaginaAtual = 0;
+  const rota = rotas[relatorioPaginaAtual];
+  if ((rota?.id ?? null) !== relatorioRotaId) { limparPdfRelatorio(); relatorioRotaId = rota?.id ?? null; }
+  for (let i = 0; i < 3; i++) {
+    const tab = document.getElementById("relatorioPagina" + (i + 1));
+    tab.disabled = !rotas[i];
+    tab.setAttribute("aria-selected", String(!!rotas[i] && i === relatorioPaginaAtual));
+    tab.tabIndex = rotas[i] && i === relatorioPaginaAtual ? 0 : -1;
+    tab.title = rotas[i] ? "Página " + (i + 1) + " · Rota " + rotas[i].id : "Sem rota vinculada";
+  }
+  conteudo.setAttribute("aria-labelledby", "relatorioPagina" + (relatorioPaginaAtual + 1));
+  document.getElementById("relatorioRota").textContent = rota
+    ? ["Página " + (relatorioPaginaAtual + 1), "Rota " + rota.id, rota.motorista, rota.placa].filter(Boolean).join(" · ")
+    : "Nenhuma rota vinculada ao seu usuário.";
+  const enviar = document.getElementById("relatorioEnviarPdf");
+  enviar.hidden = !usuarioPodeEditarRelatorio();
+  enviar.disabled = relatorioPdfEnviando || !rota;
+  enviar.textContent = relatorioPdfEnviando ? "Enviando..." : relatorioDocumentoAtual ? "Substituir PDF" : "Enviar PDF";
+  document.querySelector(".relatorio-imprimir").disabled = !relatorioPdfUrl;
+  const status = document.getElementById("relatorioPdfStatus");
   if (!relatorioPdfUrl) {
-    conteudo.replaceChildren();
-    if (status) status.hidden = true;
-    return;
+    conteudo.replaceChildren(); status.hidden = true; return;
   }
   if (conteudo.querySelector("iframe")?.dataset.documento === relatorioDocumentoAtual.arquivo_path) return;
   const frame = document.createElement("iframe");
   frame.id = "relatorioPdfViewer";
-  frame.title = "Relatório em PDF: " + relatorioDocumentoAtual.nome;
+  frame.title = "Relatório da rota " + relatorioRotaId + ": " + relatorioDocumentoAtual.nome;
   frame.dataset.documento = relatorioDocumentoAtual.arquivo_path;
   const pdfUrl = relatorioPdfUrl;
   frame.src = "./relatorio-pdf-viewer.html";
@@ -2921,33 +2961,51 @@ function renderizarRelatorio() {
     if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl);
   };
   conteudo.replaceChildren(frame);
-  if (status) { status.textContent = relatorioDocumentoAtual.nome; status.hidden = false; }
+  status.textContent = relatorioDocumentoAtual.nome; status.hidden = false;
+}
+
+function selecionarPaginaRelatorio(indice) {
+  if (!Number.isInteger(indice) || !rotasRelatorioUsuario()[indice]) return;
+  if (relatorioPaginaAtual === indice) return;
+  limparPdfRelatorio(); relatorioPaginaAtual = indice;
+  renderizarRelatorio();
+  carregarPdfRelatorio();
+}
+document.getElementById("relatorioPaginas").addEventListener("keydown", event => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const total = rotasRelatorioUsuario().length;
+  if (!total) return;
+  event.preventDefault();
+  const indice = event.key === "Home" ? 0 : event.key === "End" ? total - 1 : (relatorioPaginaAtual + (event.key === "ArrowRight" ? 1 : -1) + total) % total;
+  selecionarPaginaRelatorio(indice);
+  document.getElementById("relatorioPagina" + (indice + 1)).focus({ preventScroll: true });
+});
+
+function relatorioRequisicaoAtual(request, usuarioId, rotaId) {
+  return request === relatorioPdfRequest && usuarioAtualSistema?.id === usuarioId
+    && relatorioUsuarioId === usuarioId && relatorioRotaId === rotaId
+    && rotasRelatorioUsuario().some(r => r.id === rotaId);
 }
 
 async function carregarPdfRelatorio() {
-  if (!usuarioPodeAcessarRelatorio() || relatorioPdfCarregando) return;
+  renderizarRelatorio();
+  if (!usuarioPodeAcessarRelatorio() || !relatorioRotaId || relatorioPdfCarregando || relatorioPdfEnviando) return;
   relatorioPdfCarregando = true;
-  const request = ++relatorioPdfRequest;
-  const usuarioId = usuarioAtualSistema.id;
+  const request = ++relatorioPdfRequest, usuarioId = relatorioUsuarioId, rotaId = relatorioRotaId;
   try {
-    const { data: documento, error } = await supabaseClient.from("relatorio_documentos").select("id,nome,arquivo_path,atualizado_em").eq("id", 1).maybeSingle();
+    const { data: documento, error } = await supabaseClient.from("relatorios_por_rota").select("usuario_id,rota_id,nome,arquivo_path,atualizado_em").eq("usuario_id", usuarioId).eq("rota_id", rotaId).maybeSingle();
     if (error) throw error;
-    if (request !== relatorioPdfRequest || usuarioAtualSistema?.id !== usuarioId || !usuarioPodeAcessarRelatorio()) return;
-    if (!documento) {
-      if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
-      relatorioPdfUrl = null; relatorioDocumentoAtual = null; renderizarRelatorio();
-      return;
-    }
+    if (!relatorioRequisicaoAtual(request, usuarioId, rotaId)) return;
+    if (!documento) { limparPdfRelatorio(); renderizarRelatorio(); return; }
     if (relatorioDocumentoAtual?.arquivo_path === documento.arquivo_path && relatorioPdfUrl) return;
     const { data: pdf, error: downloadError } = await supabaseClient.storage.from("relatorios").download(documento.arquivo_path);
     if (downloadError || !pdf) throw downloadError || new Error("Não foi possível abrir o PDF.");
-    if (request !== relatorioPdfRequest || usuarioAtualSistema?.id !== usuarioId || !usuarioPodeAcessarRelatorio()) return;
+    if (!relatorioRequisicaoAtual(request, usuarioId, rotaId)) return;
     if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
     relatorioPdfUrl = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
-    relatorioDocumentoAtual = documento;
-    renderizarRelatorio();
+    relatorioDocumentoAtual = documento; renderizarRelatorio();
   } catch (error) {
-    if (request === relatorioPdfRequest && telaSistemaAtual === "relatorio") mostrarToast("Não foi possível carregar o PDF do relatório. Tente abrir a tela novamente.", "erro");
+    if (relatorioRequisicaoAtual(request, usuarioId, rotaId) && telaSistemaAtual === "relatorio") mostrarToast("Não foi possível carregar o PDF desta rota. Tente abrir a página novamente.", "erro");
   } finally {
     if (request === relatorioPdfRequest) relatorioPdfCarregando = false;
   }
@@ -2955,56 +3013,53 @@ async function carregarPdfRelatorio() {
 
 async function enviarPdfRelatorio(input) {
   const arquivo = input.files?.[0];
-  if (!arquivo) return;
-  const botao = document.getElementById("relatorioEnviarPdf");
+  if (!arquivo || relatorioPdfEnviando) return;
+  const usuarioId = relatorioUsuarioId, rotaId = relatorioRotaId;
+  const anterior = relatorioDocumentoAtual?.arquivo_path;
   let caminho = null, vinculado = false;
   try {
-    if (botao.disabled) return;
-    botao.disabled = true; botao.textContent = "Enviando...";
+    relatorioPdfEnviando = true; renderizarRelatorio();
     const usuario = await obterUsuarioAtualSistema();
-    if (!usuarioPodeEditarRelatorio(usuario)) throw new Error("Somente Operador Coleta e Administrador podem enviar o relatório.");
+    if (usuario?.id !== usuarioId || !usuarioPodeEditarRelatorio(usuario) || !rotasRelatorioUsuario(usuario).some(r => r.id === rotaId)) throw new Error("Selecione uma rota vinculada ao seu usuário para enviar o relatório.");
     if (arquivo.size > 20 * 1024 * 1024) throw new Error("Escolha um PDF de até 20 MB.");
     if (!arquivo.size || await arquivo.slice(0, 5).text() !== "%PDF-") throw new Error("Selecione um arquivo PDF válido.");
-    caminho = usuario.id + "/" + crypto.randomUUID() + ".pdf";
+    caminho = usuario.id + "/" + rotaId + "/" + crypto.randomUUID() + ".pdf";
     const { error: uploadError } = await supabaseClient.storage.from("relatorios").upload(caminho, arquivo, { contentType: "application/pdf", upsert: false });
     if (uploadError) throw uploadError;
-    const { error } = await supabaseClient.from("relatorio_documentos").upsert({
-      id: 1, arquivo_path: caminho, nome: arquivo.name.slice(0, 255), enviado_por: usuario.id,
-    }, { onConflict: "id" });
+    const { error } = await supabaseClient.from("relatorios_por_rota").upsert({
+      usuario_id: usuario.id, rota_id: rotaId, arquivo_path: caminho, nome: arquivo.name.slice(0, 255), enviado_por: usuario.id,
+    }, { onConflict: "usuario_id,rota_id" });
     if (error) throw error;
     vinculado = true;
-    relatorioPdfRequest++;
-    relatorioPdfCarregando = false;
-    if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
-    relatorioPdfUrl = URL.createObjectURL(new Blob([arquivo], { type: "application/pdf" }));
-    relatorioDocumentoAtual = { arquivo_path: caminho, nome: arquivo.name };
-    renderizarRelatorio();
-    mostrarToast("PDF enviado. Relatório atualizado.", "sucesso");
+    if (relatorioUsuarioId === usuarioId && usuarioAtualSistema?.id === usuarioId && relatorioRotaId === rotaId && usuarioPodeAcessarRelatorio()) {
+      limparPdfRelatorio();
+      relatorioPdfUrl = URL.createObjectURL(new Blob([arquivo], { type: "application/pdf" }));
+      relatorioDocumentoAtual = { usuario_id: usuarioId, rota_id: rotaId, arquivo_path: caminho, nome: arquivo.name };
+      renderizarRelatorio();
+    }
+    if (anterior && anterior !== caminho) {
+      try { await supabaseClient.storage.from("relatorios").remove([anterior]); } catch (_) {}
+    }
+    mostrarToast("PDF da rota " + rotaId + " atualizado.", "sucesso");
   } catch (error) {
     if (caminho && !vinculado) {
       try { await supabaseClient.storage.from("relatorios").remove([caminho]); } catch (_) {}
     }
     mostrarToast(error.message || "Não foi possível enviar o PDF.", "erro");
   } finally {
-    input.value = "";
-    botao.disabled = false; botao.textContent = "Enviar PDF";
+    input.value = ""; relatorioPdfEnviando = false; renderizarRelatorio();
+    if (telaSistemaAtual === "relatorio") carregarPdfRelatorio();
   }
 }
 
 async function imprimirRelatorio() {
   const usuario = await obterUsuarioAtualSistema();
-  if (telaSistemaAtual !== "relatorio" || !usuarioPodeAcessarRelatorio(usuario)) {
-    await atualizarInterfaceSessao();
-    return;
-  }
-  if (relatorioPdfUrl) {
-    const frame = document.getElementById("relatorioPdfViewer");
-    try { await frame.contentWindow.imprimirPdf?.(); }
-    catch (_) { mostrarToast("Não foi possível imprimir. Tente abrir o relatório novamente.", "erro"); }
-    return;
-  }
-  document.body.classList.add("imprimindo-relatorio");
-  window.print();
+  renderizarRelatorio();
+  if (telaSistemaAtual !== "relatorio" || !usuarioPodeAcessarRelatorio(usuario)) { await atualizarInterfaceSessao(); return; }
+  if (!relatorioPdfUrl) return;
+  const frame = document.getElementById("relatorioPdfViewer");
+  try { await frame.contentWindow.imprimirPdf?.(); }
+  catch (_) { mostrarToast("Não foi possível imprimir. Tente abrir o relatório novamente.", "erro"); }
 }
 window.addEventListener("beforeprint", () => {
   document.body.classList.toggle("imprimindo-relatorio", telaSistemaAtual === "relatorio" && usuarioPodeAcessarRelatorio());
@@ -3043,7 +3098,7 @@ function usuarioPodeAcessarRelatorio(usuario = usuarioAtualSistema) {
 }
 
 function usuarioPodeEditarRelatorio(usuario = usuarioAtualSistema) {
-  // Enviar um PDF substitui o documento compartilhado do relatório.
+  // Cada usuário tem um documento próprio por rota vinculada.
   return usuarioPodeAcessarRelatorio(usuario);
 }
 
@@ -3080,6 +3135,7 @@ async function atualizarInterfaceSessao() {
   const linkRelatorio = document.querySelector('.nav-link[href="#relatorio"]');
   if (linkRelatorio) linkRelatorio.hidden = !usuarioPodeAcessarRelatorio(usuario);
   if (!usuarioPodeAcessarRelatorio(usuario)) { limparPdfRelatorio(); renderizarRelatorio(); }
+  else renderizarRelatorio();
   if (!usuarioPodeAcessarRelatorio(usuario) && telaSistemaAtual === "relatorio") await alternarTelaSistema("consulta", { imediato: true });
   if (nomeGerenciamento) nomeGerenciamento.textContent = usuario?.nome || "";
   if (!usuarioTemPermissao([], usuario) && telaSistemaAtual === "gerenciamento") {
