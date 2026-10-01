@@ -1608,7 +1608,7 @@ async function confirmarRetorno(id) {
 
   const usuario = await obterUsuarioAtualSistema();
   if (!usuarioPodeConfirmarRetorno(usuario)) {
-    mostrarToast("Somente usuários Operacional ativos podem confirmar retorno.", "erro");
+    mostrarToast("Somente usuários Operacional ou Administrativo ativos podem confirmar retorno.", "erro");
     return;
   }
 
@@ -2225,7 +2225,7 @@ function fecharDetalhesRota() {
 
 function iniciarConfirmacaoRetornoPublico() {
   if (!usuarioPodeConfirmarRetorno()) {
-    mostrarToast("Somente usuários Operacional ativos podem confirmar retorno.", "erro");
+    mostrarToast("Somente usuários Operacional ou Administrativo ativos podem confirmar retorno.", "erro");
     return;
   }
   const rota = rotasPublicasCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId)) || rotasAdminCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId));
@@ -2674,7 +2674,7 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
     posicaoGerenciamento = gerenciamento.scrollTop;
   }
 
-  const estilos = [consulta, conteudo, menu].map(el => [el, el?.getAttribute("style")]);
+  const estilos = [consulta, conteudo, menu, gerenciamento].map(el => [el, el?.getAttribute("style")]);
   const overflowAnterior = document.body.style.overflow;
   const distancia = window.innerWidth;
   consulta.style.cssText = `position:fixed;top:0;left:0;width:${Math.max(1, distancia - barraConsulta)}px;height:100dvh;overflow:hidden;`;
@@ -2686,7 +2686,8 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
   gerenciamento.hidden = false;
   gerenciamento.scrollTop = posicaoGerenciamento;
   consulta.inert = true;
-  gerenciamento.inert = false;
+  gerenciamento.inert = true;
+  consulta.style.willChange = gerenciamento.style.willChange = "transform, opacity";
   consulta.setAttribute("aria-hidden", abrindo ? "true" : "false");
   gerenciamento.setAttribute("aria-hidden", abrindo ? "false" : "true");
   document.body.style.overflow = "hidden";
@@ -2729,14 +2730,14 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
       return;
     }
     const reduzido = movimentoTelaReduzido.matches;
-    const options = { duration: reduzido ? 130 : 760, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" };
+    const options = { duration: reduzido ? 130 : 920, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" };
     run.animations = [
       consulta.animate(reduzido ? [{ opacity: abrindo ? 1 : 0 }, { opacity: abrindo ? 0 : 1 }] :
-        [{ transform: abrindo ? "translateX(0)" : `translateX(${-distancia}px)` },
-         { transform: abrindo ? `translateX(${-distancia}px)` : "translateX(0)" }], options),
+        [{ transform: abrindo ? "translateX(0)" : `translateX(${-distancia}px)`, opacity: abrindo ? 1 : .45 },
+         { transform: abrindo ? `translateX(${-distancia}px)` : "translateX(0)", opacity: abrindo ? .45 : 1 }], options),
       gerenciamento.animate(reduzido ? [{ opacity: abrindo ? 0 : 1 }, { opacity: abrindo ? 1 : 0 }] :
-        [{ transform: abrindo ? `translateX(${distancia}px)` : "translateX(0)" },
-         { transform: abrindo ? "translateX(0)" : `translateX(${distancia}px)` }], options)
+        [{ transform: abrindo ? `translateX(${distancia}px)` : "translateX(0)", opacity: abrindo ? .45 : 1 },
+         { transform: abrindo ? "translateX(0)" : `translateX(${distancia}px)`, opacity: abrindo ? 1 : .45 }], options)
     ];
     // No modo reduzido, a troca usa apenas opacidade.
     if (reduzido) { consulta.style.transform = "none"; gerenciamento.style.transform = "none"; }
@@ -2756,7 +2757,7 @@ movimentoTelaReduzido.addEventListener("change", () => {
   if (movimentoTelaReduzido.matches) transicaoTelaSistema?.finalizar();
 });
 
-// Administrativo recebe as permissões gerais; confirmar retorno é exclusivo do Operacional.
+// Administrativo ativo herda todas as ações dos demais perfis, inclusive confirmar retorno.
 function usuarioTemPermissao(perfisPermitidos = [], usuario = usuarioAtualSistema) {
   if (!usuario || usuario.ativo !== true) return false;
   const perfil = String(usuario.perfil || "").toLowerCase();
@@ -2766,8 +2767,7 @@ function usuarioTemPermissao(perfisPermitidos = [], usuario = usuarioAtualSistem
 }
 
 function usuarioPodeConfirmarRetorno(usuario = usuarioAtualSistema) {
-  return !!usuario && usuario.ativo === true &&
-    String(usuario.perfil || "").toLowerCase() === "operacional";
+  return usuarioTemPermissao(["operacional"], usuario);
 }
 
 async function obterUsuarioAtualSistema() {
@@ -2905,7 +2905,7 @@ async function executarConfirmacaoRetornoPublico() {
   const id=Number(rotaDetalhesAtualId); const rota=rotasPublicasCache.find(r=>Number(r.id)===id)||rotasAdminCache.find(r=>Number(r.id)===id); if(!id||!rota)return;
   const usuario=await obterUsuarioAtualSistema();
   if(!usuario){ fecharConfirmacaoRetornoPublico(); abrirLoginAdminPopup(); mostrarToast("Entre no sistema para confirmar o retorno.","erro"); return; }
-  if(!usuarioPodeConfirmarRetorno(usuario)){ fecharConfirmacaoRetornoPublico(); mostrarToast("Somente usuários Operacional ativos podem confirmar retorno.","erro"); return; }
+  if(!usuarioPodeConfirmarRetorno(usuario)){ fecharConfirmacaoRetornoPublico(); mostrarToast("Somente usuários Operacional ou Administrativo ativos podem confirmar retorno.","erro"); return; }
   const botao=document.getElementById("btnSegundaConfirmacaoRetorno"); botao.disabled=true; botao.textContent="Confirmando...";
   const { error }=await supabaseClient.rpc("confirmar_retorno_rota", { rota_id:id });
   botao.disabled=false; botao.textContent="Sim, confirmar retorno";
