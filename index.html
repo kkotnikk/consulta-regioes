@@ -614,6 +614,7 @@ html{scrollbar-gutter:stable}
     </nav>
     <p id="relatorioRota" class="relatorio-rota" role="status"></p>
     <p id="relatorioPdfStatus" class="relatorio-pdf-status" role="status" hidden></p>
+    <p id="relatorioTotalStatus" class="relatorio-pdf-status" role="status" style="height:28px;line-height:14px;display:flex;align-items:center;gap:8px;margin-bottom:8px" hidden><span id="relatorioTotalTexto" style="min-width:0;flex:1;max-height:28px;overflow:hidden"></span> <button id="relatorioRelerTotal" type="button" style="flex:none;padding:3px 7px;font-size:11px" onclick="document.getElementById('relatorioPdfViewer')?.contentWindow.lerTotalPdf?.()" hidden>Ler novamente</button></p>
     <div id="relatorioConteudo" role="tabpanel" aria-live="polite" aria-labelledby="relatorioPagina1"></div>
   </div>
 </section>
@@ -3146,6 +3147,10 @@ function limparPdfRelatorio() {
   if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
   relatorioPdfUrl = null;
   relatorioDocumentoAtual = null;
+  document.getElementById("relatorioTotalStatus").hidden = true;
+  document.getElementById("relatorioTotalTexto").textContent = "";
+  document.getElementById("relatorioTotalTexto").title = "";
+  document.getElementById("relatorioRelerTotal").hidden = true;
   ocultarAreaPdfArrastado();
 }
 
@@ -3215,6 +3220,28 @@ function criarApiAnotacoesRelatorio(frame, pdfUrl) {
     if (relatorioPdfEnviando) throw new Error("Aguarde o envio do PDF para anotar.");
   }
   return {
+    informarTotal(texto, repetir = false, ocupado = false) {
+      if (!contextoAnotacoesAtual(contexto)) return;
+      document.getElementById("relatorioTotalTexto").textContent = texto;
+      document.getElementById("relatorioTotalTexto").title = texto;
+      document.getElementById("relatorioTotalStatus").hidden = !texto;
+      const botao = document.getElementById("relatorioRelerTotal"); botao.hidden = !repetir; botao.disabled = ocupado;
+    },
+    async registrarTotal(total, origem) {
+      await obterUsuarioAtualSistema(); renderizarRelatorio(); verificar();
+      if (!Number.isInteger(total) || total < 0 || total > 1000000 || !["texto", "ocr"].includes(origem)) throw new Error("Total de coletas inválido.");
+      const { data, error } = await supabaseClient.rpc("registrar_total_coletas_pdf", {
+        p_usuario_id: contexto.usuarioId, p_rota_id: contexto.rotaId, p_arquivo_path: contexto.caminho, p_total: total, p_origem: origem,
+      });
+      verificar(); if (error || !data || Number(data.rota_id) !== contexto.rotaId) throw new Error("Não foi possível atualizar o total da rota. Clique em Ler novamente.");
+      for (const cache of [rotasPublicasCache, rotasAdminCache]) {
+        const rota = cache.find(rota => Number(rota.id) === contexto.rotaId);
+        if (rota) rota.numero_coletas = data.numero_coletas;
+      }
+      renderizarRotasPublicas(); renderizarRotasAdmin();
+      if (Number(rotaDetalhesAtualId) === contexto.rotaId) document.getElementById("detalhesNumeroColetas").textContent = data.numero_coletas ?? "—";
+      return data;
+    },
     async carregar() {
       verificar(); const anotacoes = [];
       for (let inicio = 0; ; inicio += 500) {
@@ -3303,13 +3330,15 @@ function renderizarRelatorio() {
     botao.querySelector("span").textContent = relatorioConsultaDeOutroUsuario() ? relatorioAdminCarregando ? "Carregando relatórios..." : "Nenhum arquivo anexado para a seleção atual" : relatorioPdfEnviando ? "Enviando PDF..." : rota ? "ou clique para selecionar" : "Vincule uma rota ao seu perfil";
     status.hidden = true; return;
   }
+  document.getElementById("relatorioTotalStatus").hidden = false;
+  if (!document.getElementById("relatorioTotalTexto").textContent) document.getElementById("relatorioTotalTexto").textContent = "Lendo o total de coletas no rodapé...";
   if (conteudo.querySelector("iframe")?.dataset.documento === relatorioDocumentoAtual.arquivo_path) return;
   const frame = document.createElement("iframe");
   frame.id = "relatorioPdfViewer";
   frame.title = "Relatório da rota " + relatorioRotaId + ": " + relatorioDocumentoAtual.nome;
   frame.dataset.documento = relatorioDocumentoAtual.arquivo_path;
   const pdfUrl = relatorioPdfUrl;
-  frame.src = "./relatorio-pdf-viewer.html?v=20261001-anotacoes-pdf";
+  frame.src = "./relatorio-pdf-viewer.html?v=20261001-total-rodape";
   frame.onload = () => {
     if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl, criarApiAnotacoesRelatorio(frame, pdfUrl));
   };

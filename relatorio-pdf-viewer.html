@@ -26,6 +26,7 @@
 <dialog id="editorNota" aria-labelledby="notaTitulo"><h2 id="notaTitulo">Comentário</h2><label id="notaCampo" for="notaTexto">Comentário adicional<textarea id="notaTexto" maxlength="300"></textarea><small>Até 300 caracteres. O comentário será incluído na impressão.</small></label><p id="notaDescricao" hidden>Esta coleta foi marcada como concluída.</p><p id="notaErro" role="alert" hidden></p><div class="acoes"><button id="notaSalvar" type="button">Salvar comentário</button><button id="notaRemover" type="button" hidden>Remover</button><button id="notaCancelar" type="button">Cancelar</button></div></dialog>
 <script type="module">
 import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.min.mjs';
+import {lerTotalRodape} from './relatorio-total-coletas.mjs?v=20261001';
 const base='https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/';
 pdfjs.GlobalWorkerOptions.workerSrc=base+'build/pdf.worker.min.mjs';
 const paginas=document.getElementById('paginas'),folhas=document.getElementById('folhas'),status=document.getElementById('status');
@@ -34,6 +35,22 @@ let documento=null,entries=[],observer=null,printing=false,zoom=1,renderTimer;
 const notaEstado=document.getElementById('notaEstado'),editor=document.getElementById('editorNota'),textoNota=document.getElementById('notaTexto'),erroNota=document.getElementById('notaErro');
 const botoesNota={navegar:document.getElementById('notaNavegar'),concluida:document.getElementById('notaConcluida'),comentario:document.getElementById('notaComentario')};
 let apiNotas=null,anotacoes=[],notasProntas=false,carregandoNotas=false,salvandoNota=false,modoNota='navegar',notaEditando=null,promessaNotas=null;
+let lendoTotal=false,totalLido=false,viewerFechado=false;
+window.addEventListener('pagehide',()=>{viewerFechado=true});
+window.lerTotalPdf=async()=>{
+ if(!documento||!apiNotas?.registrarTotal||lendoTotal||viewerFechado)return;
+ lendoTotal=true;totalLido=false;document.body.dataset.totalLido='false';document.body.dataset.totalConcluido='false';apiNotas.informarTotal('Lendo o total de coletas no rodapé...',false,true);
+ try{
+  const resultado=await lerTotalRodape(documento,pdfjs,texto=>apiNotas.informarTotal(texto,false,true),()=>viewerFechado);
+  if(viewerFechado)return;
+  if(resultado.total===null){
+   apiNotas.informarTotal(resultado.motivo==='ambiguo'?'O rodapé contém totais diferentes. O card foi mantido.':resultado.motivo==='ilegivel'?'O total do rodapé não está legível. O card foi mantido.':'Total de coletas não identificado no rodapé. O card foi mantido.',true);return;
+  }
+  const salvo=await apiNotas.registrarTotal(resultado.total,resultado.origem);totalLido=true;
+  apiNotas.informarTotal(resultado.total+' '+(resultado.total===1?'coleta':'coletas')+(salvo.aplicado?' · Card da rota atualizado.':' neste relatório · Há um PDF mais recente para esta rota.'));
+ }catch(error){if(!viewerFechado)apiNotas.informarTotal(error.message||'Não foi possível ler o total. O card foi mantido.',true);}
+ finally{lendoTotal=false;document.body.dataset.totalLido=String(totalLido);document.body.dataset.totalConcluido='true';}
+};
 function estadoNotas(texto,erro=false){notaEstado.textContent=texto;notaEstado.classList.toggle('erro',erro);}
 function atualizarControlesNotas(){
  for(const [modo,botao] of Object.entries(botoesNota)){botao.setAttribute('aria-pressed',String(modoNota===modo));botao.disabled=printing||salvandoNota||(modo!=='navegar'&&(!notasProntas||carregandoNotas||!entries.length));}
@@ -196,7 +213,7 @@ window.abrirPdf=async (url,api)=>{
    const entry={page,element,layer,width:view.width,height:view.height,scale:0,pending:null};ajustarFolha(entry);entries.push(entry);folhas.append(element);observer.observe(element);
   }
   layout();await render(entries[0]);mensagem('');document.body.dataset.pronto='true';
-  if(apiNotas)await window.atualizarAnotacoes();else{estadoNotas('Anotações indisponíveis.');atualizarControlesNotas();}
+  if(apiNotas){window.lerTotalPdf();await window.atualizarAnotacoes();}else{estadoNotas('Anotações indisponíveis.');atualizarControlesNotas();}
  }catch(error){mensagem(error.name==='PasswordException'?'Este PDF está protegido por senha. Envie uma versão sem senha.':'Não foi possível abrir este PDF. Tente enviar o arquivo novamente.');}
 };
 window.imprimirPdf=async()=>{

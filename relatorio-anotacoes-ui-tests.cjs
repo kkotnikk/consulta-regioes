@@ -11,6 +11,7 @@ const ready=page=>page.waitForFunction(()=>{const b=document.getElementById('rel
    const url=route.request().url();
    if(url==='https://consulta.test/')return route.fulfill({contentType:'text/html',body:html});
    if(url.startsWith('https://consulta.test/relatorio-pdf-viewer.html?v='))return route.fulfill({contentType:'text/html',body:fs.readFileSync(__dirname+'/relatorio-pdf-viewer.html','utf8')});
+   if(url.startsWith('https://consulta.test/relatorio-total-coletas.mjs'))return route.fulfill({contentType:'application/javascript',body:fs.readFileSync(__dirname+'/relatorio-total-coletas.mjs','utf8')});
    if(url.endsWith('/build/pdf.min.mjs'))return route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:fs.readFileSync(process.env.PDFJS_MODULE_PATH||'/tmp/consulta-pdf.min.mjs','utf8')});
    if(url.endsWith('/build/pdf.worker.min.mjs'))return route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:fs.readFileSync(process.env.PDFJS_WORKER_PATH||'/tmp/consulta-pdf.worker.min.mjs','utf8')});
    if(url.includes('supabase-js'))return route.fulfill({contentType:'application/javascript',body:stub(perfil)});

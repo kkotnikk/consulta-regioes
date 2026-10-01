@@ -23,9 +23,19 @@ window.supabase={createClient(){
   if(key==='range')return (start,end)=>{range=[start,end];return q};
   if(key==='eq')return (name,value)=>{filters[name]=value;return q};
   if(key==='insert')return value=>{inserir=value;return q};if(key==='delete')return ()=>{remover=true;return q};
-  if(key==='upsert')return value=>{for(const [id,note] of Object.entries(window.__state.annotations||{}))if(note.usuario_id===value.usuario_id&&note.rota_id===value.rota_id&&note.arquivo_path!==value.arquivo_path)delete window.__state.annotations[id];window.__state.documents[value.usuario_id+'|'+value.rota_id]=value;return q};if(key==='update')return value=>{patch=value;return q};return ()=>q;
+  if(key==='upsert')return value=>{for(const [id,note] of Object.entries(window.__state.annotations||{}))if(note.usuario_id===value.usuario_id&&note.rota_id===value.rota_id&&note.arquivo_path!==value.arquivo_path)delete window.__state.annotations[id];window.__state.documents[value.usuario_id+'|'+value.rota_id]={...value,atualizado_em:new Date().toISOString()};return q};if(key==='update')return value=>{patch=value;return q};return ()=>q;
  }});return q;}
- return {auth:{getSession:async()=>({data:{session:window.__state.signedIn?{user:{id:window.__state.user.id},access_token:'test-jwt'}:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signOut:async()=>{window.__state.signedIn=false;return {error:null}}},from:query,storage:{from(){return {async upload(path,file){window.__uploads=(window.__uploads||0)+1;window.__state.files[path]=file;return {error:null}},async download(path){window.__downloadStarted=path;if(window.__downloadDelay)await new Promise(r=>setTimeout(r,window.__downloadDelay));return {data:window.__state.files[path],error:null}},async remove(paths){window.__removed=paths;paths.forEach(p=>delete window.__state.files[p]);return {error:null}}}}},rpc:async()=>({data:0,error:null}),removeChannel:async()=>{},channel(){const c={on(){return c},subscribe(){return c},presenceState(){return {}},track:async()=>{}};return c;}};
+ return {auth:{getSession:async()=>({data:{session:window.__state.signedIn?{user:{id:window.__state.user.id},access_token:'test-jwt'}:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signOut:async()=>{window.__state.signedIn=false;return {error:null}}},from:query,storage:{from(){return {async upload(path,file){window.__uploads=(window.__uploads||0)+1;window.__state.files[path]=file;return {error:null}},async download(path){window.__downloadStarted=path;if(window.__downloadDelay)await new Promise(r=>setTimeout(r,window.__downloadDelay));return {data:window.__state.files[path],error:null}},async remove(paths){window.__removed=paths;paths.forEach(p=>delete window.__state.files[p]);return {error:null}}}}},rpc:async(name,args)=>{
+ if(name!=='registrar_total_coletas_pdf')return {data:0,error:null};
+ window.__totalCalls=(window.__totalCalls||0)+1;window.__totalStarted=args;
+ if(window.__totalDelay)await new Promise(r=>setTimeout(r,window.__totalDelay));
+ const state=window.__state,doc=state.documents[args.p_usuario_id+'|'+args.p_rota_id];
+ if(window.__totalFailure||!doc||doc.arquivo_path!==args.p_arquivo_path||!state.user.ativo||(!['admin','operador_coleta'].includes(state.user.perfil))||(state.user.perfil!=='admin'&&(state.user.id!==args.p_usuario_id||!state.user.rotas_coleta_ids.includes(args.p_rota_id))))return {data:null,error:{message:'Não autorizado ou PDF substituído'}};
+ const latest=Object.values(state.documents).filter(d=>d.rota_id===args.p_rota_id).sort((a,b)=>String(b.atualizado_em||'').localeCompare(String(a.atualizado_em||'')))[0];
+ const applied=latest?.arquivo_path===doc.arquivo_path,route=state.routes.find(r=>r.id===args.p_rota_id);
+ if(applied&&route)route.numero_coletas=args.p_total;
+ return {data:{aplicado:applied,total:args.p_total,numero_coletas:route?.numero_coletas,rota_id:args.p_rota_id},error:null};
+},removeChannel:async()=>{},channel(){const c={on(){return c},subscribe(){return c},presenceState(){return {}},track:async()=>{}};return c;}};
 }};`;
 
 function pdfFixture() {
@@ -53,6 +63,7 @@ if(require.main===module)(async()=>{
    const url=route.request().url();
    if(url==='https://consulta.test/')return route.fulfill({contentType:'text/html',body:html});
    if(url.startsWith('https://consulta.test/relatorio-pdf-viewer.html?v='))return route.fulfill({contentType:'text/html',body:fs.readFileSync(__dirname+'/relatorio-pdf-viewer.html','utf8')});
+   if(url.startsWith('https://consulta.test/relatorio-total-coletas.mjs'))return route.fulfill({contentType:'application/javascript',body:fs.readFileSync(__dirname+'/relatorio-total-coletas.mjs','utf8')});
    if(url.endsWith('/build/pdf.min.mjs'))return route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:fs.readFileSync(process.env.PDFJS_MODULE_PATH||'/tmp/consulta-pdf.min.mjs','utf8')});
    if(url.endsWith('/build/pdf.worker.min.mjs'))return route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:fs.readFileSync(process.env.PDFJS_WORKER_PATH||'/tmp/consulta-pdf.worker.min.mjs','utf8')});
    if(url.includes('supabase-js'))return route.fulfill({contentType:'application/javascript',body:stub(perfil)});
