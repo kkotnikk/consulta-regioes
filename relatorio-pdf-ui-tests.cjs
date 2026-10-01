@@ -83,6 +83,17 @@ async function soltarPdf(locator,files){
    assert((await page.frameLocator('#relatorioPdfViewer').locator('canvas').count())>=1);
    assert.equal(await page.frameLocator('#relatorioPdfViewer').locator('.pagina').count(),2);
    assert(await page.frameLocator('#relatorioPdfViewer').locator('#paginas').evaluate(el=>el.scrollHeight>el.clientHeight));
+   const sheet=await page.frameLocator('#relatorioPdfViewer').locator('.pagina').first().evaluate(el=>{const b=el.getBoundingClientRect(),root=document.getElementById('paginas');return {width:b.width,height:b.height,top:b.top,bottom:b.bottom,viewportHeight:root.clientHeight,viewportWidth:root.clientWidth};});
+   assert(sheet.top>=0&&sheet.bottom<=sheet.viewportHeight,JSON.stringify(sheet));
+   assert(sheet.width<=sheet.viewportWidth&&Math.abs(sheet.width/sheet.height-595/842)<.01);
+   if(perfil==='admin'){
+    await page.setViewportSize({width,height:700});
+    await page.waitForFunction(()=>{const doc=document.getElementById('relatorioPdfViewer').contentDocument;return doc.querySelector('.pagina').getBoundingClientRect().bottom<=doc.getElementById('paginas').clientHeight;});
+    const smaller=await page.frameLocator('#relatorioPdfViewer').locator('.pagina').first().boundingBox();
+    assert(smaller.height<sheet.height);
+    await page.setViewportSize({width,height:900});
+    await page.waitForFunction(original=>document.getElementById('relatorioPdfViewer').contentDocument.querySelector('.pagina').getBoundingClientRect().width>=original-1,sheet.width);
+   }
    assert.equal(await page.locator('#relatorioPdfStatus').innerText(),'Relatorio.pdf');
    assert.equal(await page.evaluate(()=>window.__uploads),1);
    const bounds=await page.evaluate(()=>{const box=el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom}};return {pdf:box(document.getElementById('relatorioPdfViewer')),header:box(document.querySelector('.relatorio-cabecalho')),pane:box(document.getElementById('relatorioView')),menu:box(document.querySelector('.sidebar')),width:innerWidth,scroll:document.documentElement.scrollWidth}});
