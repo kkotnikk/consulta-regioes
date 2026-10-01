@@ -3507,7 +3507,7 @@ document.addEventListener('click', event => {
     cancelScroll();setActiveNav(hash);
     if(target.classList.contains('soft-reveal'))reveal(target,true);
     const from=scrollY;
-    const destination=()=>Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24,document.documentElement.scrollHeight-innerHeight));
+    const destination=()=>hash === "#consulta" ? 0 : Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24,document.documentElement.scrollHeight-innerHeight));
     const distance=destination()-from;
     const duration=motion.matches?280:Math.min(1650,950+Math.abs(distance)*.32);
     const start=performance.now();
