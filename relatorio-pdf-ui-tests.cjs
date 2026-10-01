@@ -25,6 +25,13 @@ function pdfFixture() {
  const xref=result.length;result+='xref\n0 '+(objects.length+1)+'\n0000000000 65535 f \n';positions.slice(1).forEach(at=>result+=String(at).padStart(10,'0')+' 00000 n \n');result+='trailer\n<< /Size '+(objects.length+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
  return Buffer.from(result);
 }
+async function soltarPdf(locator,files){
+ await locator.evaluate((el,files)=>{
+  const transfer=new DataTransfer();
+  for(const file of files)transfer.items.add(new File([Uint8Array.from(atob(file.base64),c=>c.charCodeAt(0))],file.name,{type:'application/pdf'}));
+  for(const type of ['dragenter','dragover','drop'])el.dispatchEvent(new DragEvent(type,{bubbles:true,cancelable:true,dataTransfer:transfer}));
+ },files.map(f=>({name:f.name,base64:f.buffer.toString('base64')})));
+}
 (async()=>{
  const launch={executablePath:process.env.CHROMIUM_EXECUTABLE,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader'],env:{...process.env,LD_LIBRARY_PATH:process.env.CHROMIUM_LIBRARY_PATH||process.env.LD_LIBRARY_PATH||''}};
  const browser=await chromium.launch(launch),results=[];
@@ -49,13 +56,13 @@ function pdfFixture() {
    assert(opening.animations.includes('admin-atalhos-descer'),JSON.stringify(opening));
    await page.evaluate(()=>window.__opening);
    const boxes=await page.locator('#gerenciamentoAtalhos button').evaluateAll(els=>els.map(el=>({text:el.textContent.trim(),x:el.getBoundingClientRect().x,y:el.getBoundingClientRect().y})));
-   assert.deepEqual(boxes.map(x=>x.text),['Bairros','Nova rota','Suporte','Sugestões','Histórico','Usuários']);
-   for(const at of [0,2,4]){assert.equal(boxes[at].y,boxes[at+1].y);assert(boxes[at].x<boxes[at+1].x);}
-   await page.locator('#gerenciamentoAtalhos button[aria-controls="adminUsuariosFerramenta"]').click();await page.waitForTimeout(1900);
-   for(const target of ['adminBairrosFerramenta','adminNovaRotaFerramenta']){
-    await page.locator('#gerenciamentoAtalhos button[aria-controls="'+target+'"]').click();await page.waitForTimeout(1900);
+   assert.deepEqual(boxes.map(x=>x.text),['Bairros e rotas','Suporte e sugestões','Histórico e usuários']);
+   assert.equal(boxes.length,3);assert(boxes[0].y<boxes[1].y&&boxes[1].y<boxes[2].y);
+   await page.locator('#gerenciamentoAtalhos button[aria-controls~="adminHistoricoFerramenta"]').click();await page.waitForTimeout(1900);
+   for(const target of ['adminBairrosFerramenta']){
+    await page.locator('#gerenciamentoAtalhos button[aria-controls~="'+target+'"]').click();await page.waitForTimeout(1900);
     assert.equal(await page.locator('#gerenciamentoView').evaluate(el=>el.scrollTop),0);
-    if(target==='adminBairrosFerramenta'){await page.locator('#gerenciamentoAtalhos button[aria-controls="adminUsuariosFerramenta"]').click();await page.waitForTimeout(1900);}
+    if(target==='adminBairrosFerramenta'){await page.locator('#gerenciamentoAtalhos button[aria-controls~="adminHistoricoFerramenta"]').click();await page.waitForTimeout(1900);}
    }
   }
   const allowed=perfil!=='operador_conferencia';
@@ -64,7 +71,14 @@ function pdfFixture() {
    await page.locator('#relatorioArquivoPdf').setInputFiles({name:'invalido.pdf',mimeType:'application/pdf',buffer:Buffer.from('texto comum')});
    await page.waitForFunction(()=>!document.getElementById('relatorioEnviarPdf').disabled);
    assert.equal(await page.evaluate(()=>window.__uploads||0),0);
-   await page.locator('#relatorioArquivoPdf').setInputFiles({name:'Relatorio.pdf',mimeType:'application/pdf',buffer:pdfFixture()});
+   const center=await page.evaluate(()=>{const a=document.getElementById('relatorioConteudo').getBoundingClientRect(),b=document.getElementById('relatorioSoltarPdf').getBoundingClientRect();return {dx:Math.abs((a.left+a.right-b.left-b.right)/2),dy:Math.abs((a.top+a.bottom-b.top-b.bottom)/2),border:getComputedStyle(document.getElementById('relatorioSoltarPdf')).borderStyle}});
+   assert(center.dx<2&&center.dy<2,JSON.stringify(center));assert.equal(center.border,'dashed');
+   if(perfil==='admin')await page.screenshot({path:__dirname+'/relatorio-soltar-pdf-'+width+'.png'});
+   await soltarPdf(page.locator('#relatorioConteudo'),[{name:'um.pdf',buffer:pdfFixture()},{name:'dois.pdf',buffer:pdfFixture()}]);
+   assert.equal(await page.evaluate(()=>window.__uploads||0),0);
+
+   const [chooser]=await Promise.all([page.waitForEvent('filechooser'),page.locator('#relatorioSoltarPdf').click()]);
+   await chooser.setFiles({name:'Relatorio.pdf',mimeType:'application/pdf',buffer:pdfFixture()});
    await page.waitForSelector('#relatorioPdfViewer');await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer').contentDocument?.body?.dataset.pronto==='true');
    assert((await page.frameLocator('#relatorioPdfViewer').locator('canvas').count())>=1);
    assert.equal(await page.frameLocator('#relatorioPdfViewer').locator('.pagina').count(),2);
@@ -83,7 +97,8 @@ function pdfFixture() {
     await page.locator('#relatorioPagina'+slot).click();
     await page.waitForFunction(()=>!relatorioPdfCarregando);
     assert.equal(await page.locator('#relatorioPdfViewer').count(),0);
-    await page.locator('#relatorioArquivoPdf').setInputFiles({name:'Rota'+slot+'.pdf',mimeType:'application/pdf',buffer:pdfFixture()});
+    if(slot===2)await soltarPdf(page.locator('#relatorioConteudo'),[{name:'Rota2.pdf',buffer:pdfFixture()}]);
+    else await page.locator('#relatorioArquivoPdf').setInputFiles({name:'Rota'+slot+'.pdf',mimeType:'application/pdf',buffer:pdfFixture()});
     await page.waitForFunction(()=>!relatorioPdfEnviando);
     await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer')?.contentDocument?.body?.dataset.pronto==='true');
     assert.equal(await page.locator('#relatorioPdfStatus').innerText(),'Rota'+slot+'.pdf');
@@ -93,7 +108,7 @@ function pdfFixture() {
    await page.locator('#relatorioPagina1').click();
    await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer')?.contentDocument?.body?.dataset.pronto==='true');
    assert.equal(await page.locator('#relatorioPdfStatus').innerText(),'Relatorio.pdf');
-   await page.locator('#relatorioArquivoPdf').setInputFiles({name:'Rota1-atualizada.pdf',mimeType:'application/pdf',buffer:pdfFixture()});
+   await soltarPdf(page.frameLocator('#relatorioPdfViewer').locator('#paginas'),[{name:'Rota1-atualizada.pdf',buffer:pdfFixture()}]);
    await page.waitForFunction(()=>!relatorioPdfEnviando);
    assert.equal(await page.evaluate(()=>Object.keys(window.__state.documents).length),3);
    assert(await page.evaluate(p=>window.__removed.includes(p),originalPath));
@@ -114,6 +129,7 @@ function pdfFixture() {
    assert.equal(await page.locator('#relatorioPagina3').isDisabled(),true);
    await page.evaluate(()=>{window.__state.user.rotas_coleta_ids=[];return atualizarInterfaceSessao();});
    assert.equal(await page.locator('#relatorioEnviarPdf').isDisabled(),true);
+   assert.equal(await page.locator('#relatorioSoltarPdf').isDisabled(),true);
    await page.evaluate(()=>{window.__state.user.perfil='operador_conferencia';return atualizarInterfaceSessao();});
    assert.equal(await page.locator('#relatorioView').isVisible(),false);
    assert.equal(await page.locator('#relatorioPdfViewer').count(),0);

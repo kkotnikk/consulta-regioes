@@ -383,7 +383,14 @@ html{scrollbar-gutter:stable}
 .relatorio-paginas button:disabled{cursor:default;opacity:.35}
 .relatorio-rota{flex:none;font-size:12px;line-height:1.6;margin:0 0 12px;color:#81613e}
 @media(prefers-reduced-motion:no-preference){#relatorioConteudo iframe{animation:soft-simple-in .35s var(--soft-out) both}}
-#relatorioConteudo{flex:1;min-height:0;display:flex;width:100%}
+#relatorioConteudo{position:relative;flex:1;min-height:0;display:flex;width:100%}
+.relatorio-dropzone-area{display:grid;place-items:center;width:100%;min-height:200px;padding:16px}
+.relatorio-dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:min(100%,480px);min-height:200px;padding:28px 20px;border:2px dashed #b79d76;border-radius:12px;background:transparent;color:#81613e;font-weight:400;box-shadow:none}
+.relatorio-dropzone strong{font-size:20px;color:#624523}.relatorio-dropzone span{font-size:12px}.relatorio-dropzone small{font-size:11px}.relatorio-dropzone .icon{width:30px;height:30px;color:#08703f}
+.relatorio-dropzone:not(:disabled):hover{background:#08703f09;border-color:#08703f}.relatorio-dropzone:disabled{cursor:default;opacity:.6}
+.relatorio-drop-overlay{position:absolute;inset:0;z-index:2;display:none;place-items:center;padding:18px;border:2px dashed #08703f;border-radius:8px;background:#f4ead8f2;color:#08703f;font-size:24px;font-weight:600;text-align:center}
+#relatorioConteudo.pdf-arrastado .relatorio-drop-overlay{display:grid}
+#relatorioConteudo.pdf-arrastado .relatorio-dropzone{border-color:#08703f;background:#08703f09}
 #relatorioPdfViewer{display:block;width:100%;height:100%;min-height:200px;border:1px solid #cbb491;border-radius:8px;background:#f4ead8}
 .relatorio-imprimir{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:11px 16px;white-space:nowrap;font-size:12px}
 .relatorio-imprimir .icon{width:17px;height:17px}
@@ -422,11 +429,11 @@ html{scrollbar-gutter:stable}
 
 /* Atalhos compactos, sempre ao alcance dentro do gerenciamento. */
 .side-nav>.admin-btn{min-height:36px;padding:8px 11px;font-size:12px;border-radius:6px;box-shadow:none}
-.admin-atalhos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid #8b75533b;overflow:hidden;transform-origin:top center}
+.admin-atalhos{display:grid;grid-template-columns:1fr;gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid #8b75533b;overflow:hidden;transform-origin:top center}
 .admin-atalhos:not([hidden]){animation:admin-atalhos-descer .65s var(--soft-out) both}
 .admin-atalhos:not([hidden]) button{animation:admin-atalho-entrar .4s var(--soft-out) .08s both}
-.admin-atalhos:not([hidden]) button:nth-child(n+3){animation-delay:.16s}
-.admin-atalhos:not([hidden]) button:nth-child(n+5){animation-delay:.24s}
+.admin-atalhos:not([hidden]) button:nth-child(2){animation-delay:.16s}
+.admin-atalhos:not([hidden]) button:nth-child(3){animation-delay:.24s}
 @keyframes admin-atalhos-descer{from{max-height:0;opacity:0;transform:translateY(-8px)}to{max-height:180px;opacity:1;transform:translateY(0)}}
 @keyframes admin-atalho-entrar{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.admin-atalhos:not([hidden]){animation-duration:.3s}.admin-atalhos:not([hidden]) button{animation-name:soft-simple-in;animation-duration:.25s}}
@@ -462,12 +469,9 @@ html{scrollbar-gutter:stable}
     <button type="button" class="admin-btn" onclick="abrirAdmin()" aria-controls="gerenciamentoView" aria-expanded="false">Gerenciar sistema</button>
   </nav>
   <nav id="gerenciamentoAtalhos" class="admin-atalhos" aria-label="Ferramentas do gerenciamento" hidden>
-    <button type="button" onclick="irFerramentaAdmin('adminBairrosFerramenta')" aria-controls="adminBairrosFerramenta">Bairros</button>
-    <button type="button" onclick="irFerramentaAdmin('adminNovaRotaFerramenta')" aria-controls="adminNovaRotaFerramenta">Nova rota</button>
-    <button type="button" onclick="irFerramentaAdmin('adminSuporteFerramenta')" aria-controls="adminSuporteFerramenta">Suporte</button>
-    <button type="button" onclick="irFerramentaAdmin('adminSugestoesFerramenta')" aria-controls="adminSugestoesFerramenta">Sugestões</button>
-    <button type="button" onclick="irFerramentaAdmin('adminHistoricoFerramenta')" aria-controls="adminHistoricoFerramenta">Histórico</button>
-    <button type="button" onclick="irFerramentaAdmin('adminUsuariosFerramenta')" aria-controls="adminUsuariosFerramenta">Usuários</button>
+    <button type="button" onclick="irFerramentaAdmin('adminBairrosFerramenta')" aria-controls="adminBairrosFerramenta adminNovaRotaFerramenta adminRotasFerramenta">Bairros e rotas</button>
+    <button type="button" onclick="irFerramentaAdmin('adminSuporteFerramenta')" aria-controls="adminSuporteFerramenta adminSugestoesFerramenta">Suporte e sugestões</button>
+    <button type="button" onclick="irFerramentaAdmin('adminHistoricoFerramenta')" aria-controls="adminHistoricoFerramenta adminUsuariosFerramenta">Histórico e usuários</button>
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-note"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><strong>Mais clareza na operação.</strong><p>Regiões e rotas reunidas em um só lugar.</p></div>
@@ -583,7 +587,7 @@ html{scrollbar-gutter:stable}
     <div class="relatorio-cabecalho">
       <div><div class="gerenciamento-kicker">SOLIDEZ TRANSPORTES</div><h1 id="tituloRelatorio" tabindex="-1">Relatório</h1></div>
       <div class="relatorio-acoes">
-        <button id="relatorioEnviarPdf" type="button" onclick="document.getElementById('relatorioArquivoPdf').click()">Enviar PDF</button>
+        <button id="relatorioEnviarPdf" type="button" onclick="selecionarPdfRelatorio()">Enviar PDF</button>
         <input id="relatorioArquivoPdf" type="file" accept="application/pdf,.pdf" onchange="enviarPdfRelatorio(this)" hidden>
         <button type="button" class="relatorio-imprimir" onclick="imprimirRelatorio()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6zM17 11h1"/></svg><span>Imprimir relatório</span></button>
       </div>
@@ -2919,7 +2923,51 @@ function limparPdfRelatorio() {
   if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
   relatorioPdfUrl = null;
   relatorioDocumentoAtual = null;
+  ocultarAreaPdfArrastado();
 }
+
+function podeReceberPdfRelatorio() {
+  return usuarioPodeEditarRelatorio() && !!relatorioRotaId && !relatorioPdfEnviando;
+}
+function selecionarPdfRelatorio() {
+  if (podeReceberPdfRelatorio()) document.getElementById("relatorioArquivoPdf").click();
+}
+function ocultarAreaPdfArrastado() {
+  document.getElementById("relatorioConteudo").classList.remove("pdf-arrastado");
+}
+function mostrarAreaPdfArrastado() {
+  if (!podeReceberPdfRelatorio()) return;
+  const conteudo = document.getElementById("relatorioConteudo");
+  if (relatorioPdfUrl && !conteudo.querySelector(".relatorio-drop-overlay")) {
+    const overlay = document.createElement("div");
+    overlay.className = "relatorio-drop-overlay";
+    overlay.textContent = "Soltar PDF para substituir";
+    conteudo.append(overlay);
+  }
+  conteudo.classList.add("pdf-arrastado");
+}
+function receberPdfSolto(files) {
+  ocultarAreaPdfArrastado();
+  if (!podeReceberPdfRelatorio()) return;
+  if (files.length !== 1) { mostrarToast("Solte somente um PDF por vez.", "erro"); return; }
+  return enviarPdfRelatorio({ files: [files[0]], value: "" });
+}
+const areaDropRelatorio = document.getElementById("relatorioConteudo");
+for (const evento of ["dragenter", "dragover"]) areaDropRelatorio.addEventListener(evento, event => {
+  if (!Array.from(event.dataTransfer?.types || []).includes("Files")) return;
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = podeReceberPdfRelatorio() ? "copy" : "none";
+  mostrarAreaPdfArrastado();
+});
+areaDropRelatorio.addEventListener("dragleave", event => {
+  if (!areaDropRelatorio.contains(event.relatedTarget)) ocultarAreaPdfArrastado();
+});
+areaDropRelatorio.addEventListener("drop", event => {
+  if (!event.dataTransfer?.files.length) return;
+  event.preventDefault();
+  receberPdfSolto(event.dataTransfer.files);
+});
+document.addEventListener("dragend", ocultarAreaPdfArrastado);
 
 function renderizarRelatorio() {
   const conteudo = document.getElementById("relatorioConteudo");
@@ -2948,7 +2996,18 @@ function renderizarRelatorio() {
   document.querySelector(".relatorio-imprimir").disabled = !relatorioPdfUrl;
   const status = document.getElementById("relatorioPdfStatus");
   if (!relatorioPdfUrl) {
-    conteudo.replaceChildren(); status.hidden = true; return;
+    let area = conteudo.querySelector(".relatorio-dropzone-area");
+    if (!area) {
+      area = document.createElement("div"); area.className = "relatorio-dropzone-area";
+      const botao = document.createElement("button");
+      botao.type = "button"; botao.id = "relatorioSoltarPdf"; botao.className = "relatorio-dropzone";
+      botao.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></svg><strong>Soltar PDF</strong><span>ou clique para selecionar</span><small>Um PDF por rota · até 20 MB</small>';
+      botao.onclick = selecionarPdfRelatorio; area.append(botao); conteudo.replaceChildren(area);
+    }
+    const botao = area.querySelector("button");
+    botao.disabled = !podeReceberPdfRelatorio();
+    botao.querySelector("span").textContent = relatorioPdfEnviando ? "Enviando PDF..." : rota ? "ou clique para selecionar" : "Vincule uma rota ao seu perfil";
+    status.hidden = true; return;
   }
   if (conteudo.querySelector("iframe")?.dataset.documento === relatorioDocumentoAtual.arquivo_path) return;
   const frame = document.createElement("iframe");
@@ -4000,7 +4059,7 @@ document.addEventListener('click', event => {
     const panel=target.closest('.gerenciamento-tela');
     if(panel){
       document.querySelectorAll('#gerenciamentoAtalhos button').forEach(button=>{
-        const active=button.getAttribute('aria-controls')===target.id;
+        const active=(button.getAttribute('aria-controls')||'').split(/\s+/).includes(target.id);
         button.classList.toggle('ativo',active);
         if(active)button.setAttribute('aria-current','location');else button.removeAttribute('aria-current');
       });

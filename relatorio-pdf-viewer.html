@@ -44,6 +44,15 @@ window.imprimirPdf=async()=>{
  catch(_){mensagem('Não foi possível preparar a impressão. Tente novamente.');}
  finally{printing=false;}
 };
+// Encaminha arquivos arrastados sobre o PDF ao envio protegido da tela principal.
+for(const name of ['dragenter','dragover'])document.addEventListener(name,event=>{
+ if(!Array.from(event.dataTransfer?.types||[]).includes('Files'))return;
+ event.preventDefault();parent.mostrarAreaPdfArrastado?.();
+});
+document.addEventListener('drop',event=>{
+ if(!event.dataTransfer?.files.length)return;
+ event.preventDefault();parent.receberPdfSolto?.(event.dataTransfer.files);
+});
 let resizeTimer;
 new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(printing)return;for(const entry of entries){const box=entry.element.getBoundingClientRect();if(box.bottom>=0&&box.top<=innerHeight)render(entry).catch(()=>{});}},180);}).observe(paginas);
 </script></body></html>
