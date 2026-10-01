@@ -341,7 +341,7 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
 .detalhes-status.retornando{color:#164f80!important;background:#e7f2ff}
 
 /* Gerenciamento em uma tela própria, com rolagem independente. */
-.gerenciamento-tela{position:fixed;inset:0;z-index:100;background:var(--bg,#f2eadb);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable}
+.gerenciamento-tela{position:fixed;inset:0;z-index:100;background:var(--bg,#f2eadb);box-shadow:-24px 0 65px #281e2433;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable}
 .gerenciamento-tela[hidden],#consultaView[hidden]{display:none!important}
 .gerenciamento-container{max-width:1240px;margin:0 auto;padding:32px 36px 44px}
 .gerenciamento-cabecalho{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:24px}
@@ -2677,21 +2677,22 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
   const estilos = [consulta, conteudo, menu, gerenciamento].map(el => [el, el?.getAttribute("style")]);
   const overflowAnterior = document.body.style.overflow;
   const distancia = window.innerWidth;
-  consulta.style.cssText = `position:fixed;top:0;left:0;width:${Math.max(1, distancia - barraConsulta)}px;height:100dvh;overflow:hidden;`;
+  consulta.style.cssText = `position:fixed;top:0;left:0;z-index:0;width:${Math.max(1, distancia - barraConsulta)}px;height:100dvh;overflow:hidden;`;
   conteudo.style.transform = `translateY(${-posicaoConsulta}px)`;
   if (matchMedia("(max-width:760px)").matches) menu.style.transform = `translateY(${-posicaoConsulta}px)`;
-  consulta.style.transform = abrindo ? "translateX(0)" : `translateX(${-distancia}px)`;
+  // A consulta permanece parada atrás do painel que desliza à sua frente.
+  consulta.style.transform = "none";
   gerenciamento.style.transform = abrindo ? `translateX(${distancia}px)` : "translateX(0)";
   consulta.hidden = false;
   gerenciamento.hidden = false;
   gerenciamento.scrollTop = posicaoGerenciamento;
   consulta.inert = true;
   gerenciamento.inert = true;
-  consulta.style.willChange = gerenciamento.style.willChange = "transform, opacity";
+  gerenciamento.style.willChange = "transform, opacity";
   consulta.setAttribute("aria-hidden", abrindo ? "true" : "false");
   gerenciamento.setAttribute("aria-hidden", abrindo ? "false" : "true");
   document.body.style.overflow = "hidden";
-  document.body.classList.toggle("gerenciamento-aberto", abrindo);
+  document.body.classList.add("gerenciamento-aberto");
   telaSistemaAtual = destino;
   const botao = document.querySelector(".admin-btn");
   botao?.classList.toggle("ativo", abrindo);
@@ -2715,6 +2716,7 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
       gerenciamento.inert = !abrindo;
       consulta.setAttribute("aria-hidden", String(abrindo));
       gerenciamento.setAttribute("aria-hidden", String(!abrindo));
+      document.body.classList.toggle("gerenciamento-aberto", abrindo);
       document.body.style.overflow = overflowAnterior;
       window.scrollTo({ top: abrindo ? 0 : posicaoConsulta, behavior: "instant" });
       if (!document.hidden) {
@@ -2732,12 +2734,9 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
     const reduzido = movimentoTelaReduzido.matches;
     const options = { duration: reduzido ? 130 : 920, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" };
     run.animations = [
-      consulta.animate(reduzido ? [{ opacity: abrindo ? 1 : 0 }, { opacity: abrindo ? 0 : 1 }] :
-        [{ transform: abrindo ? "translateX(0)" : `translateX(${-distancia}px)`, opacity: abrindo ? 1 : .45 },
-         { transform: abrindo ? `translateX(${-distancia}px)` : "translateX(0)", opacity: abrindo ? .45 : 1 }], options),
       gerenciamento.animate(reduzido ? [{ opacity: abrindo ? 0 : 1 }, { opacity: abrindo ? 1 : 0 }] :
-        [{ transform: abrindo ? `translateX(${distancia}px)` : "translateX(0)", opacity: abrindo ? .45 : 1 },
-         { transform: abrindo ? "translateX(0)" : `translateX(${distancia}px)`, opacity: abrindo ? 1 : .45 }], options)
+        [{ transform: abrindo ? `translateX(${distancia}px)` : "translateX(0)", opacity: 1 },
+         { transform: abrindo ? "translateX(0)" : `translateX(${distancia}px)`, opacity: 1 }], options)
     ];
     // No modo reduzido, a troca usa apenas opacidade.
     if (reduzido) { consulta.style.transform = "none"; gerenciamento.style.transform = "none"; }
