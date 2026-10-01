@@ -3192,6 +3192,62 @@ areaDropRelatorio.addEventListener("drop", event => {
 });
 document.addEventListener("dragend", ocultarAreaPdfArrastado);
 
+function contextoAnotacoesAtual(contexto) {
+  return usuarioPodeEditarRelatorio() && usuarioAtualSistema?.id === contexto.actorId
+    && relatorioUsuarioId === contexto.usuarioId && relatorioRotaId === contexto.rotaId
+    && relatorioDocumentoAtual?.arquivo_path === contexto.caminho && relatorioPdfUrl === contexto.pdfUrl
+    && document.getElementById("relatorioPdfViewer") === contexto.frame
+    && usuarioRelatorioSelecionado()?.id === contexto.usuarioId
+    && rotasRelatorioUsuario().some(rota => rota.id === contexto.rotaId);
+}
+
+function criarApiAnotacoesRelatorio(frame, pdfUrl) {
+  const contexto = { frame, pdfUrl, actorId: usuarioAtualSistema.id, usuarioId: relatorioUsuarioId, rotaId: relatorioRotaId, caminho: relatorioDocumentoAtual.arquivo_path };
+  const campos = "id,usuario_id,rota_id,arquivo_path,pagina,x,y,tipo,comentario,criado_por,criado_em";
+  function filtrar(query) {
+    return query.eq("usuario_id", contexto.usuarioId).eq("rota_id", contexto.rotaId).eq("arquivo_path", contexto.caminho);
+  }
+  function verificar() {
+    if (!contextoAnotacoesAtual(contexto)) throw new Error("O relatório mudou. Abra o PDF atual para continuar.");
+  }
+  async function autorizar() {
+    await obterUsuarioAtualSistema(); renderizarRelatorio(); verificar();
+    if (relatorioPdfEnviando) throw new Error("Aguarde o envio do PDF para anotar.");
+  }
+  return {
+    async carregar() {
+      verificar(); const anotacoes = [];
+      for (let inicio = 0; ; inicio += 500) {
+        const { data, error } = await filtrar(supabaseClient.from("relatorio_anotacoes").select(campos)).order("criado_em").order("id").range(inicio, inicio + 499);
+        verificar(); if (error) throw new Error("Não foi possível carregar as anotações. Clique em Atualizar anotações.");
+        anotacoes.push(...(data || [])); if ((data || []).length < 500) return anotacoes;
+      }
+    },
+    async salvar(anotacao) {
+      await autorizar();
+      if (!["concluida", "comentario"].includes(anotacao.tipo) || !Number.isInteger(anotacao.pagina) || anotacao.pagina < 1 || anotacao.pagina > 10000
+        || !Number.isFinite(anotacao.x) || !Number.isFinite(anotacao.y) || anotacao.x < 0 || anotacao.x > 1 || anotacao.y < 0 || anotacao.y > 1) throw new Error("Escolha um ponto válido na página.");
+      const comentario = anotacao.tipo === "comentario" ? String(anotacao.comentario || "").trim().replace(/\s+/g, " ") : "";
+      if (anotacao.tipo === "comentario" && (!comentario || comentario.length > 300)) throw new Error("Escreva um comentário de até 300 caracteres.");
+      const query = anotacao.id
+        ? filtrar(supabaseClient.from("relatorio_anotacoes").update({ comentario })).eq("id", anotacao.id)
+        : supabaseClient.from("relatorio_anotacoes").insert({
+          id: crypto.randomUUID(), usuario_id: contexto.usuarioId, rota_id: contexto.rotaId, arquivo_path: contexto.caminho,
+          pagina: anotacao.pagina, x: anotacao.x, y: anotacao.y, tipo: anotacao.tipo, comentario, criado_por: contexto.actorId,
+        });
+      const { data, error } = await query.select(campos).single();
+      verificar(); if (error || !data) throw new Error("Não foi possível salvar. Verifique seu acesso e tente novamente.");
+      return data;
+    },
+    async remover(id) {
+      await autorizar();
+      const { data, error } = await filtrar(supabaseClient.from("relatorio_anotacoes").delete()).eq("id", id).select("id").maybeSingle();
+      verificar(); if (error || !data) throw new Error("Não foi possível remover. Atualize as anotações e tente novamente.");
+      return id;
+    },
+  };
+}
+
 function renderizarRelatorio() {
   const conteudo = document.getElementById("relatorioConteudo");
   if (!conteudo) return;
@@ -3253,9 +3309,9 @@ function renderizarRelatorio() {
   frame.title = "Relatório da rota " + relatorioRotaId + ": " + relatorioDocumentoAtual.nome;
   frame.dataset.documento = relatorioDocumentoAtual.arquivo_path;
   const pdfUrl = relatorioPdfUrl;
-  frame.src = "./relatorio-pdf-viewer.html?v=20261001-arrastar-rotas-sem-limite";
+  frame.src = "./relatorio-pdf-viewer.html?v=20261001-anotacoes-pdf";
   frame.onload = () => {
-    if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl);
+    if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl, criarApiAnotacoesRelatorio(frame, pdfUrl));
   };
   conteudo.replaceChildren(frame);
   status.textContent = relatorioDocumentoAtual.nome; status.hidden = false;
@@ -3294,7 +3350,9 @@ async function carregarPdfRelatorio() {
     if (error) throw error;
     if (!relatorioRequisicaoAtual(request, usuarioId, rotaId)) return;
     if (!documento) { limparPdfRelatorio(); renderizarRelatorio(); return; }
-    if (relatorioDocumentoAtual?.arquivo_path === documento.arquivo_path && relatorioPdfUrl) return;
+    if (relatorioDocumentoAtual?.arquivo_path === documento.arquivo_path && relatorioPdfUrl) {
+      document.getElementById("relatorioPdfViewer")?.contentWindow.atualizarAnotacoes?.(); return;
+    }
     const { data: pdf, error: downloadError } = await supabaseClient.storage.from("relatorios").download(documento.arquivo_path);
     if (downloadError || !pdf) throw downloadError || new Error("Não foi possível abrir o PDF.");
     if (!relatorioRequisicaoAtual(request, usuarioId, rotaId)) return;

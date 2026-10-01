@@ -7,16 +7,23 @@
 #paginas{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:14px;scrollbar-width:thin;scrollbar-color:#aa9473 #e8dfce}
 #paginas{cursor:grab}#paginas.arrastando{cursor:grabbing;user-select:none}
 #folhas{display:flex;flex-wrap:nowrap;gap:16px;width:max-content;min-width:100%;align-items:flex-start;justify-content:center}
-.pagina{flex:none;background:white;box-shadow:0 2px 8px #38281924;position:relative;overflow:hidden}.pagina canvas{display:block;width:100%;height:100%}
+.pagina{flex:none;background:white;box-shadow:0 2px 8px #38281924;position:relative;overflow:hidden;container-type:inline-size}.pagina canvas{display:block;width:100%;height:100%}
+.ferramentas-anotacoes{flex:none;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid #cbb491;background:#f4ead8}.ferramentas-anotacoes button{min-height:28px;padding:4px 9px;border:1px solid #cbb491;border-radius:5px;background:transparent;color:#624523;font:inherit;cursor:pointer}.ferramentas-anotacoes button[aria-pressed=true]{background:#08703f;color:white;border-color:#08703f}.ferramentas-anotacoes button:disabled{opacity:.5;cursor:default}.ferramentas-anotacoes button:focus-visible{outline:2px solid #08703f;outline-offset:2px}#notaEstado{flex:1;font-size:11px;min-width:150px;line-height:1.4}#notaEstado.erro{color:#b23328}#paginas[data-modo=concluida],#paginas[data-modo=comentario]{cursor:crosshair}
+.anotacoes{position:absolute;inset:0;pointer-events:none}.anotacao{position:absolute;pointer-events:auto;cursor:pointer;font-family:system-ui,sans-serif;box-shadow:0 1px 4px #0002;text-align:left}.anotacao.concluida{font-size:3.4cqw;font-weight:bold;color:#08703f;border:.2cqw solid #08703f;background:#e3f8e5e8;border-radius:.6cqw;padding:0 .6cqw;line-height:1.2;transform:translate(-50%,-50%)}.anotacao.comentario{font-size:1.7cqw;line-height:1.35;max-width:45%;width:max-content;overflow-wrap:anywhere;white-space:normal;border:.15cqw solid #c19538;background:#fff5c5ed;color:#50371b;border-radius:.5cqw;padding:.5cqw .8cqw}.anotacao:focus-visible{outline:2px solid #08703f;outline-offset:2px}
+#editorNota{width:min(420px,90vw);max-height:85vh;overflow:auto;border:1px solid #cbb491;border-radius:8px;background:#fffaf0;color:#624523;padding:18px;box-shadow:0 8px 32px #38281940}#editorNota::backdrop{background:#38281938}#editorNota h2{font-size:17px;margin:0 0 12px}#editorNota label{display:block;font-size:12px}#notaTexto{display:block;width:100%;min-height:100px;resize:vertical;margin-top:6px;padding:10px;border:1px solid #cbb491;border-radius:5px;background:white;font:13px system-ui,sans-serif;color:#50371b}#editorNota small{display:block;font-size:11px;line-height:1.5;margin-top:6px}#notaErro{color:#b23328;font-size:12px}#editorNota .acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}#editorNota button{padding:8px 12px;border:1px solid #cbb491;border-radius:5px;background:transparent;color:#624523;font:13px system-ui,sans-serif;cursor:pointer}#editorNota #notaSalvar{background:#08703f;color:white;border-color:#08703f}#editorNota #notaRemover{color:#b23328}#editorNota button:disabled{opacity:.5;cursor:default}[hidden]{display:none!important}
 #status{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);max-width:90%;padding:8px 12px;border-radius:6px;background:#fff5e6;box-shadow:0 2px 12px #38281924;text-align:center}#status[hidden]{display:none}
 @media(max-width:500px){#paginas{padding:8px}#folhas{gap:12px}.dica{display:none}}
-@media print{html,body{display:block;height:auto;overflow:visible;background:white}#paginas{height:auto;overflow:visible;padding:0}#folhas{display:block;min-width:0;width:100%}.pagina{width:100%!important;height:auto!important;aspect-ratio:auto!important;margin:0;box-shadow:none;overflow:visible;break-after:page;break-inside:avoid}.pagina:last-child{break-after:auto}.pagina canvas{height:auto}.ferramentas,#status{display:none!important}@page{margin:8mm}}
+@media print{html,body{display:block;height:auto;overflow:visible;background:white}#paginas{height:auto;overflow:visible;padding:0}#folhas{display:block;min-width:0;width:100%}.pagina{width:100%!important;height:auto!important;aspect-ratio:auto!important;margin:0;box-shadow:none;overflow:visible;break-after:page;break-inside:avoid}.pagina:last-child{break-after:auto}.pagina canvas{height:auto}.anotacao{print-color-adjust:exact;-webkit-print-color-adjust:exact;box-shadow:none}.ferramentas,.ferramentas-anotacoes,#editorNota,#status{display:none!important}@page{margin:8mm}}
 </style></head>
 <body>
 <div class="ferramentas" role="toolbar" aria-label="Zoom do PDF">
  <button id="zoomMenos" type="button" aria-label="Diminuir zoom" disabled>−</button><output id="zoomValor" aria-live="polite">100%</output><button id="zoomMais" type="button" aria-label="Aumentar zoom" disabled>+</button><button id="zoomAjustar" type="button" disabled>Ajustar</button><span class="dica">Arraste para navegar · Ctrl + roda do mouse para zoom</span>
 </div>
+<div class="ferramentas-anotacoes" role="toolbar" aria-label="Anotações do relatório">
+ <button id="notaNavegar" type="button" aria-pressed="true">Navegar</button><button id="notaConcluida" type="button" aria-pressed="false" disabled>✓ Concluída</button><button id="notaComentario" type="button" aria-pressed="false" disabled>Comentário</button><button id="notaAtualizar" type="button" aria-label="Atualizar anotações" disabled>Atualizar</button><span id="notaEstado" role="status">Carregando anotações...</span>
+</div>
 <div id="paginas" aria-label="Páginas do relatório lado a lado"><div id="folhas"></div></div><p id="status" role="status">Abrindo PDF...</p>
+<dialog id="editorNota" aria-labelledby="notaTitulo"><h2 id="notaTitulo">Comentário</h2><label id="notaCampo" for="notaTexto">Comentário adicional<textarea id="notaTexto" maxlength="300"></textarea><small>Até 300 caracteres. O comentário será incluído na impressão.</small></label><p id="notaDescricao" hidden>Esta coleta foi marcada como concluída.</p><p id="notaErro" role="alert" hidden></p><div class="acoes"><button id="notaSalvar" type="button">Salvar comentário</button><button id="notaRemover" type="button" hidden>Remover</button><button id="notaCancelar" type="button">Cancelar</button></div></dialog>
 <script type="module">
 import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.min.mjs';
 const base='https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/';
@@ -24,10 +31,91 @@ pdfjs.GlobalWorkerOptions.workerSrc=base+'build/pdf.worker.min.mjs';
 const paginas=document.getElementById('paginas'),folhas=document.getElementById('folhas'),status=document.getElementById('status');
 const menos=document.getElementById('zoomMenos'),mais=document.getElementById('zoomMais'),ajustar=document.getElementById('zoomAjustar'),valor=document.getElementById('zoomValor');
 let documento=null,entries=[],observer=null,printing=false,zoom=1,renderTimer;
+const notaEstado=document.getElementById('notaEstado'),editor=document.getElementById('editorNota'),textoNota=document.getElementById('notaTexto'),erroNota=document.getElementById('notaErro');
+const botoesNota={navegar:document.getElementById('notaNavegar'),concluida:document.getElementById('notaConcluida'),comentario:document.getElementById('notaComentario')};
+let apiNotas=null,anotacoes=[],notasProntas=false,carregandoNotas=false,salvandoNota=false,modoNota='navegar',notaEditando=null,promessaNotas=null;
+function estadoNotas(texto,erro=false){notaEstado.textContent=texto;notaEstado.classList.toggle('erro',erro);}
+function atualizarControlesNotas(){
+ for(const [modo,botao] of Object.entries(botoesNota)){botao.setAttribute('aria-pressed',String(modoNota===modo));botao.disabled=printing||salvandoNota||(modo!=='navegar'&&(!notasProntas||carregandoNotas||!entries.length));}
+ document.getElementById('notaAtualizar').disabled=!apiNotas||printing||salvandoNota||carregandoNotas||editor.open;
+ for(const id of ['notaSalvar','notaRemover','notaCancelar'])document.getElementById(id).disabled=salvandoNota;
+ textoNota.disabled=salvandoNota;document.body.dataset.anotacoesProntas=String(notasProntas);
+}
+function mudarModoNota(modo){
+ if(salvandoNota||printing||!botoesNota[modo])return;
+ modoNota=modo;paginas.dataset.modo=modo;atualizarControlesNotas();
+ if(notasProntas)estadoNotas(modo==='concluida'?'Clique na coleta feita para marcar ✓.':modo==='comentario'?'Clique na página para adicionar um comentário.':'Anotações salvas · clique em uma marcação para editar ou remover.');
+}
+function desenharAnotacoes(){
+ for(const entry of entries){
+  entry.layer.replaceChildren();
+  for(const nota of anotacoes.filter(n=>n.pagina===entry.page.pageNumber)){
+   const botao=document.createElement('button');botao.type='button';botao.className='anotacao '+nota.tipo;botao.dataset.id=nota.id;
+   botao.style.left=(nota.tipo==='comentario'?nota.x:Math.max(.025,Math.min(.975,nota.x)))*100+'%';
+   botao.style.top=(nota.tipo==='comentario'?nota.y:Math.max(.025,Math.min(.975,nota.y)))*100+'%';
+   if(nota.tipo==='comentario')botao.style.transform='translate('+(nota.x>.5?'-100%':'0')+','+(nota.y>.5?'-100%':'0')+')';
+   botao.textContent=nota.tipo==='concluida'?'✓':nota.comentario;
+   botao.title=nota.tipo==='concluida'?'Coleta concluída · clique para remover':'Comentário · clique para editar';
+   botao.setAttribute('aria-label',nota.tipo==='concluida'?'Coleta concluída. Editar marcação.':'Editar comentário: '+nota.comentario);
+   botao.onclick=event=>{event.stopPropagation();if(notasProntas&&!salvandoNota&&!printing)abrirEditorNota(nota)};
+   entry.layer.append(botao);
+  }
+ }
+}
+window.atualizarAnotacoes=()=>{
+ if(!apiNotas||carregandoNotas||salvandoNota||printing||editor.open)return promessaNotas||Promise.resolve(false);
+ carregandoNotas=true;estadoNotas('Carregando anotações...');atualizarControlesNotas();
+ promessaNotas=(async()=>{
+  try{anotacoes=await apiNotas.carregar();notasProntas=true;desenharAnotacoes();mudarModoNota(modoNota);mensagem('');return true;}
+  catch(error){notasProntas=false;mudarModoNota('navegar');estadoNotas(error.message||'Não foi possível carregar. Clique em Atualizar anotações.',true);return false;}
+  finally{carregandoNotas=false;atualizarControlesNotas();}
+ })();return promessaNotas;
+};
+function abrirEditorNota(nota){
+ notaEditando={...nota};erroNota.hidden=true;textoNota.value=nota.comentario||'';
+ const comentario=nota.tipo==='comentario';
+ document.getElementById('notaTitulo').textContent=comentario?'Comentário adicional':'Coleta concluída';
+ document.getElementById('notaCampo').hidden=!comentario;document.getElementById('notaDescricao').hidden=comentario;
+ document.getElementById('notaSalvar').hidden=!comentario;document.getElementById('notaRemover').hidden=!nota.id;
+ document.getElementById('notaCancelar').textContent=nota.id?'Fechar':'Cancelar';
+ editor.showModal();atualizarControlesNotas();if(comentario)textoNota.focus();
+}
+async function salvarMarcacao(nota){
+ if(!notasProntas||carregandoNotas||salvandoNota||printing)return;
+ salvandoNota=true;estadoNotas('Salvando anotação...');atualizarControlesNotas();erroNota.hidden=true;
+ try{
+  const salva=await apiNotas.salvar(nota);anotacoes=anotacoes.filter(n=>n.id!==salva.id);anotacoes.push(salva);desenharAnotacoes();
+  if(editor.open)editor.close();estadoNotas('Anotação salva.');mensagem('');
+ }catch(error){estadoNotas(error.message||'Não foi possível salvar. Tente novamente.',true);if(editor.open){erroNota.textContent=error.message;erroNota.hidden=false;}}
+ finally{salvandoNota=false;atualizarControlesNotas();}
+}
+document.getElementById('notaSalvar').onclick=()=>{
+ const comentario=textoNota.value.trim().replace(/\s+/g,' ');
+ if(!comentario){erroNota.textContent='Escreva o comentário antes de salvar.';erroNota.hidden=false;textoNota.focus();return;}
+ salvarMarcacao({...notaEditando,comentario});
+};
+document.getElementById('notaRemover').onclick=async()=>{
+ if(salvandoNota||!notaEditando?.id)return;
+ salvandoNota=true;estadoNotas('Removendo anotação...');atualizarControlesNotas();erroNota.hidden=true;
+ try{const id=await apiNotas.remover(notaEditando.id);anotacoes=anotacoes.filter(n=>n.id!==id);desenharAnotacoes();editor.close();estadoNotas('Anotação removida.');mensagem('');}
+ catch(error){erroNota.textContent=error.message;erroNota.hidden=false;estadoNotas(error.message,true);}
+ finally{salvandoNota=false;atualizarControlesNotas();}
+};
+document.getElementById('notaCancelar').onclick=()=>{if(!salvandoNota)editor.close()};
+editor.addEventListener('cancel',event=>{if(salvandoNota)event.preventDefault()});editor.addEventListener('close',atualizarControlesNotas);
+for(const [modo,botao] of Object.entries(botoesNota))botao.onclick=()=>mudarModoNota(modo);
+document.getElementById('notaAtualizar').onclick=()=>window.atualizarAnotacoes();
+paginas.addEventListener('click',event=>{
+ if(modoNota==='navegar'||!notasProntas||carregandoNotas||salvandoNota||printing||event.target.closest('.anotacao'))return;
+ const entry=entries.find(entry=>entry.element.contains(event.target));if(!entry)return;
+ const rect=entry.element.getBoundingClientRect(),x=Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width)),y=Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height));
+ const nota={pagina:entry.page.pageNumber,x,y,tipo:modoNota,comentario:''};
+ if(modoNota==='comentario')abrirEditorNota(nota);else salvarMarcacao(nota);
+});
 function mensagem(text){status.textContent=text;status.hidden=!text;}
 function atualizarControles(){
  valor.value=Math.round(zoom*100)+'%';document.body.dataset.zoom=String(zoom);
- menos.disabled=!entries.length||printing||zoom<=.25;mais.disabled=!entries.length||printing||zoom>=4;ajustar.disabled=!entries.length||printing;
+ menos.disabled=!entries.length||printing||zoom<=.25;mais.disabled=!entries.length||printing||zoom>=4;ajustar.disabled=!entries.length||printing;atualizarControlesNotas();
 }
 function ajustarFolha(entry){
  if(!paginas.clientWidth||!paginas.clientHeight)return;
@@ -65,7 +153,7 @@ paginas.addEventListener('wheel',event=>{
 },{passive:false});
 let arraste=null;
 paginas.addEventListener('pointerdown',event=>{
- if(event.pointerType!=='mouse'||event.button!==0||!entries.length||printing)return;
+ if(event.pointerType!=='mouse'||event.button!==0||!entries.length||printing||modoNota!=='navegar'||event.target.closest('.anotacao'))return;
  event.preventDefault();
  arraste={id:event.pointerId,x:event.clientX,y:event.clientY,left:paginas.scrollLeft,top:paginas.scrollTop};
  paginas.setPointerCapture(event.pointerId);paginas.classList.add('arrastando');
@@ -92,24 +180,29 @@ async function render(entry,forPrint=false){
  entry.pending=(async()=>{
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Página '+entry.page.pageNumber+' do relatório');
   await entry.page.render({canvas,canvasContext:canvas.getContext('2d'),viewport}).promise;
-  entry.element.replaceChildren(canvas);entry.scale=scale;
+  entry.element.querySelector('canvas')?.remove();entry.element.prepend(canvas);entry.scale=scale;
  })();
  try{await entry.pending;}finally{entry.pending=null;}
 }
-window.abrirPdf=async url=>{
+window.abrirPdf=async (url,api)=>{
  try{
+  apiNotas=api||null;
   mensagem('Abrindo PDF...');
   documento=await pdfjs.getDocument({url,isEvalSupported:false,cMapUrl:base+'cmaps/',cMapPacked:true,standardFontDataUrl:base+'standard_fonts/',wasmUrl:base+'wasm/'}).promise;
   observer=new IntersectionObserver(items=>{for(const item of items)if(item.isIntersecting){const entry=entries.find(e=>e.element===item.target);render(entry).catch(()=>mensagem('Não foi possível exibir esta página. Tente enviar o PDF novamente.'));}},{root:paginas,rootMargin:'400px'});
   for(let n=1;n<=documento.numPages;n++){
    const page=await documento.getPage(n),view=page.getViewport({scale:1}),element=document.createElement('div');element.className='pagina';element.style.aspectRatio=view.width+'/'+view.height;
-   const entry={page,element,width:view.width,height:view.height,scale:0,pending:null};ajustarFolha(entry);entries.push(entry);folhas.append(element);observer.observe(element);
+   const layer=document.createElement('div');layer.className='anotacoes';element.append(layer);
+   const entry={page,element,layer,width:view.width,height:view.height,scale:0,pending:null};ajustarFolha(entry);entries.push(entry);folhas.append(element);observer.observe(element);
   }
   layout();await render(entries[0]);mensagem('');document.body.dataset.pronto='true';
+  if(apiNotas)await window.atualizarAnotacoes();else{estadoNotas('Anotações indisponíveis.');atualizarControlesNotas();}
  }catch(error){mensagem(error.name==='PasswordException'?'Este PDF está protegido por senha. Envie uma versão sem senha.':'Não foi possível abrir este PDF. Tente enviar o arquivo novamente.');}
 };
 window.imprimirPdf=async()=>{
  if(!documento||printing)return;
+ if(salvandoNota||editor.open){mensagem('Salve ou feche a anotação antes de imprimir.');throw new Error('Existe uma anotação em edição.');}
+ if(apiNotas){if(carregandoNotas)await promessaNotas;if(!notasProntas){mensagem('Atualize as anotações antes de imprimir.');throw new Error('As anotações não foram carregadas.');}}
  printing=true;atualizarControles();
  try{mensagem('Preparando impressão...');for(const entry of entries)await render(entry,true);mensagem('');window.focus();window.print();}
  catch(_){mensagem('Não foi possível preparar a impressão. Tente novamente.');}

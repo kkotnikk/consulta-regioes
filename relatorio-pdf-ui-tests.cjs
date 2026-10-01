@@ -3,20 +3,27 @@ const html=fs.readFileSync(__dirname+'/index.html','utf8');
 const routes=[1,2,3].map(id=>({id,motorista:'Motorista '+id,placa:'ABC1D2'+id,regiao:'Lapa',status:'em_rota',numero_coletas:5}));
 const stub=(perfil,ativo=true)=>'window.__state='+JSON.stringify({routes,documents:{},files:{},user:{id:'test',nome:'Pessoa '+perfil,perfil,ativo,rotas_coleta_ids:['admin','operador_coleta'].includes(perfil)?[1,2,3]:[]},users:[{id:'test',nome:'João',perfil:'admin',ativo:true,rotas_coleta_ids:[1,2,3]},{id:'coleta',nome:'Ana',perfil:'operador_coleta',ativo:true,rotas_coleta_ids:[1,2,3]}],signedIn:perfil!=='anon'})+`;
 window.supabase={createClient(){
- function query(table){let single=false,filters={},patch=null,range=null;const q=new Proxy({}, {get(_,key){
+ function query(table){let single=false,filters={},patch=null,range=null,inserir=null,remover=false;const q=new Proxy({}, {get(_,key){
   if(key==='then')return resolve=>{
-   let data=table==='relatorios_por_rota'?Object.values(window.__state.documents):table==='rotas'?window.__state.routes:table==='usuarios'?filters.id===window.__state.user.id?[window.__state.user]:window.__state.users:[];
+   window.__state.annotations||={};
+   const falhaNota=table==='relatorio_anotacoes'&&(window.__annotationFailure||((patch||inserir||remover)&&window.__annotationSaveFailure));
+   if(inserir&&!falhaNota)window.__state.annotations[inserir.id]={...inserir,criado_em:new Date().toISOString()};
+   let data=table==='relatorio_anotacoes'?Object.values(window.__state.annotations):table==='relatorios_por_rota'?Object.values(window.__state.documents):table==='rotas'?window.__state.routes:table==='usuarios'?filters.id===window.__state.user.id?[window.__state.user]:window.__state.users:[];
+   if(inserir)data=data.filter(row=>row.id===inserir.id);
    if(table!=='usuarios')data=data.filter(row=>Object.entries(filters).every(([key,value])=>row[key]===value));
    else if(filters.id)data=data.filter(u=>u.id===filters.id);
-   if(patch){data.forEach(u=>Object.assign(u,patch));window.__lastUpdate={filters,patch};}
+   if(patch&&!falhaNota){data.forEach(u=>Object.assign(u,patch));window.__lastUpdate={filters,patch};}
+   if(remover&&!falhaNota)data.forEach(row=>delete window.__state.annotations[row.id]);
    if(range)data=data.slice(range[0],range[1]+1);
-   const response={data:single?data[0]||null:data,error:!single&&window.__adminQueryFailure&&['usuarios','relatorios_por_rota'].includes(table)?{message:'Falha de teste'}:null};
+   const response={data:single?data[0]||null:data,error:falhaNota||(!single&&window.__adminQueryFailure&&['usuarios','relatorios_por_rota'].includes(table))?{message:'Falha de teste'}:null};
+   if(table==='relatorio_anotacoes'&&window.__annotationDelay){window.__annotationStarted=true;setTimeout(()=>resolve(response),window.__annotationDelay);return;}
    if(!single&&window.__adminQueryDelay&&['usuarios','relatorios_por_rota'].includes(table)){window.__adminQueryStarted=true;setTimeout(()=>resolve(response),window.__adminQueryDelay);}else resolve(response);
   };
   if(key==='single'||key==='maybeSingle')return ()=>{single=true;return q};
   if(key==='range')return (start,end)=>{range=[start,end];return q};
   if(key==='eq')return (name,value)=>{filters[name]=value;return q};
-  if(key==='upsert')return value=>{window.__state.documents[value.usuario_id+'|'+value.rota_id]=value;return q};if(key==='update')return value=>{patch=value;return q};return ()=>q;
+  if(key==='insert')return value=>{inserir=value;return q};if(key==='delete')return ()=>{remover=true;return q};
+  if(key==='upsert')return value=>{for(const [id,note] of Object.entries(window.__state.annotations||{}))if(note.usuario_id===value.usuario_id&&note.rota_id===value.rota_id&&note.arquivo_path!==value.arquivo_path)delete window.__state.annotations[id];window.__state.documents[value.usuario_id+'|'+value.rota_id]=value;return q};if(key==='update')return value=>{patch=value;return q};return ()=>q;
  }});return q;}
  return {auth:{getSession:async()=>({data:{session:window.__state.signedIn?{user:{id:window.__state.user.id},access_token:'test-jwt'}:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signOut:async()=>{window.__state.signedIn=false;return {error:null}}},from:query,storage:{from(){return {async upload(path,file){window.__uploads=(window.__uploads||0)+1;window.__state.files[path]=file;return {error:null}},async download(path){window.__downloadStarted=path;if(window.__downloadDelay)await new Promise(r=>setTimeout(r,window.__downloadDelay));return {data:window.__state.files[path],error:null}},async remove(paths){window.__removed=paths;paths.forEach(p=>delete window.__state.files[p]);return {error:null}}}}},rpc:async()=>({data:0,error:null}),removeChannel:async()=>{},channel(){const c={on(){return c},subscribe(){return c},presenceState(){return {}},track:async()=>{}};return c;}};
 }};`;
