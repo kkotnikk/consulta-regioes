@@ -53,6 +53,20 @@ window.supabase={createClient(){
   }
   if(perfil==='admin'){
    await page.evaluate(()=>mostrarPainelAdmin());
+   assert.equal(await page.locator('#gerenciamentoAtalhos').isVisible(),true);
+   for(const target of ['adminUsuariosFerramenta','adminBairrosFerramenta','adminNovaRotaFerramenta','adminRotasFerramenta','adminSuporteFerramenta','adminSugestoesFerramenta','adminHistoricoFerramenta']){
+    const before=await page.evaluate(()=>({panel:document.getElementById('gerenciamentoView').scrollTop,window:scrollY}));
+    await page.locator('#gerenciamentoAtalhos button[aria-controls="'+target+'"]').click();
+    await page.waitForTimeout(180);
+    const sample=await page.evaluate(id=>{const pane=document.getElementById('gerenciamentoView'),el=document.getElementById(id);return {at:pane.scrollTop,to:Math.max(0,Math.min(pane.scrollTop+el.getBoundingClientRect().top-pane.getBoundingClientRect().top-22,pane.scrollHeight-pane.clientHeight)),window:scrollY}},target);
+    if(Math.abs(sample.to-before.panel)>5)assert(sample.at>Math.min(before.panel,sample.to)&&sample.at<Math.max(before.panel,sample.to),JSON.stringify(sample));
+    assert.equal(sample.window,before.window);
+    await page.waitForFunction(id=>document.activeElement===document.getElementById(id).querySelector('h3'),target);
+    assert.equal(await page.locator('#gerenciamentoAtalhos button[aria-controls="'+target+'"]').getAttribute('aria-current'),'location');
+   }
+   const menu=await page.locator('.sidebar').boundingBox();assert.equal(menu.y,0);
+   await page.locator('#gerenciamentoAtalhos button[aria-controls="adminUsuariosFerramenta"]').click();
+   await page.waitForFunction(()=>document.activeElement===document.getElementById('adminUsuariosFerramenta').querySelector('h3'));
    await page.getByRole('button',{name:'Cadastrar usuário',exact:true}).click();
    await page.locator('#usuarioNome').fill('Maria');
    await page.locator('#usuarioEmail').fill('maria@example.test');
@@ -63,8 +77,9 @@ window.supabase={createClient(){
    assert.match(await page.locator('#usuarioFormErro').innerText(),/diferentes/);
    assert.equal(posted,null);
    await page.locator('#usuarioRota2').selectOption('2');
+   await page.locator('#usuarioRota3').selectOption('3');
    await page.locator('#usuarioSalvar').click();await page.waitForFunction(()=>document.getElementById('formUsuario').hidden);
-   assert.equal(posted.nome,'Maria');assert.equal(posted.perfil,'operador_coleta');assert.deepEqual(posted.rotas_coleta_ids,[1,2]);
+   assert.equal(posted.nome,'Maria');assert.equal(posted.perfil,'operador_coleta');assert.deepEqual(posted.rotas_coleta_ids,[1,2,3]);
    await page.evaluate(()=>abrirCadastroUsuario('coleta'));
    assert.equal(await page.locator('#usuarioNome').inputValue(),'Ana');
    assert.equal(await page.locator('#usuarioCredenciais').isVisible(),false);
@@ -73,6 +88,15 @@ window.supabase={createClient(){
    await page.locator('#usuarioSalvar').click();await page.waitForFunction(()=>document.getElementById('formUsuario').hidden);
    assert.deepEqual(await page.evaluate(()=>window.__lastUpdate.patch.rotas_coleta_ids),[]);
    assert.equal(await page.evaluate(()=>window.__lastUpdate.patch.perfil),'operador_conferencia');
+   await page.evaluate(()=>abrirCadastroUsuario('test'));
+   assert.equal(await page.locator('#usuarioTerceiraRota').isVisible(),true);
+   assert.equal(await page.locator('#usuarioRota1').evaluate(el=>el.required),false);
+   await page.locator('#usuarioRota1').selectOption('1');
+   await page.locator('#usuarioRota2').selectOption('2');
+   await page.locator('#usuarioRota3').selectOption('3');
+   await page.locator('#usuarioSalvar').click();await page.waitForFunction(()=>document.getElementById('formUsuario').hidden);
+   assert.deepEqual(await page.evaluate(()=>window.__lastUpdate.patch.rotas_coleta_ids),[1,2,3]);
+   assert.equal(await page.evaluate(()=>usuarioPodeRetornarRota(3)),true);
    await page.evaluate(()=>abrirCadastroUsuario());
    await page.screenshot({path:__dirname+'/usuarios-'+width+'.png',fullPage:false});
    const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));

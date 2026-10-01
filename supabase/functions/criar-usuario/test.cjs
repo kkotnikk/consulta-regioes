@@ -15,8 +15,12 @@ const call=(data=body,token='valid')=>handler(new Request('https://example.test'
  fresh();assert.equal((await call({...body,perfil:'operador_conferencia'})).status,400);
  fresh();assert.equal((await call(null)).status,400);
  fresh();const ok=await call();assert.equal(ok.status,201);assert.deepEqual(JSON.parse(JSON.stringify(state.created)),{email:body.email,password:body.senha,email_confirm:true});assert.equal(state.profile.nome,'Maria');assert.equal(state.profile.ativo,false);assert.equal(state.profile.senha,undefined);assert.equal((await ok.text()).includes(body.senha),false);
+ for(const ids of [[1],[1,2],[1,2,3]]){fresh();assert.equal((await call({...body,rotas_coleta_ids:ids})).status,201);}
+ for(const ids of [[],[1,2,3,4],[1,1]]){fresh();assert.equal((await call({...body,rotas_coleta_ids:ids})).status,400);}
+ for(const ids of [[],[1],[1,2],[1,2,3]]){fresh();assert.equal((await call({...body,perfil:'admin',rotas_coleta_ids:ids})).status,201);}
+ fresh();assert.equal((await call({...body,perfil:'admin',rotas_coleta_ids:[1,2,3,4]})).status,400);
  fresh();state.profileError={message:'missing routes'};assert.equal((await call()).status,400);assert.equal(state.deleted,'created');
  fresh();state.createError={code:'email_exists'};assert.equal((await call()).status,400);assert.equal(state.profile,undefined);
- console.log('OK: criação individual, JWT, admin ativo, duas rotas, validações e limpeza em caso de falha.');
+ console.log('OK: criação individual, JWT, admin ativo, limites por perfil, validações e limpeza em caso de falha.');
 })().catch(e=>{console.error(e);process.exit(1)});
 

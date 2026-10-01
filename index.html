@@ -401,6 +401,16 @@ html{scrollbar-gutter:stable}
 
 /* Acessos individuais */
 [hidden]{display:none!important}.usuario-form{margin:22px 0;padding:20px 0;border-top:1px solid #cbb491;border-bottom:1px solid #cbb491}.usuario-form h4{margin:0 0 18px;color:#624523;font-size:20px}.usuario-form small{font-size:12px;color:#81613d}.usuario-form input,.usuario-form select{width:100%;min-width:0}.usuario-form .acoes button{flex:1}.usuario-item>.editar{margin-top:12px;font-size:12px}.usuario-form :disabled{opacity:.65}.usuario-meta{overflow-wrap:anywhere}
+
+/* Atalhos compactos, sempre ao alcance dentro do gerenciamento. */
+.side-nav>.admin-btn{min-height:36px;padding:8px 11px;font-size:12px;border-radius:6px;box-shadow:none}
+.admin-atalhos{display:grid;gap:3px;margin-top:10px;padding-top:10px;border-top:1px solid #8b75533b}
+.admin-atalhos:not([hidden]){animation:soft-simple-in .45s var(--soft-out) both}
+.admin-atalhos button{display:flex;align-items:center;min-height:34px;padding:7px 11px;border:1px solid transparent;border-radius:5px;background:transparent;color:#dbc9ab;font-size:12px;font-weight:400;text-align:left;box-shadow:none;white-space:nowrap;transition:background .25s,color .25s,border-color .25s}
+.admin-atalhos button:hover{background:#ffffff0a;color:#fff1da}.admin-atalhos button.ativo{background:#08703f26;border-color:#7d987055;color:#e3efd6}.admin-atalhos button:focus-visible{outline:2px solid #c8a575;outline-offset:2px}
+#admin .admin-bloco>button{width:auto;min-height:34px;padding:8px 12px;font-size:12px;box-shadow:none}#admin .acoes button{min-height:32px;padding:7px 10px;font-size:11px;box-shadow:none}
+#admin h3:focus{outline:none}
+@media(max-width:760px){.side-nav>.admin-btn{font-size:10px;padding:8px;min-height:34px}.admin-atalhos{display:flex;gap:4px;overflow-x:auto;margin-top:8px;padding-top:8px;padding-bottom:2px;scrollbar-width:none}.admin-atalhos::-webkit-scrollbar{display:none}.admin-atalhos button{flex:none;font-size:11px;min-height:34px;padding:7px 9px}}
 </style>
 </head>
 
@@ -426,6 +436,15 @@ html{scrollbar-gutter:stable}
     <a class="nav-link" href="#controleRotas"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Rotas</span></a>
     <a class="nav-link" href="#relatorio" aria-controls="relatorioView" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H5v18h14V8l-5-5Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></svg><span>Relatório</span></a>
     <button type="button" class="admin-btn" onclick="abrirAdmin()" aria-controls="gerenciamentoView" aria-expanded="false">Gerenciar sistema</button>
+  </nav>
+  <nav id="gerenciamentoAtalhos" class="admin-atalhos" aria-label="Ferramentas do gerenciamento" hidden>
+    <button type="button" onclick="irFerramentaAdmin('adminBairrosFerramenta')" aria-controls="adminBairrosFerramenta">Bairros</button>
+    <button type="button" onclick="irFerramentaAdmin('adminNovaRotaFerramenta')" aria-controls="adminNovaRotaFerramenta">Nova rota</button>
+    <button type="button" onclick="irFerramentaAdmin('adminRotasFerramenta')" aria-controls="adminRotasFerramenta">Rotas cadastradas</button>
+    <button type="button" onclick="irFerramentaAdmin('adminSuporteFerramenta')" aria-controls="adminSuporteFerramenta">Suporte</button>
+    <button type="button" onclick="irFerramentaAdmin('adminSugestoesFerramenta')" aria-controls="adminSugestoesFerramenta">Sugestões</button>
+    <button type="button" onclick="irFerramentaAdmin('adminHistoricoFerramenta')" aria-controls="adminHistoricoFerramenta">Histórico</button>
+    <button type="button" onclick="irFerramentaAdmin('adminUsuariosFerramenta')" aria-controls="adminUsuariosFerramenta">Usuários</button>
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-note"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><strong>Mais clareza na operação.</strong><p>Regiões e rotas reunidas em um só lugar.</p></div>
@@ -1040,7 +1059,7 @@ async function mostrarPainelAdmin() {
 
     <div class="admin-formularios">
 
-      <div class="admin-bloco">
+      <div id="adminBairrosFerramenta" class="admin-bloco">
         <h3>Gerenciar bairros</h3>
 
         <div class="campo">
@@ -1078,7 +1097,7 @@ async function mostrarPainelAdmin() {
         <div id="adminLista" class="lista-bairros-admin"></div>
       </div>
 
-      <div class="admin-bloco">
+      <div id="adminNovaRotaFerramenta" class="admin-bloco">
         <h3>Gerenciar rotas</h3>
 
         <div class="campo">
@@ -1145,7 +1164,7 @@ async function mostrarPainelAdmin() {
 
     </div>
 
-    <div class="admin-lista controle-rotas-admin">
+    <div id="adminRotasFerramenta" class="admin-lista controle-rotas-admin">
       <h3>Controle de Rotas cadastradas</h3>
       <div class="admin-rotas-pesquisa">
         <label for="buscaRotasAdmin">Pesquisar rotas cadastradas</label>
@@ -1158,7 +1177,7 @@ async function mostrarPainelAdmin() {
       <div id="adminRotasLista"></div>
     </div>
 
-    <div class="admin-lista suporte-admin-secao">
+    <div id="adminSuporteFerramenta" class="admin-lista suporte-admin-secao">
       <div class="suporte-admin-cabecalho">
         <div>
           <div class="suporte-kicker">SUPORTE</div>
@@ -1170,7 +1189,7 @@ async function mostrarPainelAdmin() {
       <div id="adminSuporteLista" class="suporte-admin-lista"></div>
     </div>
 
-    <div class="admin-lista sugestoes-admin-secao">
+    <div id="adminSugestoesFerramenta" class="admin-lista sugestoes-admin-secao">
       <div class="suporte-admin-cabecalho">
         <div>
           <div class="suporte-kicker">SUGESTÕES</div>
@@ -1183,13 +1202,13 @@ async function mostrarPainelAdmin() {
     </div>
 
     <div class="admin-extra-grid">
-      <section class="admin-bloco">
+      <section id="adminHistoricoFerramenta" class="admin-bloco">
         <div class="suporte-kicker">AUDITORIA</div>
         <h3>Histórico de Rotas</h3>
         <p class="aviso" style="text-align:left">Últimas alterações registradas no sistema.</p>
         <div id="adminHistoricoRotas" class="historico-lista"></div>
       </section>
-      <section class="admin-bloco">
+      <section id="adminUsuariosFerramenta" class="admin-bloco">
         <div class="suporte-kicker">ACESSOS</div>
         <h3>Usuários</h3>
         <p class="aviso" style="text-align:left">Uma conta para cada pessoa, com nome e permissões individuais.</p>
@@ -1207,8 +1226,9 @@ async function mostrarPainelAdmin() {
           </select></div>
           <p id="usuarioResumoPermissoes" class="aviso" style="text-align:left"></p>
           <div id="usuarioRotasColeta">
-            <div class="campo"><label for="usuarioRota1">Primeira rota de coleta</label><select id="usuarioRota1"></select></div>
-            <div class="campo"><label for="usuarioRota2">Segunda rota de coleta</label><select id="usuarioRota2"></select></div>
+            <div class="campo"><label for="usuarioRota1">Primeira rota</label><select id="usuarioRota1"></select></div>
+            <div class="campo"><label for="usuarioRota2">Segunda rota (opcional)</label><select id="usuarioRota2"></select></div>
+            <div id="usuarioTerceiraRota" class="campo"><label for="usuarioRota3">Terceira rota (opcional)</label><select id="usuarioRota3"></select></div>
           </div>
           <div class="campo"><label for="usuarioAtivo">Acesso</label><select id="usuarioAtivo"><option value="true">Ativo</option><option value="false">Desativado</option></select></div>
           <p id="usuarioFormErro" class="erro" role="alert" hidden></p>
@@ -2739,6 +2759,9 @@ window.addEventListener("resize", atualizarAlturaMenuSistema);
 atualizarAlturaMenuSistema();
 
 function atualizarMenuSistema(hash) {
+  const atalhos = document.getElementById("gerenciamentoAtalhos");
+  if (atalhos) atalhos.hidden = telaSistemaAtual !== "gerenciamento" || !usuarioTemPermissao([]);
+  atualizarAlturaMenuSistema();
   const selecionado = hash || (telaSistemaAtual === "relatorio" ? "#relatorio" : "#consulta");
   document.querySelectorAll(".nav-link").forEach(link => {
     const ativo = telaSistemaAtual !== "gerenciamento" && link.getAttribute("href") === selecionado;
@@ -2748,6 +2771,12 @@ function atualizarMenuSistema(hash) {
   const botao = document.querySelector(".admin-btn");
   botao?.classList.toggle("ativo", telaSistemaAtual === "gerenciamento");
   botao?.setAttribute("aria-expanded", String(telaSistemaAtual === "gerenciamento"));
+}
+
+function irFerramentaAdmin(id) {
+  if (telaSistemaAtual !== "gerenciamento" || !usuarioTemPermissao([])) return;
+  const alvo = document.getElementById(id);
+  if (alvo) window.solidezSoft?.navigate(alvo);
 }
 
 function alternarTelaSistema(destino, { imediato = false } = {}) {
@@ -3010,7 +3039,7 @@ async function registrarRetornandoBase(id, botao) {
   try {
     const usuario = await obterUsuarioAtualSistema();
     if (!usuarioPodeRetornarRota(id, usuario)) {
-      mostrarToast("Você só pode registrar o retorno à base nas duas rotas atribuídas ao seu usuário.", "erro");
+      mostrarToast("Você só pode registrar o retorno à base nas rotas atribuídas ao seu usuário.", "erro");
       return;
     }
     const rotaId = Number(id);
@@ -3082,7 +3111,7 @@ async function carregarUsuariosAdmin() {
     return '<div class="usuario-item"><div class="usuario-topo"><strong>' + escapeHtml(u.nome || "Sem nome") +
       '</strong><span class="perfil-badge">' + nomePerfilUsuario(u.perfil) +
       '</span></div><div class="usuario-meta">' + (u.ativo ? "● Acesso ativo" : "⚪ Acesso desativado") +
-      (u.perfil === "operador_coleta" ? '<br>' + (rotas.length === 2 ? "Coleta: " + rotas.map(escapeHtml).join(" / ") : "Pendente: informe o nome da pessoa e escolha duas rotas.") : "") +
+      (["operador_coleta", "admin"].includes(u.perfil) ? '<br>' + (rotas.length ? "Rotas vinculadas: " + rotas.map(escapeHtml).join(" / ") : u.perfil === "operador_coleta" ? "Pendente: informe o nome da pessoa e escolha até três rotas." : "Sem rotas vinculadas · acesso completo") : "") +
       '</div><button type="button" class="editar" onclick="abrirCadastroUsuario(usuariosAdminCache[' + usuariosAdminCache.indexOf(u) + '].id)">Editar usuário</button></div>';
   }).join("") || '<p class="aviso">Nenhum usuário cadastrado.</p>';
 }
@@ -3119,7 +3148,7 @@ async function abrirCadastroUsuario(id = "") {
   const options = '<option value="">Selecione uma rota</option>' + rotasCadastroUsuario.map(r =>
     '<option value="' + Number(r.id) + '">' + escapeHtml([r.motorista, r.regiao, r.placa].filter(Boolean).join(" · ")) + '</option>'
   ).join("");
-  [1, 2].forEach(n => {
+  [1, 2, 3].forEach(n => {
     const select = document.getElementById("usuarioRota" + n);
     select.innerHTML = options;
     select.value = String(usuario?.rotas_coleta_ids?.[n - 1] || "");
@@ -3136,15 +3165,17 @@ async function abrirCadastroUsuario(id = "") {
 function atualizarCamposPerfilUsuario() {
   const perfil = document.getElementById("usuarioPerfil").value;
   const coleta = perfil === "operador_coleta";
-  document.getElementById("usuarioRotasColeta").hidden = !coleta;
-  [1, 2].forEach(n => {
+  const administrador = perfil === "admin";
+  document.getElementById("usuarioRotasColeta").hidden = !coleta && !administrador;
+  document.getElementById("usuarioTerceiraRota").hidden = !coleta && !administrador;
+  [1, 2, 3].forEach(n => {
     const campo = document.getElementById("usuarioRota" + n);
-    campo.required = coleta; campo.disabled = !coleta;
+    campo.required = coleta && n === 1; campo.disabled = !coleta && !administrador;
   });
   document.getElementById("usuarioResumoPermissoes").textContent = ({
-    operador_coleta: "Visualiza todas as rotas. Marca Retornando à base somente nas duas rotas abaixo. Pode acessar, editar e imprimir o relatório.",
+    operador_coleta: "Visualiza todas as rotas. Escolha de uma até três rotas para marcar Retornando à base. Pode acessar, editar e imprimir o relatório.",
     operador_conferencia: "Visualiza todas as rotas e confirma o retorno à base. Sem acesso ao relatório.",
-    admin: "Acesso completo: todas as permissões existentes e futuras, usuários, rotas e relatório.",
+    admin: "Acesso completo: todas as permissões existentes e futuras. Pode vincular até três rotas, mantendo acesso a todas as rotas e ações.",
   })[perfil] || "";
 }
 
@@ -3167,11 +3198,12 @@ async function salvarUsuario(event) {
   const payload = {
     nome: document.getElementById("usuarioNome").value.trim(), perfil,
     ativo: document.getElementById("usuarioAtivo").value === "true",
-    rotas_coleta_ids: perfil === "operador_coleta" ? [1, 2].map(n => Number(document.getElementById("usuarioRota" + n).value)) : [],
+    rotas_coleta_ids: (perfil === "operador_coleta" ? [1, 2, 3] : perfil === "admin" ? [1, 2, 3] : []).map(n => document.getElementById("usuarioRota" + n).value).filter(Boolean).map(Number),
   };
   erro.hidden = true;
-  if (!payload.nome || (perfil === "operador_coleta" && (payload.rotas_coleta_ids.some(id => !Number.isSafeInteger(id) || id <= 0) || payload.rotas_coleta_ids[0] === payload.rotas_coleta_ids[1]))) {
-    erro.textContent = "Informe o nome da pessoa e selecione duas rotas diferentes para Operador Coleta.";
+  const limiteRotas = perfil === "operador_coleta" ? 3 : perfil === "admin" ? 3 : 0;
+  if (!payload.nome || (perfil === "operador_coleta" && payload.rotas_coleta_ids.length < 1) || payload.rotas_coleta_ids.length > limiteRotas || payload.rotas_coleta_ids.some(id => !Number.isSafeInteger(id) || id <= 0) || new Set(payload.rotas_coleta_ids).size !== payload.rotas_coleta_ids.length) {
+    erro.textContent = "Informe o nome e escolha rotas diferentes: até três para Coleta ou até três para Administrador.";
     erro.hidden = false; return;
   }
   botao.disabled = true;
@@ -3776,19 +3808,30 @@ document.addEventListener('click', event => {
   function setActiveNav(hash){ atualizarMenuSistema(hash); }
   function navigate(target,hash){
     if(!target||!target.getClientRects().length)return;
-    cancelScroll();setActiveNav(hash);
+    cancelScroll();
+    const panel=target.closest('.gerenciamento-tela');
+    if(panel){
+      document.querySelectorAll('#gerenciamentoAtalhos button').forEach(button=>{
+        const active=button.getAttribute('aria-controls')===target.id;
+        button.classList.toggle('ativo',active);
+        if(active)button.setAttribute('aria-current','location');else button.removeAttribute('aria-current');
+      });
+    }else setActiveNav(hash);
     if(target.classList.contains('soft-reveal'))reveal(target,true);
-    const from=scrollY;
-    const destination=()=>hash === "#consulta" ? 0 : Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24-parseFloat(getComputedStyle(root).getPropertyValue("--menu-height")),document.documentElement.scrollHeight-innerHeight));
+    const from=panel?panel.scrollTop:scrollY;
+    const destination=()=>panel
+      ? Math.max(0,Math.min(panel.scrollTop+target.getBoundingClientRect().top-panel.getBoundingClientRect().top-22,panel.scrollHeight-panel.clientHeight))
+      : hash === "#consulta" ? 0 : Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24-parseFloat(getComputedStyle(root).getPropertyValue("--menu-height")),document.documentElement.scrollHeight-innerHeight));
     const distance=destination()-from;
-    const duration=motion.matches?Math.min(1300,900+Math.abs(distance)*.2):Math.min(2050,1200+Math.abs(distance)*.40);
+    const duration=motion.matches?Math.min(1100,760+Math.abs(distance)*.18):Math.min(1800,1000+Math.abs(distance)*.36);
     const start=performance.now();
-    const focus=()=>{target.setAttribute('tabindex','-1');target.focus({preventScroll:true});if(hash&&location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}};
+    const focus=()=>{const heading=panel?target.querySelector('h3')||target:target;heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});if(hash&&location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}};
     if(Math.abs(distance)<2){focus();return;}
     const step=now=>{
       const t=Math.min(1,(now-start)/duration);
       const eased=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
-      window.scrollTo({top:from+(destination()-from)*eased,behavior:'instant'});
+      const next=from+(destination()-from)*eased;
+      if(panel)panel.scrollTo({top:next,behavior:'instant'});else window.scrollTo({top:next,behavior:'instant'});
       if(t<1)scrollFrame=requestAnimationFrame(step);else{scrollFrame=null;focus();}
     };
     scrollFrame=requestAnimationFrame(step);
