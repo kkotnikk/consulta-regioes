@@ -391,7 +391,8 @@ html{scrollbar-gutter:stable}
 .relatorio-drop-overlay{position:absolute;inset:0;z-index:2;display:none;place-items:center;padding:18px;border:2px dashed #08703f;border-radius:8px;background:#f4ead8f2;color:#08703f;font-size:24px;font-weight:600;text-align:center}
 #relatorioConteudo.pdf-arrastado .relatorio-drop-overlay{display:grid}
 #relatorioConteudo.pdf-arrastado .relatorio-dropzone{border-color:#08703f;background:#08703f09}
-#relatorioPdfViewer{display:block;width:100%;height:100%;min-height:200px;border:1px solid #cbb491;border-radius:8px;background:#f4ead8}
+#relatorioConteudo.pdf-aberto{overflow:hidden;border:1px solid #cbb491;border-radius:10px;background:#e8dfce}
+#relatorioPdfViewer{display:block;width:100%;height:100%;min-height:0;border:0;border-radius:0;background:#f4ead8}
 .relatorio-imprimir{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:11px 16px;white-space:nowrap;font-size:12px}
 .relatorio-imprimir .icon{width:17px;height:17px}
 @media print{
@@ -421,7 +422,7 @@ html{scrollbar-gutter:stable}
   #relatorioView .relatorio-cabecalho{flex-wrap:wrap}
   .relatorio-acoes{justify-content:flex-start}
   #relatorioEnviarPdf{font-size:11px;padding:10px 12px}
-  #relatorioPdfViewer{min-height:160px}
+  #relatorioPdfViewer{min-height:0}
 }
 
 /* Acessos individuais */
@@ -440,6 +441,10 @@ html{scrollbar-gutter:stable}
 .admin-atalhos button{display:flex;align-items:center;justify-content:center;min-width:0;min-height:34px;padding:7px 8px;border:1px solid #8b755326;border-radius:5px;background:transparent;color:#dbc9ab;font-size:11px;font-weight:400;text-align:center;box-shadow:none;white-space:nowrap;transition:background .25s,color .25s,border-color .25s}
 .admin-atalhos button:hover{background:#ffffff0a;color:#fff1da}.admin-atalhos button.ativo{background:#08703f26;border-color:#7d987055;color:#e3efd6}.admin-atalhos button:focus-visible{outline:2px solid #c8a575;outline-offset:2px}
 #admin .admin-bloco>button{width:auto;min-height:34px;padding:8px 12px;font-size:12px;box-shadow:none}#admin .acoes button{min-height:32px;padding:7px 10px;font-size:11px;box-shadow:none}
+#admin .admin-extra-grid{align-items:stretch}
+#adminUsuariosFerramenta>button{margin:2px 0 16px}
+#adminUsuariosFerramenta .usuario-form{margin:0 0 22px}
+.usuario-rotas-titulo{display:flex;align-items:center;gap:10px;margin-bottom:14px}.usuario-rotas-titulo strong{font-size:13px}.usuario-rotas-titulo small{margin-left:auto}#admin #usuarioAdicionarRota{width:30px;height:30px;min-height:30px;padding:0;border:1px solid #cbb491;border-radius:5px;background:transparent;color:#08703f;font-size:22px;line-height:1;box-shadow:none}#usuarioAdicionarRota:focus-visible{outline:2px solid #08703f;outline-offset:2px}
 #admin h3:focus{outline:none}
 @media(max-width:760px){.side-nav>.admin-btn{font-size:10px;padding:8px;min-height:34px}.admin-atalhos{margin-top:8px;padding-top:8px;padding-bottom:2px}.admin-atalhos button{font-size:11px;min-height:32px;padding:6px 9px}}
 </style>
@@ -1264,9 +1269,10 @@ async function mostrarPainelAdmin() {
           </select></div>
           <p id="usuarioResumoPermissoes" class="aviso" style="text-align:left"></p>
           <div id="usuarioRotasColeta">
+            <div class="usuario-rotas-titulo"><strong>Vincular rotas</strong><button id="usuarioAdicionarRota" type="button" aria-label="Adicionar rota" title="Adicionar rota" onclick="adicionarRotaUsuario()">+</button><small>Até 3 rotas</small></div>
             <div class="campo"><label for="usuarioRota1">Primeira rota</label><select id="usuarioRota1"></select></div>
-            <div class="campo"><label for="usuarioRota2">Segunda rota (opcional)</label><select id="usuarioRota2"></select></div>
-            <div id="usuarioTerceiraRota" class="campo"><label for="usuarioRota3">Terceira rota (opcional)</label><select id="usuarioRota3"></select></div>
+            <div id="usuarioSegundaRota" class="campo" hidden><label for="usuarioRota2">Segunda rota (opcional)</label><select id="usuarioRota2"></select></div>
+            <div id="usuarioTerceiraRota" class="campo" hidden><label for="usuarioRota3">Terceira rota (opcional)</label><select id="usuarioRota3"></select></div>
           </div>
           <div class="campo"><label for="usuarioAtivo">Acesso</label><select id="usuarioAtivo"><option value="true">Ativo</option><option value="false">Desativado</option></select></div>
           <p id="usuarioFormErro" class="erro" role="alert" hidden></p>
@@ -2995,6 +3001,7 @@ function renderizarRelatorio() {
   enviar.textContent = relatorioPdfEnviando ? "Enviando..." : relatorioDocumentoAtual ? "Substituir PDF" : "Enviar PDF";
   document.querySelector(".relatorio-imprimir").disabled = !relatorioPdfUrl;
   const status = document.getElementById("relatorioPdfStatus");
+  conteudo.classList.toggle("pdf-aberto", !!relatorioPdfUrl);
   if (!relatorioPdfUrl) {
     let area = conteudo.querySelector(".relatorio-dropzone-area");
     if (!area) {
@@ -3015,7 +3022,7 @@ function renderizarRelatorio() {
   frame.title = "Relatório da rota " + relatorioRotaId + ": " + relatorioDocumentoAtual.nome;
   frame.dataset.documento = relatorioDocumentoAtual.arquivo_path;
   const pdfUrl = relatorioPdfUrl;
-  frame.src = "./relatorio-pdf-viewer.html";
+  frame.src = "./relatorio-pdf-viewer.html?v=20261001-zoom-lado-a-lado";
   frame.onload = () => {
     if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl);
   };
@@ -3342,6 +3349,7 @@ async function carregarHistoricoRotas(){
 let usuariosAdminCache = [];
 let rotasCadastroUsuario = [];
 let cadastroUsuarioCarregamento = 0;
+let cadastroUsuarioRotasVisiveis = 1;
 
 async function carregarUsuariosAdmin() {
   const lista = document.getElementById("adminUsuarios");
@@ -3371,6 +3379,7 @@ async function abrirCadastroUsuario(id = "") {
   const usuario = usuariosAdminCache.find(u => u.id === id);
   if (id && !usuario) return;
   const carregamento = ++cadastroUsuarioCarregamento;
+  cadastroUsuarioRotasVisiveis = Math.max(1, Math.min(3, usuario?.rotas_coleta_ids?.length || 1));
   form.reset();
   document.getElementById("usuarioEditarId").value = id;
   document.getElementById("usuarioNome").value = usuario?.nome === "Operacional Teste" ? "" : usuario?.nome || "";
@@ -3409,15 +3418,24 @@ async function abrirCadastroUsuario(id = "") {
   form.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
+function adicionarRotaUsuario() {
+  if (cadastroUsuarioRotasVisiveis >= 3 || document.getElementById("usuarioRotasColeta").hidden) return;
+  cadastroUsuarioRotasVisiveis++;
+  atualizarCamposPerfilUsuario();
+  document.getElementById("usuarioRota" + cadastroUsuarioRotasVisiveis).focus({ preventScroll: true });
+}
+
 function atualizarCamposPerfilUsuario() {
   const perfil = document.getElementById("usuarioPerfil").value;
   const coleta = perfil === "operador_coleta";
   const administrador = perfil === "admin";
   document.getElementById("usuarioRotasColeta").hidden = !coleta && !administrador;
-  document.getElementById("usuarioTerceiraRota").hidden = !coleta && !administrador;
+  document.getElementById("usuarioSegundaRota").hidden = cadastroUsuarioRotasVisiveis < 2;
+  document.getElementById("usuarioTerceiraRota").hidden = cadastroUsuarioRotasVisiveis < 3;
+  document.getElementById("usuarioAdicionarRota").hidden = cadastroUsuarioRotasVisiveis >= 3;
   [1, 2, 3].forEach(n => {
     const campo = document.getElementById("usuarioRota" + n);
-    campo.required = coleta && n === 1; campo.disabled = !coleta && !administrador;
+    campo.required = coleta && n === 1; campo.disabled = (!coleta && !administrador) || n > cadastroUsuarioRotasVisiveis;
   });
   document.getElementById("usuarioResumoPermissoes").textContent = ({
     operador_coleta: "Visualiza todas as rotas. Escolha de uma até três rotas para marcar Retornando à base. Pode acessar, editar e imprimir o relatório.",

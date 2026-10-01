@@ -5,6 +5,17 @@ const fs=require('fs'),assert=require('node:assert/strict');
  const db=new PGlite();await db.exec(fs.readFileSync(__dirname+'/perfis-test-fixture.sql','utf8'));
  await db.exec(fs.readFileSync(__dirname+'/perfis-individuais.sql','utf8'));
  await db.exec(fs.readFileSync(__dirname+'/rotas-por-perfil.sql','utf8'));
+ // Reproduz a ausência de privilégios encontrada no cadastro em produção.
+ await db.exec('revoke select,insert on usuarios from service_role; revoke select on rotas from service_role; set role service_role');
+ await assert.rejects(()=>db.query('select perfil,ativo from usuarios'),/permission denied/);
+ await db.exec('reset role');
+ await db.exec(fs.readFileSync(__dirname+'/cadastro-usuario-service.sql','utf8'));
+ await db.exec('set role service_role');
+ assert.equal((await db.query('select * from usuarios')).rows.length,2);
+ assert.equal((await db.query('select * from rotas')).rows.length,8);
+ await db.query("insert into usuarios(id,nome,perfil,ativo) values('00000000-0000-0000-0000-000000000003','Teste de cadastro','admin',true)");
+ await db.exec('reset role');
+ await db.query("delete from usuarios where id='00000000-0000-0000-0000-000000000003'");
  const uid=n=>'00000000-0000-0000-0000-'+String(n).padStart(12,'0');
  assert.deepEqual((await db.query("select perfil,ativo from usuarios where id=$1",[uid(2)])).rows[0],{perfil:'operador_coleta',ativo:false});
  await db.query("update usuarios set ativo=true,rotas_coleta_ids='{1,2}' where id=$1",[uid(2)]);

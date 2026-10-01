@@ -18,7 +18,8 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await service.auth.getUser(authorization.slice(7));
   if (authError || !user) return reply(401, "Sessão inválida.");
   const { data: actor, error: actorError } = await service.from("usuarios").select("perfil,ativo").eq("id", user.id).maybeSingle();
-  if (actorError || actor?.perfil !== "admin" || actor?.ativo !== true) return reply(403, "Somente o Administrador pode criar usuários.");
+  if (actorError) return reply(500, "Não foi possível verificar seu acesso. Tente novamente.");
+  if (actor?.perfil !== "admin" || actor?.ativo !== true) return reply(403, "Somente o Administrador pode criar usuários.");
   let body;
   try { body = await req.json(); } catch { return reply(400, "Dados inválidos."); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return reply(400, "Dados inválidos.");

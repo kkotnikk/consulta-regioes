@@ -6,7 +6,7 @@ window.supabase={createClient(){
  function query(table){let single=false,filter=null,patch=null;const q=new Proxy({}, {get(_,key){
   if(key==='then')return resolve=>{
    let data=table==='rotas'?window.__state.routes:table==='usuarios'?(filter?filter==='test'?[window.__state.user]:window.__state.users.filter(u=>u.id===filter):window.__state.users):[];
-   if(patch){data.forEach(u=>Object.assign(u,patch));window.__lastUpdate={filter,patch};}
+   if(patch){data.forEach(u=>Object.assign(u,patch));window.__state.users.filter(u=>u.id===filter).forEach(u=>Object.assign(u,patch));window.__lastUpdate={filter,patch};}
    resolve({data:single?data[0]||null:data,error:null});
   };
   if(key==='single'||key==='maybeSingle')return ()=>{single=true;return q};
@@ -68,7 +68,14 @@ window.supabase={createClient(){
    const menu=await page.locator('.sidebar').boundingBox();assert.equal(menu.y,0);
    await page.locator('#gerenciamentoAtalhos button[aria-controls~="adminHistoricoFerramenta"]').click();
    await page.waitForFunction(()=>document.activeElement===document.getElementById('adminHistoricoFerramenta').querySelector('h3'));
+   const cards=await page.locator('.admin-extra-grid>.admin-bloco').evaluateAll(els=>els.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
+   if(width===1280){assert(Math.abs(cards[0].width-cards[1].width)<1);assert(Math.abs(cards[0].height-cards[1].height)<1);}
+   const cadastroGap=await page.evaluate(()=>document.getElementById('adminUsuarios').getBoundingClientRect().top-document.querySelector('#adminUsuariosFerramenta>button').getBoundingClientRect().bottom);
+   assert(cadastroGap>=16,cadastroGap);
    await page.getByRole('button',{name:'Cadastrar usuário',exact:true}).click();
+   assert.equal(await page.locator('#usuarioSegundaRota').isVisible(),false);
+   assert.equal(await page.locator('#usuarioTerceiraRota').isVisible(),false);
+   await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();
    await page.locator('#usuarioNome').fill('Maria');
    await page.locator('#usuarioEmail').fill('maria@example.test');
    await page.locator('#usuarioSenha').fill('SenhaTest123!');
@@ -78,6 +85,8 @@ window.supabase={createClient(){
    assert.match(await page.locator('#usuarioFormErro').innerText(),/diferentes/);
    assert.equal(posted,null);
    await page.locator('#usuarioRota2').selectOption('2');
+   await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();
+   assert.equal(await page.locator('#usuarioAdicionarRota').isVisible(),false);
    await page.locator('#usuarioRota3').selectOption('3');
    await page.locator('#usuarioSalvar').click();await page.waitForFunction(()=>document.getElementById('formUsuario').hidden);
    assert.equal(posted.nome,'Maria');assert.equal(posted.perfil,'operador_coleta');assert.deepEqual(posted.rotas_coleta_ids,[1,2,3]);
@@ -90,7 +99,9 @@ window.supabase={createClient(){
    assert.deepEqual(await page.evaluate(()=>window.__lastUpdate.patch.rotas_coleta_ids),[]);
    assert.equal(await page.evaluate(()=>window.__lastUpdate.patch.perfil),'operador_conferencia');
    await page.evaluate(()=>abrirCadastroUsuario('test'));
-   assert.equal(await page.locator('#usuarioTerceiraRota').isVisible(),true);
+   assert.equal(await page.locator('#usuarioTerceiraRota').isVisible(),false);
+   await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();
+   await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();
    assert.equal(await page.locator('#usuarioRota1').evaluate(el=>el.required),false);
    await page.locator('#usuarioRota1').selectOption('1');
    await page.locator('#usuarioRota2').selectOption('2');
@@ -98,6 +109,9 @@ window.supabase={createClient(){
    await page.locator('#usuarioSalvar').click();await page.waitForFunction(()=>document.getElementById('formUsuario').hidden);
    assert.deepEqual(await page.evaluate(()=>window.__lastUpdate.patch.rotas_coleta_ids),[1,2,3]);
    assert.equal(await page.evaluate(()=>usuarioPodeRetornarRota(3)),true);
+   await page.evaluate(()=>abrirCadastroUsuario('test'));
+   assert.equal(await page.locator('#usuarioTerceiraRota').isVisible(),true);
+   assert.equal(await page.locator('#usuarioAdicionarRota').isVisible(),false);
    await page.evaluate(()=>abrirCadastroUsuario());
    await page.screenshot({path:__dirname+'/usuarios-'+width+'.png',fullPage:false});
    const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));

@@ -41,7 +41,7 @@ async function soltarPdf(locator,files){
   await ctx.route('**/*',route=>{
    const url=route.request().url();
    if(url==='https://consulta.test/')return route.fulfill({contentType:'text/html',body:html});
-   if(url==='https://consulta.test/relatorio-pdf-viewer.html')return route.fulfill({contentType:'text/html',body:fs.readFileSync(__dirname+'/relatorio-pdf-viewer.html','utf8')});
+   if(url.startsWith('https://consulta.test/relatorio-pdf-viewer.html?v='))return route.fulfill({contentType:'text/html',body:fs.readFileSync(__dirname+'/relatorio-pdf-viewer.html','utf8')});
    if(url.endsWith('/build/pdf.min.mjs'))return route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:fs.readFileSync(process.env.PDFJS_MODULE_PATH||'/tmp/consulta-pdf.min.mjs','utf8')});
    if(url.endsWith('/build/pdf.worker.min.mjs'))return route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:fs.readFileSync(process.env.PDFJS_WORKER_PATH||'/tmp/consulta-pdf.worker.min.mjs','utf8')});
    if(url.includes('supabase-js'))return route.fulfill({contentType:'application/javascript',body:stub(perfil)});
@@ -82,13 +82,24 @@ async function soltarPdf(locator,files){
    await page.waitForSelector('#relatorioPdfViewer');await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer').contentDocument?.body?.dataset.pronto==='true');
    assert((await page.frameLocator('#relatorioPdfViewer').locator('canvas').count())>=1);
    assert.equal(await page.frameLocator('#relatorioPdfViewer').locator('.pagina').count(),2);
-   assert(await page.frameLocator('#relatorioPdfViewer').locator('#paginas').evaluate(el=>el.scrollHeight>el.clientHeight));
-   const sheet=await page.frameLocator('#relatorioPdfViewer').locator('.pagina').first().evaluate(el=>{const b=el.getBoundingClientRect(),root=document.getElementById('paginas');return {width:b.width,height:b.height,top:b.top,bottom:b.bottom,viewportHeight:root.clientHeight,viewportWidth:root.clientWidth};});
+   const row=await page.frameLocator('#relatorioPdfViewer').locator('.pagina').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right}}));
+   assert.equal(row[0].y,row[1].y);assert(row[1].x>row[0].right);
+   const viewer=page.frameLocator('#relatorioPdfViewer');
+   const initial=await viewer.locator('.pagina').first().boundingBox();
+   const zoomed=await viewer.locator('#paginas').evaluate(el=>{const event=new WheelEvent('wheel',{ctrlKey:true,deltaY:-120,bubbles:true,cancelable:true,clientX:el.getBoundingClientRect().left+100,clientY:el.getBoundingClientRect().top+100});el.dispatchEvent(event);return {prevented:event.defaultPrevented,zoom:Number(document.body.dataset.zoom)};});
+   assert(zoomed.prevented&&zoomed.zoom>1);assert((await viewer.locator('.pagina').first().boundingBox()).width>initial.width);
+   await viewer.locator('#zoomAjustar').click();
+   assert.equal(await viewer.locator('body').getAttribute('data-zoom'),'1');
+   await viewer.locator('#zoomMais').click();assert.equal(await viewer.locator('#zoomValor').innerText(),'120%');
+   await viewer.locator('#zoomMenos').click();assert.equal(await viewer.locator('#zoomValor').innerText(),'100%');
+   const ordinary=await viewer.locator('#paginas').evaluate(el=>{const event=new WheelEvent('wheel',{deltaY:120,cancelable:true});el.dispatchEvent(event);return {prevented:event.defaultPrevented,zoom:Number(document.body.dataset.zoom)};});
+   assert.equal(ordinary.prevented,false);assert.equal(ordinary.zoom,1);
+   const sheet=await page.frameLocator('#relatorioPdfViewer').locator('.pagina').first().evaluate(el=>{const b=el.getBoundingClientRect(),root=document.getElementById('paginas'),area=root.getBoundingClientRect();return {width:b.width,height:b.height,top:b.top-area.top,bottom:b.bottom-area.top,viewportHeight:root.clientHeight,viewportWidth:root.clientWidth};});
    assert(sheet.top>=0&&sheet.bottom<=sheet.viewportHeight,JSON.stringify(sheet));
    assert(sheet.width<=sheet.viewportWidth&&Math.abs(sheet.width/sheet.height-595/842)<.01);
    if(perfil==='admin'){
     await page.setViewportSize({width,height:700});
-    await page.waitForFunction(()=>{const doc=document.getElementById('relatorioPdfViewer').contentDocument;return doc.querySelector('.pagina').getBoundingClientRect().bottom<=doc.getElementById('paginas').clientHeight;});
+    await page.waitForFunction(()=>{const doc=document.getElementById('relatorioPdfViewer').contentDocument,root=doc.getElementById('paginas');return doc.querySelector('.pagina').getBoundingClientRect().bottom-root.getBoundingClientRect().top<=root.clientHeight;});
     const smaller=await page.frameLocator('#relatorioPdfViewer').locator('.pagina').first().boundingBox();
     assert(smaller.height<sheet.height);
     await page.setViewportSize({width,height:900});
@@ -103,6 +114,11 @@ async function soltarPdf(locator,files){
    await page.evaluate(()=>{renderizarRelatorio();window.__printed=false;document.getElementById('relatorioPdfViewer').contentWindow.print=()=>window.__printed=true;});
    await page.locator('.relatorio-imprimir').click();await page.waitForFunction(()=>window.__printed);
    assert.equal(await page.frameLocator('#relatorioPdfViewer').locator('canvas').count(),2);
+   await page.emulateMedia({media:'print'});
+   const printLayout=await viewer.locator('.pagina').evaluateAll(els=>els.map(el=>({display:getComputedStyle(el.parentElement).display,after:getComputedStyle(el).breakAfter,top:el.getBoundingClientRect().top,bottom:el.getBoundingClientRect().bottom})));
+   assert.equal(printLayout[0].display,'block');assert.equal(printLayout[0].after,'page');assert(printLayout[1].top>=printLayout[0].bottom);
+   assert.equal(await viewer.locator('.ferramentas').isVisible(),false);
+   await page.emulateMedia({media:'screen'});
    const originalPath=await page.evaluate(()=>relatorioDocumentoAtual.arquivo_path);
    for(const slot of [2,3]){
     await page.locator('#relatorioPagina'+slot).click();

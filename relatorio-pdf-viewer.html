@@ -2,28 +2,72 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PDF do relatório</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;height:100%;font:13px system-ui,sans-serif;background:#e8dfce;color:#624523}#paginas{height:100%;overflow:auto;overscroll-behavior:contain;padding:14px;scrollbar-width:thin;scroll-behavior:smooth}.pagina{margin:0 auto 14px;background:white;box-shadow:0 2px 8px #38281924;position:relative;max-width:100%}.pagina:last-child{margin-bottom:0}.pagina canvas{display:block;width:100%;height:100%}#status{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);max-width:90%;padding:8px 12px;border-radius:6px;background:#fff5e6;box-shadow:0 2px 12px #38281924;text-align:center}#status[hidden]{display:none}@media(max-width:500px){#paginas{padding:8px}.pagina{margin-bottom:8px}}@media print{html,body{height:auto;background:white}#paginas{height:auto;overflow:visible;padding:0}.pagina{width:100%!important;height:auto!important;aspect-ratio:auto!important;margin:0;box-shadow:none;break-after:page;break-inside:avoid}.pagina:last-child{break-after:auto}.pagina canvas{height:auto}#status{display:none!important}@page{margin:8mm}}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font:13px system-ui,sans-serif;background:#e8dfce;color:#624523}body{display:flex;flex-direction:column;overflow:hidden}
+.ferramentas{flex:none;display:flex;align-items:center;gap:6px;padding:6px 10px;min-height:42px;border-bottom:1px solid #cbb491;background:#f4ead8}.ferramentas button{min-height:28px;min-width:30px;padding:4px 9px;border:1px solid #cbb491;border-radius:5px;background:transparent;color:#624523;font:inherit;cursor:pointer}.ferramentas button:hover{background:#08703f0d;border-color:#08703f}.ferramentas button:focus-visible{outline:2px solid #08703f;outline-offset:2px}.ferramentas button:disabled{opacity:.4;cursor:default}#zoomValor{min-width:46px;text-align:center;font-size:12px;font-variant-numeric:tabular-nums}.dica{margin-left:auto;font-size:11px;color:#81613e}
+#paginas{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:14px;scrollbar-width:thin;scrollbar-color:#aa9473 #e8dfce}
+#folhas{display:flex;flex-wrap:nowrap;gap:16px;width:max-content;min-width:100%;align-items:flex-start;justify-content:center}
+.pagina{flex:none;background:white;box-shadow:0 2px 8px #38281924;position:relative;overflow:hidden}.pagina canvas{display:block;width:100%;height:100%}
+#status{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);max-width:90%;padding:8px 12px;border-radius:6px;background:#fff5e6;box-shadow:0 2px 12px #38281924;text-align:center}#status[hidden]{display:none}
+@media(max-width:500px){#paginas{padding:8px}#folhas{gap:12px}.dica{display:none}}
+@media print{html,body{display:block;height:auto;overflow:visible;background:white}#paginas{height:auto;overflow:visible;padding:0}#folhas{display:block;min-width:0;width:100%}.pagina{width:100%!important;height:auto!important;aspect-ratio:auto!important;margin:0;box-shadow:none;overflow:visible;break-after:page;break-inside:avoid}.pagina:last-child{break-after:auto}.pagina canvas{height:auto}.ferramentas,#status{display:none!important}@page{margin:8mm}}
 </style></head>
-<body><div id="paginas" aria-label="Páginas do relatório"></div><p id="status" role="status">Abrindo PDF...</p>
+<body>
+<div class="ferramentas" role="toolbar" aria-label="Zoom do PDF">
+ <button id="zoomMenos" type="button" aria-label="Diminuir zoom" disabled>−</button><output id="zoomValor" aria-live="polite">100%</output><button id="zoomMais" type="button" aria-label="Aumentar zoom" disabled>+</button><button id="zoomAjustar" type="button" disabled>Ajustar</button><span class="dica">Ctrl + roda do mouse para zoom</span>
+</div>
+<div id="paginas" aria-label="Páginas do relatório lado a lado"><div id="folhas"></div></div><p id="status" role="status">Abrindo PDF...</p>
 <script type="module">
 import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.min.mjs';
 const base='https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/';
 pdfjs.GlobalWorkerOptions.workerSrc=base+'build/pdf.worker.min.mjs';
-const paginas=document.getElementById('paginas'),status=document.getElementById('status');
-let documento=null,entries=[],observer=null,printing=false;
+const paginas=document.getElementById('paginas'),folhas=document.getElementById('folhas'),status=document.getElementById('status');
+const menos=document.getElementById('zoomMenos'),mais=document.getElementById('zoomMais'),ajustar=document.getElementById('zoomAjustar'),valor=document.getElementById('zoomValor');
+let documento=null,entries=[],observer=null,printing=false,zoom=1,renderTimer;
 function mensagem(text){status.textContent=text;status.hidden=!text;}
+function atualizarControles(){
+ valor.value=Math.round(zoom*100)+'%';document.body.dataset.zoom=String(zoom);
+ menos.disabled=!entries.length||printing||zoom<=.25;mais.disabled=!entries.length||printing||zoom>=4;ajustar.disabled=!entries.length||printing;
+}
 function ajustarFolha(entry){
+ if(!paginas.clientWidth||!paginas.clientHeight)return;
  const style=getComputedStyle(paginas);
  const width=Math.max(1,paginas.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight));
  const height=Math.max(1,paginas.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-2);
- const scale=Math.min(width/entry.width,height/entry.height);
+ const scale=Math.min(width/entry.width,height/entry.height)*zoom;
  entry.element.style.width=Math.max(1,Math.floor(entry.width*scale))+'px';
 }
+function renderVisiveis(){
+ clearTimeout(renderTimer);renderTimer=setTimeout(()=>{
+  if(printing)return;
+  const box=paginas.getBoundingClientRect();
+  for(const entry of entries){const rect=entry.element.getBoundingClientRect();if(rect.right>=box.left-400&&rect.left<=box.right+400&&rect.bottom>=box.top-400&&rect.top<=box.bottom+400)render(entry).catch(()=>mensagem('Não foi possível exibir esta página. Tente abrir o relatório novamente.'));}
+ },100);
+}
+function layout(){for(const entry of entries)ajustarFolha(entry);atualizarControles();renderVisiveis();}
+function mudarZoom(novo,ponto){
+ if(!entries.length||printing)return;
+ novo=Math.max(.25,Math.min(4,novo));if(novo===zoom)return;
+ const box=paginas.getBoundingClientRect();
+ ponto=ponto||{x:box.left+paginas.clientWidth/2,y:box.top+paginas.clientHeight/2};
+ let anchor=null,distance=Infinity;
+ for(const entry of entries){const r=entry.element.getBoundingClientRect();const d=Math.max(r.left-ponto.x,0,ponto.x-r.right);if(d<distance){distance=d;anchor={entry,x:(ponto.x-r.left)/r.width,y:(ponto.y-r.top)/r.height};}}
+ zoom=novo;layout();
+ if(anchor){const rect=anchor.entry.element.getBoundingClientRect();paginas.scrollLeft+=rect.left+rect.width*anchor.x-ponto.x;paginas.scrollTop+=rect.top+rect.height*anchor.y-ponto.y;}
+}
+menos.onclick=()=>mudarZoom(zoom/1.2);mais.onclick=()=>mudarZoom(zoom*1.2);
+ajustar.onclick=()=>{zoom=1;layout();paginas.scrollLeft=0;paginas.scrollTop=0;};
+paginas.addEventListener('wheel',event=>{
+ if(!event.ctrlKey||!entries.length||printing)return;
+ event.preventDefault();
+ const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?paginas.clientHeight:1);
+ mudarZoom(zoom*Math.exp(-Math.max(-300,Math.min(300,delta))*.002),{x:event.clientX,y:event.clientY});
+},{passive:false});
 async function render(entry,forPrint=false){
- if(entry.pending){await entry.pending;if(!forPrint)return;}
+ if(entry.pending){await entry.pending;return render(entry,forPrint);}
  const size=entry.page.getViewport({scale:1});
- const scale=forPrint?2:Math.min(2,entry.element.clientWidth/size.width*(window.devicePixelRatio||1));
- if(entry.scale>=scale)return;
+ const requested=forPrint?2:Math.min(4,entry.element.clientWidth/size.width*(window.devicePixelRatio||1));
+ const scale=Math.min(requested,Math.sqrt(6000000/(size.width*size.height)));
+ if(entry.scale>=scale||scale<=0)return;
  const viewport=entry.page.getViewport({scale});
  entry.pending=(async()=>{
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Página '+entry.page.pageNumber+' do relatório');
@@ -39,19 +83,18 @@ window.abrirPdf=async url=>{
   observer=new IntersectionObserver(items=>{for(const item of items)if(item.isIntersecting){const entry=entries.find(e=>e.element===item.target);render(entry).catch(()=>mensagem('Não foi possível exibir esta página. Tente enviar o PDF novamente.'));}},{root:paginas,rootMargin:'400px'});
   for(let n=1;n<=documento.numPages;n++){
    const page=await documento.getPage(n),view=page.getViewport({scale:1}),element=document.createElement('div');element.className='pagina';element.style.aspectRatio=view.width+'/'+view.height;
-   const entry={page,element,width:view.width,height:view.height,scale:0,pending:null};ajustarFolha(entry);entries.push(entry);paginas.append(element);observer.observe(element);
+   const entry={page,element,width:view.width,height:view.height,scale:0,pending:null};ajustarFolha(entry);entries.push(entry);folhas.append(element);observer.observe(element);
   }
-  await render(entries[0]);mensagem('');document.body.dataset.pronto='true';
+  layout();await render(entries[0]);mensagem('');document.body.dataset.pronto='true';
  }catch(error){mensagem(error.name==='PasswordException'?'Este PDF está protegido por senha. Envie uma versão sem senha.':'Não foi possível abrir este PDF. Tente enviar o arquivo novamente.');}
 };
 window.imprimirPdf=async()=>{
  if(!documento||printing)return;
- printing=true;
+ printing=true;atualizarControles();
  try{mensagem('Preparando impressão...');for(const entry of entries)await render(entry,true);mensagem('');window.focus();window.print();}
  catch(_){mensagem('Não foi possível preparar a impressão. Tente novamente.');}
- finally{printing=false;}
+ finally{printing=false;atualizarControles();}
 };
-// Encaminha arquivos arrastados sobre o PDF ao envio protegido da tela principal.
 for(const name of ['dragenter','dragover'])document.addEventListener(name,event=>{
  if(!Array.from(event.dataTransfer?.types||[]).includes('Files'))return;
  event.preventDefault();parent.mostrarAreaPdfArrastado?.();
@@ -61,5 +104,5 @@ document.addEventListener('drop',event=>{
  event.preventDefault();parent.receberPdfSolto?.(event.dataTransfer.files);
 });
 let resizeTimer;
-new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(printing)return;for(const entry of entries){ajustarFolha(entry);const box=entry.element.getBoundingClientRect();if(box.bottom>=0&&box.top<=innerHeight)render(entry).catch(()=>{});}},180);}).observe(paginas);
+new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(!printing)layout();},180);}).observe(paginas);
 </script></body></html>
