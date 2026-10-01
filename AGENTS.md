@@ -14,6 +14,8 @@
 
 ## Relatório e animações
 
-- O conteúdo do relatório permanece vazio conforme pedido. Mantenha o botão de impressão no canto superior direito.
-- Quando o editor do relatório for implementado, aplique a permissão Coleta + Administrador também no backend.
+- O relatório fica vazio até o envio de um PDF. Usuários Coleta e Administrador ativos podem enviar/substituir o documento compartilhado, visualizar e imprimir. O visualizador ocupa somente a área de conteúdo, sem cobrir o menu, o cabeçalho ou as ações.
+- PDFs ficam no bucket privado `relatorios` (até 20 MB); o documento atual está em `relatorio_documentos`. Mantenha as políticas de Storage e da tabela restritas a Coleta e Administrador ativos.
+- `relatorio-pdf-viewer.html` exibe as páginas com PDF.js, rolagem interna e preparação da impressão. Mantenha biblioteca e worker na mesma versão; não execute scripts embutidos no PDF. Os testes do visualizador aceitam `PDFJS_MODULE_PATH` e `PDFJS_WORKER_PATH` para os módulos de teste.
+- Atalhos administrativos em três pares: Bairros/Nova rota, Suporte/Sugestões, Histórico/Usuários. Abertura animada para baixo; Bairros e Nova rota rolam ao topo do gerenciamento.
 - Preserve animações suaves de entrada, rolagem, modais e transições de tela; o menu permanece fixo.

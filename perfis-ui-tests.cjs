@@ -54,11 +54,11 @@ window.supabase={createClient(){
   if(perfil==='admin'){
    await page.evaluate(()=>mostrarPainelAdmin());
    assert.equal(await page.locator('#gerenciamentoAtalhos').isVisible(),true);
-   for(const target of ['adminUsuariosFerramenta','adminBairrosFerramenta','adminNovaRotaFerramenta','adminRotasFerramenta','adminSuporteFerramenta','adminSugestoesFerramenta','adminHistoricoFerramenta']){
+   for(const target of ['adminUsuariosFerramenta','adminBairrosFerramenta','adminNovaRotaFerramenta','adminSuporteFerramenta','adminSugestoesFerramenta','adminHistoricoFerramenta']){
     const before=await page.evaluate(()=>({panel:document.getElementById('gerenciamentoView').scrollTop,window:scrollY}));
     await page.locator('#gerenciamentoAtalhos button[aria-controls="'+target+'"]').click();
     await page.waitForTimeout(180);
-    const sample=await page.evaluate(id=>{const pane=document.getElementById('gerenciamentoView'),el=document.getElementById(id);return {at:pane.scrollTop,to:Math.max(0,Math.min(pane.scrollTop+el.getBoundingClientRect().top-pane.getBoundingClientRect().top-22,pane.scrollHeight-pane.clientHeight)),window:scrollY}},target);
+    const sample=await page.evaluate(id=>{const pane=document.getElementById('gerenciamentoView'),el=document.getElementById(id);return {at:pane.scrollTop,to:['adminBairrosFerramenta','adminNovaRotaFerramenta'].includes(id)?0:Math.max(0,Math.min(pane.scrollTop+el.getBoundingClientRect().top-pane.getBoundingClientRect().top-22,pane.scrollHeight-pane.clientHeight)),window:scrollY}},target);
     if(Math.abs(sample.to-before.panel)>5)assert(sample.at>Math.min(before.panel,sample.to)&&sample.at<Math.max(before.panel,sample.to),JSON.stringify(sample));
     assert.equal(sample.window,before.window);
     await page.waitForFunction(id=>document.activeElement===document.getElementById(id).querySelector('h3'),target);

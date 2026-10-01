@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PDF do relatório</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font:13px system-ui,sans-serif;background:#e8dfce;color:#624523}#paginas{height:100%;overflow:auto;overscroll-behavior:contain;padding:14px;scrollbar-width:thin;scroll-behavior:smooth}.pagina{margin:0 auto 14px;background:white;box-shadow:0 2px 8px #38281924;position:relative;max-width:100%}.pagina canvas{display:block;width:100%;height:100%}#status{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);max-width:90%;padding:8px 12px;border-radius:6px;background:#fff5e6;box-shadow:0 2px 12px #38281924;text-align:center}#status[hidden]{display:none}@media(max-width:500px){#paginas{padding:8px}.pagina{margin-bottom:8px}}@media print{html,body{height:auto;background:white}#paginas{height:auto;overflow:visible;padding:0}.pagina{width:100%!important;height:auto!important;aspect-ratio:auto!important;margin:0;box-shadow:none;break-after:page;break-inside:avoid}.pagina:last-child{break-after:auto}.pagina canvas{height:auto}#status{display:none!important}@page{margin:8mm}}
+</style></head>
+<body><div id="paginas" aria-label="Páginas do relatório"></div><p id="status" role="status">Abrindo PDF...</p>
+<script type="module">
+import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.min.mjs';
+const base='https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/';
+pdfjs.GlobalWorkerOptions.workerSrc=base+'build/pdf.worker.min.mjs';
+const paginas=document.getElementById('paginas'),status=document.getElementById('status');
+let documento=null,entries=[],observer=null,printing=false;
+function mensagem(text){status.textContent=text;status.hidden=!text;}
+async function render(entry,forPrint=false){
+ if(entry.pending){await entry.pending;if(!forPrint)return;}
+ const size=entry.page.getViewport({scale:1});
+ const scale=forPrint?2:Math.min(2,entry.element.clientWidth/size.width*(window.devicePixelRatio||1));
+ if(entry.scale>=scale)return;
+ const viewport=entry.page.getViewport({scale});
+ entry.pending=(async()=>{
+  const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Página '+entry.page.pageNumber+' do relatório');
+  await entry.page.render({canvas,canvasContext:canvas.getContext('2d'),viewport}).promise;
+  entry.element.replaceChildren(canvas);entry.scale=scale;
+ })();
+ try{await entry.pending;}finally{entry.pending=null;}
+}
+window.abrirPdf=async url=>{
+ try{
+  mensagem('Abrindo PDF...');
+  documento=await pdfjs.getDocument({url,isEvalSupported:false,cMapUrl:base+'cmaps/',cMapPacked:true,standardFontDataUrl:base+'standard_fonts/',wasmUrl:base+'wasm/'}).promise;
+  observer=new IntersectionObserver(items=>{for(const item of items)if(item.isIntersecting){const entry=entries.find(e=>e.element===item.target);render(entry).catch(()=>mensagem('Não foi possível exibir esta página. Tente enviar o PDF novamente.'));}},{root:paginas,rootMargin:'400px'});
+  for(let n=1;n<=documento.numPages;n++){
+   const page=await documento.getPage(n),view=page.getViewport({scale:1}),element=document.createElement('div');element.className='pagina';element.style.width='100%';element.style.aspectRatio=view.width+'/'+view.height;
+   const entry={page,element,scale:0,pending:null};entries.push(entry);paginas.append(element);observer.observe(element);
+  }
+  await render(entries[0]);mensagem('');document.body.dataset.pronto='true';
+ }catch(error){mensagem(error.name==='PasswordException'?'Este PDF está protegido por senha. Envie uma versão sem senha.':'Não foi possível abrir este PDF. Tente enviar o arquivo novamente.');}
+};
+window.imprimirPdf=async()=>{
+ if(!documento||printing)return;
+ printing=true;
+ try{mensagem('Preparando impressão...');for(const entry of entries)await render(entry,true);mensagem('');window.focus();window.print();}
+ catch(_){mensagem('Não foi possível preparar a impressão. Tente novamente.');}
+ finally{printing=false;}
+};
+let resizeTimer;
+new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(printing)return;for(const entry of entries){const box=entry.element.getBoundingClientRect();if(box.bottom>=0&&box.top<=innerHeight)render(entry).catch(()=>{});}},180);}).observe(paginas);
+</script></body></html>

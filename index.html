@@ -372,6 +372,13 @@ html{scrollbar-gutter:stable}
 .relatorio-cabecalho h1{font-family:'Solidez Display',Georgia,serif;font-size:36px;color:#624523;margin:0 0 9px}
 .relatorio-cabecalho p{font-size:13px;line-height:1.6;color:#81613e;margin:0}
 #tituloRelatorio:focus{outline:none}
+#relatorioView .relatorio-container{height:100%;max-width:none;display:flex;flex-direction:column;min-height:0;padding-bottom:22px}
+#relatorioView .relatorio-cabecalho{flex:none;align-items:center;margin-bottom:14px}
+.relatorio-acoes{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+#relatorioEnviarPdf{min-height:42px;padding:11px 16px;font-size:12px;white-space:nowrap}
+.relatorio-pdf-status{flex:none;margin:0 0 12px;font-size:12px;color:#81613e;overflow-wrap:anywhere}
+#relatorioConteudo{flex:1;min-height:0;display:flex;width:100%}
+#relatorioPdfViewer{display:block;width:100%;height:100%;min-height:200px;border:1px solid #cbb491;border-radius:8px;background:#f4ead8}
 .relatorio-imprimir{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:11px 16px;white-space:nowrap;font-size:12px}
 .relatorio-imprimir .icon{width:17px;height:17px}
 @media print{
@@ -380,7 +387,7 @@ html{scrollbar-gutter:stable}
   body.imprimindo-relatorio #relatorioView{display:block!important;position:static!important;inset:auto!important;width:100%;overflow:visible;box-shadow:none;background:white!important;transform:none!important}
   body.imprimindo-relatorio .relatorio-container{max-width:none;padding:0}
   body.imprimindo-relatorio .relatorio-cabecalho{margin-bottom:24px}
-  body.imprimindo-relatorio .relatorio-imprimir{display:none!important}
+  body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-pdf-status{display:none!important}
   body.imprimindo-relatorio #relatorioView *{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
 }
 @media(max-width:1200px){:root{--menu-width:192px}.relatorio-container{padding:28px}}
@@ -397,6 +404,11 @@ html{scrollbar-gutter:stable}
   .relatorio-cabecalho{flex-direction:row;gap:12px;align-items:center}
   .relatorio-cabecalho h1{font-size:29px}
   .relatorio-imprimir{font-size:11px;padding:10px 12px;gap:6px}
+  #relatorioView .relatorio-container{padding:20px 16px 16px}
+  #relatorioView .relatorio-cabecalho{flex-wrap:wrap}
+  .relatorio-acoes{justify-content:flex-start}
+  #relatorioEnviarPdf{font-size:11px;padding:10px 12px}
+  #relatorioPdfViewer{min-height:160px}
 }
 
 /* Acessos individuais */
@@ -404,13 +416,19 @@ html{scrollbar-gutter:stable}
 
 /* Atalhos compactos, sempre ao alcance dentro do gerenciamento. */
 .side-nav>.admin-btn{min-height:36px;padding:8px 11px;font-size:12px;border-radius:6px;box-shadow:none}
-.admin-atalhos{display:grid;gap:3px;margin-top:10px;padding-top:10px;border-top:1px solid #8b75533b}
-.admin-atalhos:not([hidden]){animation:soft-simple-in .45s var(--soft-out) both}
-.admin-atalhos button{display:flex;align-items:center;min-height:34px;padding:7px 11px;border:1px solid transparent;border-radius:5px;background:transparent;color:#dbc9ab;font-size:12px;font-weight:400;text-align:left;box-shadow:none;white-space:nowrap;transition:background .25s,color .25s,border-color .25s}
+.admin-atalhos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid #8b75533b;overflow:hidden;transform-origin:top center}
+.admin-atalhos:not([hidden]){animation:admin-atalhos-descer .65s var(--soft-out) both}
+.admin-atalhos:not([hidden]) button{animation:admin-atalho-entrar .4s var(--soft-out) .08s both}
+.admin-atalhos:not([hidden]) button:nth-child(n+3){animation-delay:.16s}
+.admin-atalhos:not([hidden]) button:nth-child(n+5){animation-delay:.24s}
+@keyframes admin-atalhos-descer{from{max-height:0;opacity:0;transform:translateY(-8px)}to{max-height:180px;opacity:1;transform:translateY(0)}}
+@keyframes admin-atalho-entrar{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.admin-atalhos:not([hidden]){animation-duration:.3s}.admin-atalhos:not([hidden]) button{animation-name:soft-simple-in;animation-duration:.25s}}
+.admin-atalhos button{display:flex;align-items:center;justify-content:center;min-width:0;min-height:34px;padding:7px 8px;border:1px solid #8b755326;border-radius:5px;background:transparent;color:#dbc9ab;font-size:11px;font-weight:400;text-align:center;box-shadow:none;white-space:nowrap;transition:background .25s,color .25s,border-color .25s}
 .admin-atalhos button:hover{background:#ffffff0a;color:#fff1da}.admin-atalhos button.ativo{background:#08703f26;border-color:#7d987055;color:#e3efd6}.admin-atalhos button:focus-visible{outline:2px solid #c8a575;outline-offset:2px}
 #admin .admin-bloco>button{width:auto;min-height:34px;padding:8px 12px;font-size:12px;box-shadow:none}#admin .acoes button{min-height:32px;padding:7px 10px;font-size:11px;box-shadow:none}
 #admin h3:focus{outline:none}
-@media(max-width:760px){.side-nav>.admin-btn{font-size:10px;padding:8px;min-height:34px}.admin-atalhos{display:flex;gap:4px;overflow-x:auto;margin-top:8px;padding-top:8px;padding-bottom:2px;scrollbar-width:none}.admin-atalhos::-webkit-scrollbar{display:none}.admin-atalhos button{flex:none;font-size:11px;min-height:34px;padding:7px 9px}}
+@media(max-width:760px){.side-nav>.admin-btn{font-size:10px;padding:8px;min-height:34px}.admin-atalhos{margin-top:8px;padding-top:8px;padding-bottom:2px}.admin-atalhos button{font-size:11px;min-height:32px;padding:6px 9px}}
 </style>
 </head>
 
@@ -440,7 +458,6 @@ html{scrollbar-gutter:stable}
   <nav id="gerenciamentoAtalhos" class="admin-atalhos" aria-label="Ferramentas do gerenciamento" hidden>
     <button type="button" onclick="irFerramentaAdmin('adminBairrosFerramenta')" aria-controls="adminBairrosFerramenta">Bairros</button>
     <button type="button" onclick="irFerramentaAdmin('adminNovaRotaFerramenta')" aria-controls="adminNovaRotaFerramenta">Nova rota</button>
-    <button type="button" onclick="irFerramentaAdmin('adminRotasFerramenta')" aria-controls="adminRotasFerramenta">Rotas cadastradas</button>
     <button type="button" onclick="irFerramentaAdmin('adminSuporteFerramenta')" aria-controls="adminSuporteFerramenta">Suporte</button>
     <button type="button" onclick="irFerramentaAdmin('adminSugestoesFerramenta')" aria-controls="adminSugestoesFerramenta">Sugestões</button>
     <button type="button" onclick="irFerramentaAdmin('adminHistoricoFerramenta')" aria-controls="adminHistoricoFerramenta">Histórico</button>
@@ -559,8 +576,13 @@ html{scrollbar-gutter:stable}
   <div class="relatorio-container">
     <div class="relatorio-cabecalho">
       <div><div class="gerenciamento-kicker">SOLIDEZ TRANSPORTES</div><h1 id="tituloRelatorio" tabindex="-1">Relatório</h1></div>
-      <button type="button" class="relatorio-imprimir" onclick="imprimirRelatorio()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6zM17 11h1"/></svg><span>Imprimir relatório</span></button>
+      <div class="relatorio-acoes">
+        <button id="relatorioEnviarPdf" type="button" onclick="document.getElementById('relatorioArquivoPdf').click()">Enviar PDF</button>
+        <input id="relatorioArquivoPdf" type="file" accept="application/pdf,.pdf" onchange="enviarPdfRelatorio(this)" hidden>
+        <button type="button" class="relatorio-imprimir" onclick="imprimirRelatorio()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6zM17 11h1"/></svg><span>Imprimir relatório</span></button>
+      </div>
     </div>
+    <p id="relatorioPdfStatus" class="relatorio-pdf-status" role="status" hidden></p>
     <div id="relatorioConteudo" aria-live="polite"></div>
   </div>
 </section>
@@ -2776,7 +2798,7 @@ function atualizarMenuSistema(hash) {
 function irFerramentaAdmin(id) {
   if (telaSistemaAtual !== "gerenciamento" || !usuarioTemPermissao([])) return;
   const alvo = document.getElementById(id);
-  if (alvo) window.solidezSoft?.navigate(alvo);
+  if (alvo) window.solidezSoft?.navigate(alvo, ["adminBairrosFerramenta", "adminNovaRotaFerramenta"].includes(id) ? "#topoGerenciamento" : undefined);
 }
 
 function alternarTelaSistema(destino, { imediato = false } = {}) {
@@ -2863,15 +2885,122 @@ function voltarConsulta() {
   return alternarTelaSistema("consulta");
 }
 
+let relatorioDocumentoAtual = null;
+let relatorioPdfUrl = null;
+let relatorioPdfRequest = 0;
+let relatorioPdfCarregando = false;
+
+function limparPdfRelatorio() {
+  relatorioPdfRequest++;
+  relatorioPdfCarregando = false;
+  if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
+  relatorioPdfUrl = null;
+  relatorioDocumentoAtual = null;
+}
+
 function renderizarRelatorio() {
-  // Conteúdo será definido na próxima etapa; a tela permanece vazia por enquanto.
-  document.getElementById("relatorioConteudo")?.replaceChildren();
+  const conteudo = document.getElementById("relatorioConteudo");
+  const status = document.getElementById("relatorioPdfStatus");
+  const enviar = document.getElementById("relatorioEnviarPdf");
+  if (enviar) enviar.hidden = !usuarioPodeEditarRelatorio();
+  if (!conteudo) return;
+  if (!usuarioPodeAcessarRelatorio()) limparPdfRelatorio();
+  if (!relatorioPdfUrl) {
+    conteudo.replaceChildren();
+    if (status) status.hidden = true;
+    return;
+  }
+  if (conteudo.querySelector("iframe")?.dataset.documento === relatorioDocumentoAtual.arquivo_path) return;
+  const frame = document.createElement("iframe");
+  frame.id = "relatorioPdfViewer";
+  frame.title = "Relatório em PDF: " + relatorioDocumentoAtual.nome;
+  frame.dataset.documento = relatorioDocumentoAtual.arquivo_path;
+  const pdfUrl = relatorioPdfUrl;
+  frame.src = "./relatorio-pdf-viewer.html";
+  frame.onload = () => {
+    if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl);
+  };
+  conteudo.replaceChildren(frame);
+  if (status) { status.textContent = relatorioDocumentoAtual.nome; status.hidden = false; }
+}
+
+async function carregarPdfRelatorio() {
+  if (!usuarioPodeAcessarRelatorio() || relatorioPdfCarregando) return;
+  relatorioPdfCarregando = true;
+  const request = ++relatorioPdfRequest;
+  const usuarioId = usuarioAtualSistema.id;
+  try {
+    const { data: documento, error } = await supabaseClient.from("relatorio_documentos").select("id,nome,arquivo_path,atualizado_em").eq("id", 1).maybeSingle();
+    if (error) throw error;
+    if (request !== relatorioPdfRequest || usuarioAtualSistema?.id !== usuarioId || !usuarioPodeAcessarRelatorio()) return;
+    if (!documento) {
+      if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
+      relatorioPdfUrl = null; relatorioDocumentoAtual = null; renderizarRelatorio();
+      return;
+    }
+    if (relatorioDocumentoAtual?.arquivo_path === documento.arquivo_path && relatorioPdfUrl) return;
+    const { data: pdf, error: downloadError } = await supabaseClient.storage.from("relatorios").download(documento.arquivo_path);
+    if (downloadError || !pdf) throw downloadError || new Error("Não foi possível abrir o PDF.");
+    if (request !== relatorioPdfRequest || usuarioAtualSistema?.id !== usuarioId || !usuarioPodeAcessarRelatorio()) return;
+    if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
+    relatorioPdfUrl = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
+    relatorioDocumentoAtual = documento;
+    renderizarRelatorio();
+  } catch (error) {
+    if (request === relatorioPdfRequest && telaSistemaAtual === "relatorio") mostrarToast("Não foi possível carregar o PDF do relatório. Tente abrir a tela novamente.", "erro");
+  } finally {
+    if (request === relatorioPdfRequest) relatorioPdfCarregando = false;
+  }
+}
+
+async function enviarPdfRelatorio(input) {
+  const arquivo = input.files?.[0];
+  if (!arquivo) return;
+  const botao = document.getElementById("relatorioEnviarPdf");
+  let caminho = null, vinculado = false;
+  try {
+    if (botao.disabled) return;
+    botao.disabled = true; botao.textContent = "Enviando...";
+    const usuario = await obterUsuarioAtualSistema();
+    if (!usuarioPodeEditarRelatorio(usuario)) throw new Error("Somente Operador Coleta e Administrador podem enviar o relatório.");
+    if (arquivo.size > 20 * 1024 * 1024) throw new Error("Escolha um PDF de até 20 MB.");
+    if (!arquivo.size || await arquivo.slice(0, 5).text() !== "%PDF-") throw new Error("Selecione um arquivo PDF válido.");
+    caminho = usuario.id + "/" + crypto.randomUUID() + ".pdf";
+    const { error: uploadError } = await supabaseClient.storage.from("relatorios").upload(caminho, arquivo, { contentType: "application/pdf", upsert: false });
+    if (uploadError) throw uploadError;
+    const { error } = await supabaseClient.from("relatorio_documentos").upsert({
+      id: 1, arquivo_path: caminho, nome: arquivo.name.slice(0, 255), enviado_por: usuario.id,
+    }, { onConflict: "id" });
+    if (error) throw error;
+    vinculado = true;
+    relatorioPdfRequest++;
+    relatorioPdfCarregando = false;
+    if (relatorioPdfUrl) URL.revokeObjectURL(relatorioPdfUrl);
+    relatorioPdfUrl = URL.createObjectURL(new Blob([arquivo], { type: "application/pdf" }));
+    relatorioDocumentoAtual = { arquivo_path: caminho, nome: arquivo.name };
+    renderizarRelatorio();
+    mostrarToast("PDF enviado. Relatório atualizado.", "sucesso");
+  } catch (error) {
+    if (caminho && !vinculado) {
+      try { await supabaseClient.storage.from("relatorios").remove([caminho]); } catch (_) {}
+    }
+    mostrarToast(error.message || "Não foi possível enviar o PDF.", "erro");
+  } finally {
+    input.value = "";
+    botao.disabled = false; botao.textContent = "Enviar PDF";
+  }
 }
 
 async function imprimirRelatorio() {
   const usuario = await obterUsuarioAtualSistema();
   if (telaSistemaAtual !== "relatorio" || !usuarioPodeAcessarRelatorio(usuario)) {
     await atualizarInterfaceSessao();
+    return;
+  }
+  if (relatorioPdfUrl) {
+    const frame = document.getElementById("relatorioPdfViewer");
+    try { await frame.contentWindow.imprimirPdf?.(); }
+    catch (_) { mostrarToast("Não foi possível imprimir. Tente abrir o relatório novamente.", "erro"); }
     return;
   }
   document.body.classList.add("imprimindo-relatorio");
@@ -2914,7 +3043,7 @@ function usuarioPodeAcessarRelatorio(usuario = usuarioAtualSistema) {
 }
 
 function usuarioPodeEditarRelatorio(usuario = usuarioAtualSistema) {
-  // O editor será adicionado quando o conteúdo do relatório for definido.
+  // Enviar um PDF substitui o documento compartilhado do relatório.
   return usuarioPodeAcessarRelatorio(usuario);
 }
 
@@ -2930,6 +3059,7 @@ async function abrirRelatorio() {
     return false;
   }
   renderizarRelatorio();
+  carregarPdfRelatorio();
   return alternarTelaSistema("relatorio");
 }
 
@@ -2949,6 +3079,7 @@ async function atualizarInterfaceSessao() {
   const nomeGerenciamento = document.getElementById("gerenciamentoUsuario");
   const linkRelatorio = document.querySelector('.nav-link[href="#relatorio"]');
   if (linkRelatorio) linkRelatorio.hidden = !usuarioPodeAcessarRelatorio(usuario);
+  if (!usuarioPodeAcessarRelatorio(usuario)) { limparPdfRelatorio(); renderizarRelatorio(); }
   if (!usuarioPodeAcessarRelatorio(usuario) && telaSistemaAtual === "relatorio") await alternarTelaSistema("consulta", { imediato: true });
   if (nomeGerenciamento) nomeGerenciamento.textContent = usuario?.nome || "";
   if (!usuarioTemPermissao([], usuario) && telaSistemaAtual === "gerenciamento") {
@@ -3030,6 +3161,7 @@ async function carregarRotasPublicas() {
   const { data, error } = await supabaseClient.from("rotas").select("*");
   if (error) { console.error(error); container.innerHTML='<div class="card erro">Erro ao carregar as rotas.</div>'; return; }
   rotasPublicasCache=data||[]; renderizarRotasPublicas(); renderizarRelatorio();
+  if (telaSistemaAtual === "relatorio") carregarPdfRelatorio();
 }
 
 async function registrarRetornandoBase(id, botao) {
@@ -3820,12 +3952,12 @@ document.addEventListener('click', event => {
     if(target.classList.contains('soft-reveal'))reveal(target,true);
     const from=panel?panel.scrollTop:scrollY;
     const destination=()=>panel
-      ? Math.max(0,Math.min(panel.scrollTop+target.getBoundingClientRect().top-panel.getBoundingClientRect().top-22,panel.scrollHeight-panel.clientHeight))
+      ? hash === "#topoGerenciamento" ? 0 : Math.max(0,Math.min(panel.scrollTop+target.getBoundingClientRect().top-panel.getBoundingClientRect().top-22,panel.scrollHeight-panel.clientHeight))
       : hash === "#consulta" ? 0 : Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24-parseFloat(getComputedStyle(root).getPropertyValue("--menu-height")),document.documentElement.scrollHeight-innerHeight));
     const distance=destination()-from;
     const duration=motion.matches?Math.min(1100,760+Math.abs(distance)*.18):Math.min(1800,1000+Math.abs(distance)*.36);
     const start=performance.now();
-    const focus=()=>{const heading=panel?target.querySelector('h3')||target:target;heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});if(hash&&location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}};
+    const focus=()=>{const heading=panel?target.querySelector('h3')||target:target;heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});if(hash && hash !== "#topoGerenciamento" && location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}};
     if(Math.abs(distance)<2){focus();return;}
     const step=now=>{
       const t=Math.min(1,(now-start)/duration);
