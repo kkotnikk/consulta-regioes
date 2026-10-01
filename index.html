@@ -357,6 +357,53 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
 .gerenciamento-tela #admin{margin-top:0}
 body.gerenciamento-aberto .floating-support{display:none}
 @media(max-width:760px){.gerenciamento-container{padding:22px 16px 30px}.gerenciamento-cabecalho{flex-direction:column;gap:18px}.gerenciamento-cabecalho h1{font-size:29px}.gerenciamento-voltar{margin-bottom:18px}.gerenciamento-conta{padding-top:0}.gerenciamento-tela #admin{padding:18px}}
+/* Menu compartilhado: fica visível durante a rolagem e a troca de telas. */
+:root{--menu-width:224px;--menu-height:0px}
+html{scrollbar-gutter:stable}
+.sidebar{z-index:120;overflow-y:auto}
+.app-shell{margin-left:var(--menu-width)}
+.gerenciamento-tela{left:var(--menu-width);top:var(--menu-height)}
+#relatorioView[hidden]{display:none!important}
+.relatorio-container{max-width:1240px;margin:0 auto;padding:32px 36px 44px}
+.relatorio-cabecalho{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:26px}
+.relatorio-cabecalho h1{font-family:'Solidez Display',Georgia,serif;font-size:36px;color:#624523;margin:0 0 9px}
+.relatorio-cabecalho p{font-size:13px;line-height:1.6;color:#81613e;margin:0}
+#tituloRelatorio:focus{outline:none}
+.relatorio-data{font-size:12px;color:#81613e;white-space:nowrap;padding-top:7px}
+.relatorio-resumo{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}
+.relatorio-metrica{background:#fcf6e8;border:1px solid #cbb491;border-radius:12px;padding:20px;color:#624523}
+.relatorio-metrica strong{display:block;font-family:'Solidez Display',Georgia,serif;font-size:34px;margin-bottom:7px}
+.relatorio-metrica span{font-size:12px}
+.relatorio-metrica.retornando{color:#164f80;border-color:#a8cae9;background:#edf5ff}
+.relatorio-metrica.confirmada{color:#006b38;border-color:#a4c6a7;background:#edf5e8}
+.relatorio-lista{background:#fcf6e8;border:1px solid #cbb491;border-radius:13px;overflow:hidden}
+.relatorio-lista h2{font-family:'Solidez Display',Georgia,serif;font-size:24px;color:#624523;margin:0;padding:22px 24px;border-bottom:1px solid #ddccb0}
+.relatorio-tabela-scroll{overflow-x:auto}
+.relatorio-tabela{width:100%;border-collapse:collapse;text-align:left;font-size:12px}
+.relatorio-tabela caption{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.relatorio-tabela th{color:#81613e;font-size:10px;font-weight:600;letter-spacing:.6px;background:#f4ead7;padding:15px 18px;white-space:nowrap}
+.relatorio-tabela td{padding:17px 18px;border-top:1px solid #e6d7bd;color:#624523;vertical-align:top}
+.relatorio-tabela td:first-child{font-weight:600;min-width:130px}
+.relatorio-tabela .rota-status{display:inline-flex;margin:0;white-space:nowrap;font-size:10px}
+.relatorio-mensagem{padding:24px;color:#81613e;font-size:13px;line-height:1.7}
+.relatorio-mensagem button{margin-top:12px}
+@media(max-width:1200px){:root{--menu-width:192px}.relatorio-container{padding:28px}}
+@media(max-width:760px){
+  :root{--menu-width:0px;--menu-height:132px}
+  .sidebar{position:fixed;inset:0 0 auto;width:100%;overflow:visible}
+  #consultaView{padding-top:var(--menu-height)}
+  .side-nav{display:flex;overflow-x:auto;gap:4px;scrollbar-width:none}
+  .side-nav::-webkit-scrollbar{display:none}
+  .side-nav>.nav-link,.side-nav>.admin-btn{flex-shrink:0;white-space:nowrap}
+  .side-nav>.nav-link{padding:9px 8px;font-size:11px;gap:5px}
+  .side-nav>.admin-btn{margin-left:auto;padding:10px 8px;font-size:10px}
+  .relatorio-container{padding:22px 16px 30px}
+  .relatorio-cabecalho{flex-direction:column;gap:9px}
+  .relatorio-cabecalho h1{font-size:29px}
+  .relatorio-resumo{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .relatorio-metrica{padding:17px}.relatorio-metrica strong{font-size:29px}
+  .relatorio-tabela th,.relatorio-tabela td{padding:14px}
+}
 </style>
 </head>
 
@@ -370,7 +417,6 @@ body.gerenciamento-aberto .floating-support{display:none}
  <button type="button" id="softIntroSkip" class="soft-intro-skip">Pular abertura · Esc</button>
 </div>
 
-<div id="consultaView">
 <a class="skip-link" href="#consulta">Ir para consulta</a>
 <aside class="sidebar" aria-label="Navegação principal">
   <header class="brand-header">
@@ -381,6 +427,7 @@ body.gerenciamento-aberto .floating-support{display:none}
   <nav class="side-nav">
     <a class="nav-link ativo" href="#consulta"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15m6-12v15"/></svg><span>Consulta</span></a>
     <a class="nav-link" href="#controleRotas"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Rotas</span></a>
+    <a class="nav-link" href="#relatorio" aria-controls="relatorioView"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H5v18h14V8l-5-5Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></svg><span>Relatório</span></a>
     <button type="button" class="admin-btn" onclick="abrirAdmin()" aria-controls="gerenciamentoView" aria-expanded="false">Gerenciar sistema</button>
   </nav>
   <div class="sidebar-footer">
@@ -388,6 +435,7 @@ body.gerenciamento-aberto .floating-support{display:none}
     <span class="sistema-versao">SOLIDEZ TRANSPORTES · v1.0.0</span>
   </div>
 </aside>
+<div id="consultaView">
 <div class="app-shell">
 <main class="container">
   <header class="solidez-cabecalho">
@@ -489,6 +537,15 @@ body.gerenciamento-aberto .floating-support{display:none}
       </div>
     </header>
     <div id="gerenciamentoConteudo"><div id="admin" class="admin"></div></div>
+  </div>
+</section>
+<section id="relatorioView" class="gerenciamento-tela" aria-labelledby="tituloRelatorio" aria-hidden="true" hidden inert>
+  <div class="relatorio-container">
+    <div class="relatorio-cabecalho">
+      <div><div class="gerenciamento-kicker">ACOMPANHAMENTO · SOLIDEZ</div><h1 id="tituloRelatorio" tabindex="-1">Relatório</h1><p>Resumo das rotas cadastradas e dos retornos à base.</p></div>
+      <span id="relatorioData" class="relatorio-data"></span>
+    </div>
+    <div id="relatorioConteudo" aria-live="polite"></div>
   </div>
 </section>
 <button type="button" class="floating-support" onclick="abrirSuporte()" aria-label="Abrir suporte"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2c-1.4.8-1.6 1-1.6 2m0 3h.01"/></svg><span>Precisa de ajuda?</span></button>
@@ -2649,54 +2706,69 @@ let usuarioAtualSistema = null;
 
 let telaSistemaAtual = "consulta";
 let transicaoTelaSistema = null;
-let posicaoConsulta = 0;
-let posicaoGerenciamento = 0;
-let barraConsulta = 0;
-let focoAntesDoGerenciamento = null;
+const posicoesTelasSistema = { consulta: 0, gerenciamento: 0, relatorio: 0 };
 const movimentoTelaReduzido = matchMedia("(prefers-reduced-motion: reduce)");
+let overflowAntesDasTelas = "";
+
+// A altura do menu móvel é medida para que nenhuma tela fique atrás dele.
+const menuSistema = document.querySelector(".sidebar");
+function atualizarAlturaMenuSistema() {
+  document.documentElement.style.setProperty("--menu-height",
+    matchMedia("(max-width:760px)").matches ? `${menuSistema.getBoundingClientRect().height}px` : "0px");
+}
+new ResizeObserver(atualizarAlturaMenuSistema).observe(menuSistema);
+window.addEventListener("resize", atualizarAlturaMenuSistema);
+atualizarAlturaMenuSistema();
+
+function atualizarMenuSistema(hash) {
+  const selecionado = hash || (telaSistemaAtual === "relatorio" ? "#relatorio" : "#consulta");
+  document.querySelectorAll(".nav-link").forEach(link => {
+    const ativo = telaSistemaAtual !== "gerenciamento" && link.getAttribute("href") === selecionado;
+    link.classList.toggle("ativo", ativo);
+    if (ativo) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
+  });
+  const botao = document.querySelector(".admin-btn");
+  botao?.classList.toggle("ativo", telaSistemaAtual === "gerenciamento");
+  botao?.setAttribute("aria-expanded", String(telaSistemaAtual === "gerenciamento"));
+}
 
 function alternarTelaSistema(destino, { imediato = false } = {}) {
-  if (destino === "gerenciamento" && !usuarioTemPermissao([])) return Promise.resolve(false);
-  if (transicaoTelaSistema) transicaoTelaSistema.finalizar();
+  const ids = { consulta: "consultaView", gerenciamento: "gerenciamentoView", relatorio: "relatorioView" };
+  if (!ids[destino] || (destino === "gerenciamento" && !usuarioTemPermissao([]))) return Promise.resolve(false);
+  window.solidezSoft?.cancelScroll?.();
+  transicaoTelaSistema?.finalizar();
+  if (destino === telaSistemaAtual) return Promise.resolve(true);
 
-  const consulta = document.getElementById("consultaView");
-  const gerenciamento = document.getElementById("gerenciamentoView");
-  if (!consulta || !gerenciamento || destino === telaSistemaAtual) return Promise.resolve(true);
-
-  const abrindo = destino === "gerenciamento";
-  const conteudo = consulta.querySelector(".app-shell");
-  const menu = consulta.querySelector(".sidebar");
-  if (abrindo) {
-    posicaoConsulta = window.scrollY;
-    barraConsulta = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
-    focoAntesDoGerenciamento = document.activeElement;
-  } else {
-    posicaoGerenciamento = gerenciamento.scrollTop;
-  }
-
-  const estilos = [consulta, conteudo, menu, gerenciamento].map(el => [el, el?.getAttribute("style")]);
-  const overflowAnterior = document.body.style.overflow;
-  const distancia = window.innerWidth;
-  consulta.style.cssText = `position:fixed;top:0;left:0;z-index:0;width:${Math.max(1, distancia - barraConsulta)}px;height:100dvh;overflow:hidden;`;
-  conteudo.style.transform = `translateY(${-posicaoConsulta}px)`;
-  if (matchMedia("(max-width:760px)").matches) menu.style.transform = `translateY(${-posicaoConsulta}px)`;
-  // A consulta permanece parada atrás do painel que desliza à sua frente.
-  consulta.style.transform = "none";
-  gerenciamento.style.transform = abrindo ? `translateX(${distancia}px)` : "translateX(0)";
-  consulta.hidden = false;
-  gerenciamento.hidden = false;
-  gerenciamento.scrollTop = posicaoGerenciamento;
-  consulta.inert = true;
-  gerenciamento.inert = true;
-  gerenciamento.style.willChange = "transform";
-  consulta.setAttribute("aria-hidden", abrindo ? "true" : "false");
-  gerenciamento.setAttribute("aria-hidden", abrindo ? "false" : "true");
+  const origem = telaSistemaAtual;
+  const anterior = document.getElementById(ids[origem]);
+  const proxima = document.getElementById(ids[destino]);
+  const consulta = document.getElementById(ids.consulta);
+  posicoesTelasSistema[origem] = origem === "consulta" ? window.scrollY : anterior.scrollTop;
+  const estilos = [anterior, proxima].map(el => [el, el.getAttribute("style")]);
+  if (origem === "consulta") overflowAntesDasTelas = document.body.style.overflow;
   document.body.style.overflow = "hidden";
-  document.body.classList.add("gerenciamento-aberto");
+
+  // Congela somente o conteúdo de consulta. O menu continua fixo e clicável.
+  if (origem === "consulta" || destino === "consulta") {
+    consulta.style.cssText = `position:fixed;top:${-posicoesTelasSistema.consulta}px;left:0;width:100%;`;
+  }
+  anterior.hidden = false;
+  proxima.hidden = false;
+  anterior.inert = true;
+  proxima.inert = true;
+  anterior.setAttribute("aria-hidden", "true");
+  proxima.setAttribute("aria-hidden", "false");
+  if (destino !== "consulta") proxima.scrollTop = posicoesTelasSistema[destino];
+  const saindo = destino === "consulta";
+  const painel = saindo ? anterior : proxima;
+  if (origem !== "consulta") anterior.style.zIndex = "100";
+  if (destino !== "consulta") proxima.style.zIndex = "101";
+  const distancia = painel.getBoundingClientRect().width;
+  painel.style.transform = `translate3d(${saindo ? 0 : distancia}px,0,0)`;
+  painel.style.willChange = "transform";
   telaSistemaAtual = destino;
-  const botao = document.querySelector(".admin-btn");
-  botao?.classList.toggle("ativo", abrindo);
-  botao?.setAttribute("aria-expanded", String(abrindo));
+  atualizarMenuSistema();
+  document.body.classList.toggle("gerenciamento-aberto", destino !== "consulta");
 
   return new Promise(resolve => {
     const run = { frame: null, finalizar: null };
@@ -2705,47 +2777,34 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
       transicaoTelaSistema = null;
       cancelAnimationFrame(run.frame);
       estilos.forEach(([el, valor]) => {
-        if (!el) return;
         if (valor === null) el.removeAttribute("style"); else el.setAttribute("style", valor);
       });
-      gerenciamento.style.removeProperty("transform");
-      consulta.hidden = abrindo;
-      gerenciamento.hidden = !abrindo;
-      consulta.inert = abrindo;
-      gerenciamento.inert = !abrindo;
-      consulta.setAttribute("aria-hidden", String(abrindo));
-      gerenciamento.setAttribute("aria-hidden", String(!abrindo));
-      document.body.classList.toggle("gerenciamento-aberto", abrindo);
-      document.body.style.overflow = overflowAnterior;
-      window.scrollTo({ top: abrindo ? 0 : posicaoConsulta, behavior: "instant" });
+      anterior.hidden = true;
+      anterior.inert = true;
+      proxima.hidden = false;
+      proxima.inert = false;
+      document.body.style.overflow = destino === "consulta" ? overflowAntesDasTelas : "hidden";
+      if (destino === "consulta") window.scrollTo({ top: posicoesTelasSistema.consulta, behavior: "instant" });
       if (!document.hidden) {
-        const foco = abrindo ? document.getElementById("tituloGerenciamento") :
-          (focoAntesDoGerenciamento?.isConnected ? focoAntesDoGerenciamento : botao);
-        foco?.focus({ preventScroll: true });
+        const id = destino === "gerenciamento" ? "tituloGerenciamento" : destino === "relatorio" ? "tituloRelatorio" : "consultaTitulo";
+        const titulo = document.getElementById(id);
+        titulo?.setAttribute("tabindex", "-1");
+        titulo?.focus({ preventScroll: true });
       }
       resolve(true);
     };
     transicaoTelaSistema = run;
-    if (imediato || document.hidden) {
-      run.finalizar();
-      return;
-    }
-    // Esta navegação foi solicitada como um painel lateral. Mesmo com movimento
-    // reduzido, preserva a direção, com duração menor e sem efeitos extras.
-    const duracao = movimentoTelaReduzido.matches ? 360 : 850;
+    if (imediato || document.hidden || movimentoTelaReduzido.matches) { run.finalizar(); return; }
+    const duracao = 1100;
     let inicio = null;
     const desenhar = agora => {
       if (transicaoTelaSistema !== run) return;
       if (inicio === null) inicio = agora;
       const progresso = Math.min(1, (agora - inicio) / duracao);
       const suave = 1 - Math.pow(1 - progresso, 3);
-      const x = distancia * (abrindo ? 1 - suave : suave);
-      gerenciamento.style.transform = `translate3d(${x}px,0,0)`;
-      if (progresso < 1) run.frame = requestAnimationFrame(desenhar);
-      else run.finalizar();
+      painel.style.transform = `translate3d(${distancia * (saindo ? suave : 1 - suave)}px,0,0)`;
+      if (progresso < 1) run.frame = requestAnimationFrame(desenhar); else run.finalizar();
     };
-    // Dois quadros separam a exibição do painel do início do movimento, evitando
-    // que a montagem dos formulários consuma a animação antes da primeira pintura.
     run.frame = requestAnimationFrame(() => {
       if (transicaoTelaSistema === run) run.frame = requestAnimationFrame(desenhar);
     });
@@ -2754,6 +2813,30 @@ function alternarTelaSistema(destino, { imediato = false } = {}) {
 
 function voltarConsulta() {
   return alternarTelaSistema("consulta");
+}
+
+function renderizarRelatorio() {
+  const container = document.getElementById("relatorioConteudo");
+  if (!container) return;
+  document.getElementById("relatorioData").textContent = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "long", year: "numeric" });
+  if (!usuarioAtualSistema || usuarioAtualSistema.ativo !== true) {
+    container.innerHTML = '<div class="relatorio-lista relatorio-mensagem">Entre no sistema para visualizar o relatório das rotas.<br><button type="button" onclick="abrirLoginAdminPopup()">Entrar</button></div>';
+    return;
+  }
+  const rotas = [...rotasPublicasCache].sort((a, b) => (a.motorista || "").localeCompare(b.motorista || "", "pt-BR"));
+  const nomes = { em_rota: "Em rota", retornando_base: "Retornando à base", retorno_confirmado: "Retorno confirmado" };
+  const metricas = [
+    [rotas.length, "Rotas cadastradas", ""],
+    [rotas.filter(r => !r.status || r.status === "em_rota").length, "Em rota", ""],
+    [rotas.filter(r => r.status === "retornando_base").length, "Retornando à base", "retornando"],
+    [rotas.filter(r => r.status === "retorno_confirmado").length, "Retorno confirmado", "confirmada"]
+  ];
+  const resumo = '<div class="relatorio-resumo">' + metricas.map(([total, nome, classe]) => `<div class="relatorio-metrica ${classe}"><strong>${total}</strong><span>${nome}</span></div>`).join("") + '</div>';
+  if (!rotas.length) { container.innerHTML = resumo + '<div class="relatorio-lista relatorio-mensagem">Nenhuma rota cadastrada.</div>'; return; }
+  container.innerHTML = resumo + `<section class="relatorio-lista" aria-labelledby="relatorioRotasTitulo"><h2 id="relatorioRotasTitulo">Rotas cadastradas</h2><div class="relatorio-tabela-scroll" tabindex="0" role="region" aria-label="Tabela de rotas"><table class="relatorio-tabela"><caption>Relatório das rotas cadastradas e dos retornos à base</caption><thead><tr><th scope="col">Motorista</th><th scope="col">Placa</th><th scope="col">Região</th><th scope="col">Coletas</th><th scope="col">Status</th><th scope="col">Retorno à base</th></tr></thead><tbody>${rotas.map(rota => {
+    const classe = rota.status === "retorno_confirmado" ? "confirmada" : rota.status === "retornando_base" ? "retornando" : "em-rota";
+    return `<tr><td>${escapeHtml(rota.motorista || "—")}</td><td>${escapeHtml(rota.placa || "—")}</td><td>${escapeHtml(rota.regiao || "—")}</td><td>${escapeHtml(rota.numero_coletas ?? "—")}</td><td><span class="rota-status ${classe}">${escapeHtml(nomes[rota.status || "em_rota"] || "—")}</span></td><td>${rota.status === "retorno_confirmado" && rota.retorno_confirmado_em ? escapeHtml(formatarHora(rota.retorno_confirmado_em)) : "—"}</td></tr>`;
+  }).join("")}</tbody></table></div></section>`;
 }
 
 document.addEventListener("visibilitychange", () => {
@@ -2815,6 +2898,7 @@ async function sairSistema(){
   if (canalPresencaSistema) { try { await supabaseClient.removeChannel(canalPresencaSistema); } catch (_) {} canalPresencaSistema = null; }
   await supabaseClient.auth.signOut();
   usuarioAtualSistema = null;
+  rotasPublicasCache = []; renderizarRelatorio();
   await alternarTelaSistema("consulta", { imediato: true });
   const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}
   await atualizarInterfaceSessao();
@@ -2861,14 +2945,14 @@ async function carregarRotasPublicas() {
   const container = document.getElementById("rotasPublicas"); if (!container) return;
   const usuario = await obterUsuarioAtualSistema();
   if (!usuario) {
-    rotasPublicasCache=[];
+    rotasPublicasCache=[]; renderizarRelatorio();
     container.innerHTML='<div class="acesso-necessario"><strong>Acesso ao acompanhamento de rotas</strong><br><span>Entre no sistema para visualizar as rotas e confirmar retornos.</span><br><button type="button" style="margin-top:12px" onclick="abrirLoginAdminPopup()">Entrar</button></div>';
     const resumo=document.getElementById("resumoRotas"); if(resumo) resumo.innerHTML="";
     return;
   }
   const { data, error } = await supabaseClient.from("rotas").select("*");
   if (error) { console.error(error); container.innerHTML='<div class="card erro">Erro ao carregar as rotas.</div>'; return; }
-  rotasPublicasCache=data||[]; renderizarRotasPublicas();
+  rotasPublicasCache=data||[]; renderizarRotasPublicas(); renderizarRelatorio();
 }
 
 async function registrarRetornandoBase(id, botao) {
@@ -3504,21 +3588,19 @@ document.addEventListener('click', event => {
   }
 
   function cancelScroll(){if(scrollFrame!==null){cancelAnimationFrame(scrollFrame);scrollFrame=null;}}
-  function setActiveNav(hash){
-    document.querySelectorAll('.nav-link').forEach(link=>link.classList.toggle('ativo',link.getAttribute('href')===hash));
-    document.querySelector('.admin-btn')?.classList.toggle('ativo',hash==='#admin');
-  }
+  function setActiveNav(hash){ atualizarMenuSistema(hash); }
   function navigate(target,hash){
     if(!target||!target.getClientRects().length)return;
     cancelScroll();setActiveNav(hash);
     if(target.classList.contains('soft-reveal'))reveal(target,true);
     const from=scrollY;
-    const destination=()=>hash === "#consulta" ? 0 : Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24,document.documentElement.scrollHeight-innerHeight));
+    const destination=()=>hash === "#consulta" ? 0 : Math.max(0,Math.min(scrollY+target.getBoundingClientRect().top-24-parseFloat(getComputedStyle(root).getPropertyValue("--menu-height")),document.documentElement.scrollHeight-innerHeight));
     const distance=destination()-from;
-    const duration=motion.matches?280:Math.min(1650,950+Math.abs(distance)*.32);
+    const duration=motion.matches?0:Math.min(2050,1200+Math.abs(distance)*.40);
     const start=performance.now();
     const focus=()=>{target.setAttribute('tabindex','-1');target.focus({preventScroll:true});if(hash&&location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}};
     if(Math.abs(distance)<2){focus();return;}
+    if(motion.matches){window.scrollTo({top:destination(),behavior:'instant'});focus();return;}
     const step=now=>{
       const t=Math.min(1,(now-start)/duration);
       const eased=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
@@ -3528,12 +3610,28 @@ document.addEventListener('click', event => {
     scrollFrame=requestAnimationFrame(step);
   }
   window.solidezSoft.navigate=navigate;
+  window.solidezSoft.cancelScroll=cancelScroll;
+  let navToken=0;
   // Interceptar a navegação antes da âncora para evitar o salto nativo.
   document.addEventListener('click',event=>{
     const link=event.target.closest?.('.nav-link[href^="#"]');
     if(!link||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
-    const hash=link.getAttribute('href');const target=document.getElementById(hash.slice(1));
-    if(!target)return;event.preventDefault();navigate(target,hash);
+    const hash=link.getAttribute('href');
+    if(!['#consulta','#controleRotas','#relatorio'].includes(hash))return;
+    event.preventDefault();const token=++navToken;
+    if(hash==='#relatorio'){
+      renderizarRelatorio();
+      alternarTelaSistema('relatorio').then(()=>{
+        if(token!==navToken||telaSistemaAtual!=='relatorio')return;
+        setActiveNav(hash);
+        if(location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}
+      });
+      return;
+    }
+    const target=document.getElementById(hash.slice(1));
+    alternarTelaSistema('consulta').then(()=>{
+      if(token===navToken&&telaSistemaAtual==='consulta')navigate(target,hash);
+    });
   },true);
   window.addEventListener('wheel',cancelScroll,{passive:true});
   window.addEventListener('touchstart',cancelScroll,{passive:true});
