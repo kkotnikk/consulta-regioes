@@ -8,3 +8,7 @@
 - A interface não substitui a autorização no banco. Mantenha a verificação de permissão em cada operação de escrita. Não conceda permissões administrativas aos demais perfis.
 - Para confirmar retorno, use `usuarioPodeConfirmarRetorno(usuario)` no frontend e a validação exclusiva de `operacional` na RPC e no trigger `proteger_confirmacao_retorno`. Não use a regra geral que autoriza o Administrativo nessa ação.
 - Preserve o escopo solicitado e as animações existentes ao alterar a interface.
+
+## Pendências solicitadas
+
+- Relatório (registrado em 01/10/2026): ao implementar o relatório, permitir acesso somente a usuários autenticados e ativos dos perfis `admin` (Administrativo) e `operacional` (Operacional/Operador). Visitantes, usuários inativos e outros perfis não devem ter acesso. O usuário pediu apenas guardar esta regra para adicionar depois; não aplicar a restrição nesta etapa.
