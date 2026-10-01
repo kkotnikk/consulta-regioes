@@ -1,15 +1,13 @@
--- Coleta: de uma até três rotas; Administrador: zero até três rotas de referência.
+-- Coleta: uma ou mais rotas; Administrador: zero ou mais rotas de referência. Sem limite de quantidade.
 -- O Administrador mantém todas as permissões, inclusive nas demais rotas.
 alter table public.usuarios drop constraint if exists usuarios_rotas_coleta_check;
 alter table public.usuarios add constraint usuarios_rotas_coleta_check check (
- ((perfil='operador_coleta' and (cardinality(rotas_coleta_ids) between 1 and 3 or (not ativo and cardinality(rotas_coleta_ids)=0)))
-  or (perfil='admin' and cardinality(rotas_coleta_ids) between 0 and 3)
+ ((perfil='operador_coleta' and (cardinality(rotas_coleta_ids)>=1 or (not ativo and cardinality(rotas_coleta_ids)=0)))
+  or perfil='admin'
   or (perfil='operador_conferencia' and cardinality(rotas_coleta_ids)=0))
  and (cardinality(rotas_coleta_ids)=0 or (
    array_ndims(rotas_coleta_ids)=1 and array_lower(rotas_coleta_ids,1)=1
    and array_position(rotas_coleta_ids,null) is null
-   and (cardinality(rotas_coleta_ids)<2 or rotas_coleta_ids[1]<>rotas_coleta_ids[2])
-   and (cardinality(rotas_coleta_ids)<3 or (rotas_coleta_ids[1]<>rotas_coleta_ids[3] and rotas_coleta_ids[2]<>rotas_coleta_ids[3]))
  ))
 );
 create or replace function consulta_regioes_private.validar_usuario()
@@ -21,10 +19,9 @@ begin
  end if;
  if new.id is distinct from old.id and tg_op='UPDATE' then raise exception 'O identificador do usuário não pode ser alterado.'; end if;
  if btrim(new.nome)='' then raise exception 'Informe o nome de quem vai usar esta conta.'; end if;
- if (new.perfil='operador_coleta' and (cardinality(new.rotas_coleta_ids)>3 or (new.ativo and cardinality(new.rotas_coleta_ids)<1)))
- or (new.perfil='admin' and cardinality(new.rotas_coleta_ids)>3)
+ if (new.perfil='operador_coleta' and new.ativo and cardinality(new.rotas_coleta_ids)<1)
  or (new.perfil='operador_conferencia' and cardinality(new.rotas_coleta_ids)>0) then
-   raise exception 'Limite de rotas: Coleta de uma até três; Administrador até três; Conferência sem vínculo.';
+   raise exception 'Coleta ativo precisa de pelo menos uma rota; Conferência não possui vínculo de rota.';
  end if;
  perform 1 from public.rotas r where r.id=any(new.rotas_coleta_ids) for key share;
  if cardinality(new.rotas_coleta_ids)>0 and

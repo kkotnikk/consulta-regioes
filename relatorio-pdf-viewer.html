@@ -5,6 +5,7 @@
 *{box-sizing:border-box}html,body{margin:0;height:100%;font:13px system-ui,sans-serif;background:#e8dfce;color:#624523}body{display:flex;flex-direction:column;overflow:hidden}
 .ferramentas{flex:none;display:flex;align-items:center;gap:6px;padding:6px 10px;min-height:42px;border-bottom:1px solid #cbb491;background:#f4ead8}.ferramentas button{min-height:28px;min-width:30px;padding:4px 9px;border:1px solid #cbb491;border-radius:5px;background:transparent;color:#624523;font:inherit;cursor:pointer}.ferramentas button:hover{background:#08703f0d;border-color:#08703f}.ferramentas button:focus-visible{outline:2px solid #08703f;outline-offset:2px}.ferramentas button:disabled{opacity:.4;cursor:default}#zoomValor{min-width:46px;text-align:center;font-size:12px;font-variant-numeric:tabular-nums}.dica{margin-left:auto;font-size:11px;color:#81613e}
 #paginas{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:14px;scrollbar-width:thin;scrollbar-color:#aa9473 #e8dfce}
+#paginas{cursor:grab}#paginas.arrastando{cursor:grabbing;user-select:none}
 #folhas{display:flex;flex-wrap:nowrap;gap:16px;width:max-content;min-width:100%;align-items:flex-start;justify-content:center}
 .pagina{flex:none;background:white;box-shadow:0 2px 8px #38281924;position:relative;overflow:hidden}.pagina canvas{display:block;width:100%;height:100%}
 #status{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);max-width:90%;padding:8px 12px;border-radius:6px;background:#fff5e6;box-shadow:0 2px 12px #38281924;text-align:center}#status[hidden]{display:none}
@@ -13,7 +14,7 @@
 </style></head>
 <body>
 <div class="ferramentas" role="toolbar" aria-label="Zoom do PDF">
- <button id="zoomMenos" type="button" aria-label="Diminuir zoom" disabled>−</button><output id="zoomValor" aria-live="polite">100%</output><button id="zoomMais" type="button" aria-label="Aumentar zoom" disabled>+</button><button id="zoomAjustar" type="button" disabled>Ajustar</button><span class="dica">Ctrl + roda do mouse para zoom</span>
+ <button id="zoomMenos" type="button" aria-label="Diminuir zoom" disabled>−</button><output id="zoomValor" aria-live="polite">100%</output><button id="zoomMais" type="button" aria-label="Aumentar zoom" disabled>+</button><button id="zoomAjustar" type="button" disabled>Ajustar</button><span class="dica">Arraste para navegar · Ctrl + roda do mouse para zoom</span>
 </div>
 <div id="paginas" aria-label="Páginas do relatório lado a lado"><div id="folhas"></div></div><p id="status" role="status">Abrindo PDF...</p>
 <script type="module">
@@ -62,6 +63,25 @@ paginas.addEventListener('wheel',event=>{
  const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?paginas.clientHeight:1);
  mudarZoom(zoom*Math.exp(-Math.max(-300,Math.min(300,delta))*.002),{x:event.clientX,y:event.clientY});
 },{passive:false});
+let arraste=null;
+paginas.addEventListener('pointerdown',event=>{
+ if(event.pointerType!=='mouse'||event.button!==0||!entries.length||printing)return;
+ event.preventDefault();
+ arraste={id:event.pointerId,x:event.clientX,y:event.clientY,left:paginas.scrollLeft,top:paginas.scrollTop};
+ paginas.setPointerCapture(event.pointerId);paginas.classList.add('arrastando');
+});
+paginas.addEventListener('pointermove',event=>{
+ if(!arraste||event.pointerId!==arraste.id)return;
+ paginas.scrollLeft=arraste.left+arraste.x-event.clientX;
+ paginas.scrollTop=arraste.top+arraste.y-event.clientY;
+});
+function encerrarArraste(event){
+ if(!arraste||event.pointerId!==arraste.id)return;
+ arraste=null;paginas.classList.remove('arrastando');
+ if(paginas.hasPointerCapture(event.pointerId))paginas.releasePointerCapture(event.pointerId);
+}
+for(const tipo of ['pointerup','pointercancel','lostpointercapture'])paginas.addEventListener(tipo,encerrarArraste);
+paginas.addEventListener('scroll',renderVisiveis,{passive:true});
 async function render(entry,forPrint=false){
  if(entry.pending){await entry.pending;return render(entry,forPrint);}
  const size=entry.page.getViewport({scale:1});

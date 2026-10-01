@@ -1,6 +1,6 @@
 const {chromium}=require('playwright'),fs=require('fs'),assert=require('node:assert/strict');
 const html=fs.readFileSync(__dirname+'/index.html','utf8');
-const routes=[1,2,3].map(id=>({id,motorista:'Motorista '+id,placa:'ABC1D2'+id,regiao:'Lapa',status:'em_rota',numero_coletas:5}));
+const routes=[1,2,3,4,5,6,7,8].map(id=>({id,motorista:'Motorista '+id,placa:'ABC1D2'+id,regiao:'Lapa',status:'em_rota',numero_coletas:5}));
 const stub=(perfil,ativo=true)=>'window.__state='+JSON.stringify({routes,user:{id:'test',nome:'Pessoa '+perfil,perfil,ativo,rotas_coleta_ids:perfil==='operador_coleta'?[1,2]:[]},users:[{id:'test',nome:'João',perfil:'admin',ativo:true,rotas_coleta_ids:[]},{id:'coleta',nome:'Ana',perfil:'operador_coleta',ativo:true,rotas_coleta_ids:[1,2]}],signedIn:perfil!=='anon'})+`;
 window.supabase={createClient(){
  function query(table){let single=false,filter=null,patch=null;const q=new Proxy({}, {get(_,key){
@@ -35,7 +35,7 @@ window.supabase={createClient(){
   await page.evaluate(async()=>{await atualizarInterfaceSessao();await carregarRotasPublicas();});
   const reportAllowed=['admin','operador_coleta'].includes(perfil),logged=!['anon','inactive'].includes(perfil);
   assert.equal(await page.locator('.nav-link[href="#relatorio"]').isVisible(),reportAllowed);
-  assert.equal(await page.evaluate(()=>rotasPublicasCache.length),logged?3:0);
+  assert.equal(await page.evaluate(()=>rotasPublicasCache.length),logged?8:0);
   for(const id of [1,3]){
    if(!logged)continue;
    await page.evaluate(id=>abrirDetalhesRota(id),id);
@@ -73,8 +73,7 @@ window.supabase={createClient(){
    const cadastroGap=await page.evaluate(()=>document.getElementById('adminUsuarios').getBoundingClientRect().top-document.querySelector('#adminUsuariosFerramenta>button').getBoundingClientRect().bottom);
    assert(cadastroGap>=16,cadastroGap);
    await page.getByRole('button',{name:'Cadastrar usuário',exact:true}).click();
-   assert.equal(await page.locator('#usuarioSegundaRota').isVisible(),false);
-   assert.equal(await page.locator('#usuarioTerceiraRota').isVisible(),false);
+   assert.equal(await page.locator('#usuarioRotasLista select').count(),1);
    await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();
    await page.locator('#usuarioNome').fill('Maria');
    await page.locator('#usuarioEmail').fill('maria@example.test');
@@ -86,10 +85,11 @@ window.supabase={createClient(){
    assert.equal(posted,null);
    await page.locator('#usuarioRota2').selectOption('2');
    await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();
-   assert.equal(await page.locator('#usuarioAdicionarRota').isVisible(),false);
+   assert.equal(await page.locator('#usuarioAdicionarRota').isVisible(),true);
    await page.locator('#usuarioRota3').selectOption('3');
+   for(const id of [4,5,6,7,8]){await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();await page.locator('#usuarioRota'+id).selectOption(String(id));}
    await page.locator('#usuarioSalvar').click();await page.waitForFunction(()=>document.getElementById('formUsuario').hidden);
-   assert.equal(posted.nome,'Maria');assert.equal(posted.perfil,'operador_coleta');assert.deepEqual(posted.rotas_coleta_ids,[1,2,3]);
+   assert.equal(posted.nome,'Maria');assert.equal(posted.perfil,'operador_coleta');assert.deepEqual(posted.rotas_coleta_ids,[1,2,3,4,5,6,7,8]);
    await page.evaluate(()=>abrirCadastroUsuario('coleta'));
    assert.equal(await page.locator('#usuarioNome').inputValue(),'Ana');
    assert.equal(await page.locator('#usuarioCredenciais').isVisible(),false);
@@ -99,19 +99,30 @@ window.supabase={createClient(){
    assert.deepEqual(await page.evaluate(()=>window.__lastUpdate.patch.rotas_coleta_ids),[]);
    assert.equal(await page.evaluate(()=>window.__lastUpdate.patch.perfil),'operador_conferencia');
    await page.evaluate(()=>abrirCadastroUsuario('test'));
-   assert.equal(await page.locator('#usuarioTerceiraRota').isVisible(),false);
+   assert.equal(await page.locator('#usuarioRotasLista select').count(),1);
    await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();
    await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();
    assert.equal(await page.locator('#usuarioRota1').evaluate(el=>el.required),false);
    await page.locator('#usuarioRota1').selectOption('1');
    await page.locator('#usuarioRota2').selectOption('2');
    await page.locator('#usuarioRota3').selectOption('3');
+   for(const id of [4,5,6,7,8]){await page.getByRole('button',{name:'Adicionar rota',exact:true}).click();await page.locator('#usuarioRota'+id).selectOption(String(id));}
    await page.locator('#usuarioSalvar').click();await page.waitForFunction(()=>document.getElementById('formUsuario').hidden);
-   assert.deepEqual(await page.evaluate(()=>window.__lastUpdate.patch.rotas_coleta_ids),[1,2,3]);
+   assert.deepEqual(await page.evaluate(()=>window.__lastUpdate.patch.rotas_coleta_ids),[1,2,3,4,5,6,7,8]);
    assert.equal(await page.evaluate(()=>usuarioPodeRetornarRota(3)),true);
    await page.evaluate(()=>abrirCadastroUsuario('test'));
-   assert.equal(await page.locator('#usuarioTerceiraRota').isVisible(),true);
-   assert.equal(await page.locator('#usuarioAdicionarRota').isVisible(),false);
+   assert.equal(await page.locator('#usuarioRotasLista select').count(),8);
+   assert.equal(await page.locator('#usuarioAdicionarRota').isVisible(),true);
+   await page.getByRole('button',{name:'Remover rota 4',exact:true}).click();
+   await page.locator('#usuarioSalvar').click();await page.waitForFunction(()=>document.getElementById('formUsuario').hidden);
+   assert.deepEqual(await page.evaluate(()=>window.__lastUpdate.patch.rotas_coleta_ids),[1,2,3,5,6,7,8]);
+   await page.evaluate(()=>alternarTelaSistema('relatorio',{imediato:true}));
+   assert.equal(await page.locator('#relatorioPaginas button').count(),7);
+   await page.locator('#relatorioPagina7').click();
+   assert.equal(await page.evaluate(()=>relatorioRotaId),8);
+   await page.locator('#relatorioPagina7').press('Home');
+   assert.equal(await page.evaluate(()=>relatorioRotaId),1);
+   await page.evaluate(()=>alternarTelaSistema('gerenciamento',{imediato:true}));
    await page.evaluate(()=>abrirCadastroUsuario());
    await page.screenshot({path:__dirname+'/usuarios-'+width+'.png',fullPage:false});
    const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));

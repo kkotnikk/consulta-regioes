@@ -32,13 +32,13 @@ Deno.serve(async (req: Request) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply(400, "Informe um e-mail válido.");
   if (senha.length < 8 || senha.length > 128) return reply(400, "A senha deve ter entre 8 e 128 caracteres.");
   if (!["admin", "operador_coleta", "operador_conferencia"].includes(perfil)) return reply(400, "Escolha um perfil válido.");
-  const limiteRotas = perfil === "operador_coleta" ? 3 : perfil === "admin" ? 3 : 0;
-  if ((perfil === "operador_coleta" && rotas.length < 1) || rotas.length > limiteRotas
+  if ((perfil === "operador_coleta" && rotas.length < 1) || (perfil === "operador_conferencia" && rotas.length > 0)
     || rotas.some((id: unknown) => !Number.isSafeInteger(id) || Number(id) <= 0) || new Set(rotas).size !== rotas.length)
-    return reply(400, "Escolha rotas diferentes: de uma até três para Coleta ou até três para Administrador.");
-  if (rotas.length) {
-    const { data: found, error } = await service.from("rotas").select("id").in("id", rotas);
-    if (error || found?.length !== rotas.length) return reply(400, "Todas as rotas escolhidas devem existir.");
+    return reply(400, "Escolha rotas existentes e diferentes. Coleta precisa de pelo menos uma rota; Conferência não possui vínculos.");
+  for (let inicio = 0; inicio < rotas.length; inicio += 200) {
+    const lote = rotas.slice(inicio, inicio + 200);
+    const { data: found, error } = await service.from("rotas").select("id").in("id", lote);
+    if (error || found?.length !== lote.length) return reply(400, "Todas as rotas escolhidas devem existir.");
   }
   // The password never enters profile metadata, logs, or the database profile.
   const { data: created, error: createError } = await service.auth.admin.createUser({

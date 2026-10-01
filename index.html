@@ -377,8 +377,8 @@ html{scrollbar-gutter:stable}
 .relatorio-acoes{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
 #relatorioEnviarPdf{min-height:42px;padding:11px 16px;font-size:12px;white-space:nowrap}
 .relatorio-pdf-status{flex:none;margin:0 0 12px;font-size:12px;color:#81613e;overflow-wrap:anywhere}
-.relatorio-paginas{display:flex;align-items:center;gap:7px;flex:none;margin:0 0 10px}
-.relatorio-paginas button{min-height:34px;min-width:38px;padding:7px 12px;font-size:12px;border:1px solid #cbb491;background:transparent;color:#624523;border-radius:6px;box-shadow:none}
+.relatorio-paginas{display:flex;align-items:center;gap:7px;flex:none;min-width:0;max-width:100%;overflow-x:auto;margin:0 0 10px;padding-bottom:3px;scrollbar-width:thin}
+.relatorio-paginas button{flex:none;min-height:34px;min-width:38px;padding:7px 12px;font-size:12px;border:1px solid #cbb491;background:transparent;color:#624523;border-radius:6px;box-shadow:none}
 .relatorio-paginas button[aria-selected="true"]{background:#08703f;border-color:#08703f;color:white}
 .relatorio-paginas button:disabled{cursor:default;opacity:.35}
 .relatorio-rota{flex:none;font-size:12px;line-height:1.6;margin:0 0 12px;color:#81613e}
@@ -444,7 +444,7 @@ html{scrollbar-gutter:stable}
 #admin .admin-extra-grid{align-items:stretch}
 #adminUsuariosFerramenta>button{margin:2px 0 16px}
 #adminUsuariosFerramenta .usuario-form{margin:0 0 22px}
-.usuario-rotas-titulo{display:flex;align-items:center;gap:10px;margin-bottom:14px}.usuario-rotas-titulo strong{font-size:13px}.usuario-rotas-titulo small{margin-left:auto}#admin #usuarioAdicionarRota{width:30px;height:30px;min-height:30px;padding:0;border:1px solid #cbb491;border-radius:5px;background:transparent;color:#08703f;font-size:22px;line-height:1;box-shadow:none}#usuarioAdicionarRota:focus-visible{outline:2px solid #08703f;outline-offset:2px}
+.usuario-rota-linha{display:flex;align-items:center;gap:8px}.usuario-rota-linha select{flex:1}.usuario-rota-linha .usuario-remover-rota{flex:none;width:30px;min-height:30px;padding:4px;background:transparent;border:1px solid #cbb491;color:#81613d;box-shadow:none}.usuario-rotas-titulo{display:flex;align-items:center;gap:10px;margin-bottom:14px}.usuario-rotas-titulo strong{font-size:13px}.usuario-rotas-titulo small{margin-left:auto}#admin #usuarioAdicionarRota{width:30px;height:30px;min-height:30px;padding:0;border:1px solid #cbb491;border-radius:5px;background:transparent;color:#08703f;font-size:22px;line-height:1;box-shadow:none}#usuarioAdicionarRota:focus-visible{outline:2px solid #08703f;outline-offset:2px}
 #admin h3:focus{outline:none}
 @media(max-width:760px){.side-nav>.admin-btn{font-size:10px;padding:8px;min-height:34px}.admin-atalhos{margin-top:8px;padding-top:8px;padding-bottom:2px}.admin-atalhos button{font-size:11px;min-height:32px;padding:6px 9px}}
 </style>
@@ -1269,10 +1269,8 @@ async function mostrarPainelAdmin() {
           </select></div>
           <p id="usuarioResumoPermissoes" class="aviso" style="text-align:left"></p>
           <div id="usuarioRotasColeta">
-            <div class="usuario-rotas-titulo"><strong>Vincular rotas</strong><button id="usuarioAdicionarRota" type="button" aria-label="Adicionar rota" title="Adicionar rota" onclick="adicionarRotaUsuario()">+</button><small>Até 3 rotas</small></div>
-            <div class="campo"><label for="usuarioRota1">Primeira rota</label><select id="usuarioRota1"></select></div>
-            <div id="usuarioSegundaRota" class="campo" hidden><label for="usuarioRota2">Segunda rota (opcional)</label><select id="usuarioRota2"></select></div>
-            <div id="usuarioTerceiraRota" class="campo" hidden><label for="usuarioRota3">Terceira rota (opcional)</label><select id="usuarioRota3"></select></div>
+            <div class="usuario-rotas-titulo"><strong>Vincular rotas</strong><button id="usuarioAdicionarRota" type="button" aria-label="Adicionar rota" title="Adicionar rota" onclick="adicionarRotaUsuario()">+</button><small>Sem limite de rotas</small></div>
+            <div id="usuarioRotasLista"></div>
           </div>
           <div class="campo"><label for="usuarioAtivo">Acesso</label><select id="usuarioAtivo"><option value="true">Ativo</option><option value="false">Desativado</option></select></div>
           <p id="usuarioFormErro" class="erro" role="alert" hidden></p>
@@ -2918,7 +2916,7 @@ let relatorioRotaId = null;
 
 function rotasRelatorioUsuario(usuario = usuarioAtualSistema) {
   if (!usuarioPodeAcessarRelatorio(usuario)) return [];
-  return [...new Set(usuario.rotas_coleta_ids || [])].slice(0, 3).map(id =>
+  return [...new Set(usuario.rotas_coleta_ids || [])].map(id =>
     rotasPublicasCache.find(r => Number(r.id) === Number(id)) || rotasAdminCache.find(r => Number(r.id) === Number(id)) || { id: Number(id) }
   );
 }
@@ -2984,8 +2982,17 @@ function renderizarRelatorio() {
   if (!rotas[relatorioPaginaAtual]) relatorioPaginaAtual = 0;
   const rota = rotas[relatorioPaginaAtual];
   if ((rota?.id ?? null) !== relatorioRotaId) { limparPdfRelatorio(); relatorioRotaId = rota?.id ?? null; }
-  for (let i = 0; i < 3; i++) {
-    const tab = document.getElementById("relatorioPagina" + (i + 1));
+  const paginas = document.getElementById("relatorioPaginas");
+  const totalPaginas = Math.max(3, rotas.length);
+  while (paginas.children.length > totalPaginas) paginas.lastElementChild.remove();
+  for (let i = 0; i < totalPaginas; i++) {
+    let tab = document.getElementById("relatorioPagina" + (i + 1));
+    if (!tab) {
+      tab = document.createElement("button"); tab.id = "relatorioPagina" + (i + 1);
+      tab.type = "button"; tab.textContent = String(i + 1); tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-controls", "relatorioConteudo"); tab.onclick = () => selecionarPaginaRelatorio(i);
+      paginas.append(tab);
+    }
     tab.disabled = !rotas[i];
     tab.setAttribute("aria-selected", String(!!rotas[i] && i === relatorioPaginaAtual));
     tab.tabIndex = rotas[i] && i === relatorioPaginaAtual ? 0 : -1;
@@ -3022,7 +3029,7 @@ function renderizarRelatorio() {
   frame.title = "Relatório da rota " + relatorioRotaId + ": " + relatorioDocumentoAtual.nome;
   frame.dataset.documento = relatorioDocumentoAtual.arquivo_path;
   const pdfUrl = relatorioPdfUrl;
-  frame.src = "./relatorio-pdf-viewer.html?v=20261001-zoom-lado-a-lado";
+  frame.src = "./relatorio-pdf-viewer.html?v=20261001-arrastar-rotas-sem-limite";
   frame.onload = () => {
     if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl);
   };
@@ -3349,7 +3356,6 @@ async function carregarHistoricoRotas(){
 let usuariosAdminCache = [];
 let rotasCadastroUsuario = [];
 let cadastroUsuarioCarregamento = 0;
-let cadastroUsuarioRotasVisiveis = 1;
 
 async function carregarUsuariosAdmin() {
   const lista = document.getElementById("adminUsuarios");
@@ -3366,7 +3372,7 @@ async function carregarUsuariosAdmin() {
     return '<div class="usuario-item"><div class="usuario-topo"><strong>' + escapeHtml(u.nome || "Sem nome") +
       '</strong><span class="perfil-badge">' + nomePerfilUsuario(u.perfil) +
       '</span></div><div class="usuario-meta">' + (u.ativo ? "● Acesso ativo" : "⚪ Acesso desativado") +
-      (["operador_coleta", "admin"].includes(u.perfil) ? '<br>' + (rotas.length ? "Rotas vinculadas: " + rotas.map(escapeHtml).join(" / ") : u.perfil === "operador_coleta" ? "Pendente: informe o nome da pessoa e escolha até três rotas." : "Sem rotas vinculadas · acesso completo") : "") +
+      (["operador_coleta", "admin"].includes(u.perfil) ? '<br>' + (rotas.length ? "Rotas vinculadas: " + rotas.map(escapeHtml).join(" / ") : u.perfil === "operador_coleta" ? "Pendente: informe o nome da pessoa e vincule uma ou mais rotas." : "Sem rotas vinculadas · acesso completo") : "") +
       '</div><button type="button" class="editar" onclick="abrirCadastroUsuario(usuariosAdminCache[' + usuariosAdminCache.indexOf(u) + '].id)">Editar usuário</button></div>';
   }).join("") || '<p class="aviso">Nenhum usuário cadastrado.</p>';
 }
@@ -3379,7 +3385,6 @@ async function abrirCadastroUsuario(id = "") {
   const usuario = usuariosAdminCache.find(u => u.id === id);
   if (id && !usuario) return;
   const carregamento = ++cadastroUsuarioCarregamento;
-  cadastroUsuarioRotasVisiveis = Math.max(1, Math.min(3, usuario?.rotas_coleta_ids?.length || 1));
   form.reset();
   document.getElementById("usuarioEditarId").value = id;
   document.getElementById("usuarioNome").value = usuario?.nome === "Operacional Teste" ? "" : usuario?.nome || "";
@@ -3397,32 +3402,50 @@ async function abrirCadastroUsuario(id = "") {
   const proprioAdmin = id === actor.id;
   document.getElementById("usuarioPerfil").disabled = proprioAdmin;
   document.getElementById("usuarioAtivo").disabled = proprioAdmin;
+  document.getElementById("usuarioAdicionarRota").disabled = true;
+  document.getElementById("usuarioRotasLista").replaceChildren();
   form.hidden = false;
-  const { data, error } = await supabaseClient.from("rotas").select("id,motorista,regiao,placa").order("motorista");
+  const data = []; let error = null;
+  for (let inicio = 0; ; inicio += 500) {
+    const resposta = await supabaseClient.from("rotas").select("id,motorista,regiao,placa").order("motorista").order("id").range(inicio, inicio + 499);
+    if (carregamento !== cadastroUsuarioCarregamento || form.hidden) return;
+    if (resposta.error) { error = resposta.error; break; }
+    data.push(...(resposta.data || []));
+    if ((resposta.data || []).length < 500) break;
+  }
   if (carregamento !== cadastroUsuarioCarregamento || form.hidden) return;
   rotasCadastroUsuario = data || [];
-  const options = '<option value="">Selecione uma rota</option>' + rotasCadastroUsuario.map(r =>
-    '<option value="' + Number(r.id) + '">' + escapeHtml([r.motorista, r.regiao, r.placa].filter(Boolean).join(" · ")) + '</option>'
-  ).join("");
-  [1, 2, 3].forEach(n => {
-    const select = document.getElementById("usuarioRota" + n);
-    select.innerHTML = options;
-    select.value = String(usuario?.rotas_coleta_ids?.[n - 1] || "");
-  });
+  const vinculadas = usuario?.rotas_coleta_ids?.length ? usuario.rotas_coleta_ids : [""];
+  vinculadas.forEach(rotaId => adicionarRotaUsuario(rotaId, false));
   if (error) {
     document.getElementById("usuarioFormErro").textContent = "Não foi possível carregar as rotas. Abra o cadastro novamente.";
     document.getElementById("usuarioFormErro").hidden = false;
-  } else document.getElementById("usuarioSalvar").disabled = false;
+  } else {
+    document.getElementById("usuarioSalvar").disabled = false;
+    document.getElementById("usuarioAdicionarRota").disabled = false;
+  }
   atualizarCamposPerfilUsuario();
   document.getElementById("usuarioNome").focus({ preventScroll: true });
   form.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-function adicionarRotaUsuario() {
-  if (cadastroUsuarioRotasVisiveis >= 3 || document.getElementById("usuarioRotasColeta").hidden) return;
-  cadastroUsuarioRotasVisiveis++;
+function adicionarRotaUsuario(rotaId = "", focar = true) {
+  if (focar && (document.getElementById("usuarioAdicionarRota").disabled || document.getElementById("usuarioRotasColeta").hidden)) return;
+  const lista = document.getElementById("usuarioRotasLista");
+  const campo = document.createElement("div"); campo.className = "campo";
+  const label = document.createElement("label");
+  const linha = document.createElement("div"); linha.className = "usuario-rota-linha";
+  const select = document.createElement("select"); select.dataset.usuarioRota = "";
+  select.add(new Option("Selecione uma rota", ""));
+  for (const rota of rotasCadastroUsuario) select.add(new Option([rota.motorista, rota.regiao, rota.placa].filter(Boolean).join(" · ") || "Rota #" + rota.id, String(rota.id)));
+  // Preserva vínculos existentes mesmo se uma rota estiver fora da resposta carregada.
+  if (rotaId && !rotasCadastroUsuario.some(rota => Number(rota.id) === Number(rotaId))) select.add(new Option("Rota #" + rotaId, String(rotaId)));
+  select.value = String(rotaId);
+  const remover = document.createElement("button"); remover.type = "button"; remover.className = "usuario-remover-rota"; remover.textContent = "−";
+  remover.onclick = () => { campo.remove(); atualizarCamposPerfilUsuario(); lista.querySelector("select")?.focus({ preventScroll: true }); };
+  linha.append(select, remover); campo.append(label, linha); lista.append(campo);
   atualizarCamposPerfilUsuario();
-  document.getElementById("usuarioRota" + cadastroUsuarioRotasVisiveis).focus({ preventScroll: true });
+  if (focar) select.focus({ preventScroll: true });
 }
 
 function atualizarCamposPerfilUsuario() {
@@ -3430,17 +3453,17 @@ function atualizarCamposPerfilUsuario() {
   const coleta = perfil === "operador_coleta";
   const administrador = perfil === "admin";
   document.getElementById("usuarioRotasColeta").hidden = !coleta && !administrador;
-  document.getElementById("usuarioSegundaRota").hidden = cadastroUsuarioRotasVisiveis < 2;
-  document.getElementById("usuarioTerceiraRota").hidden = cadastroUsuarioRotasVisiveis < 3;
-  document.getElementById("usuarioAdicionarRota").hidden = cadastroUsuarioRotasVisiveis >= 3;
-  [1, 2, 3].forEach(n => {
-    const campo = document.getElementById("usuarioRota" + n);
-    campo.required = coleta && n === 1; campo.disabled = (!coleta && !administrador) || n > cadastroUsuarioRotasVisiveis;
+  document.querySelectorAll("#usuarioRotasLista select").forEach((campo, i) => {
+    campo.id = "usuarioRota" + (i + 1); campo.required = coleta && i === 0; campo.disabled = !coleta && !administrador;
+    const label = campo.closest(".campo").querySelector("label"); label.htmlFor = campo.id;
+    label.textContent = "Rota " + (i + 1) + (i > 0 ? " (opcional)" : "");
+    const remover = campo.parentElement.querySelector("button"); remover.hidden = i === 0;
+    remover.setAttribute("aria-label", "Remover rota " + (i + 1));
   });
   document.getElementById("usuarioResumoPermissoes").textContent = ({
-    operador_coleta: "Visualiza todas as rotas. Escolha de uma até três rotas para marcar Retornando à base. Pode acessar, editar e imprimir o relatório.",
+    operador_coleta: "Visualiza todas as rotas. Vincule uma ou mais rotas, sem limite de quantidade, para marcar Retornando à base. Pode acessar, editar e imprimir o relatório.",
     operador_conferencia: "Visualiza todas as rotas e confirma o retorno à base. Sem acesso ao relatório.",
-    admin: "Acesso completo: todas as permissões existentes e futuras. Pode vincular até três rotas, mantendo acesso a todas as rotas e ações.",
+    admin: "Acesso completo: todas as permissões existentes e futuras. Pode vincular rotas sem limite de quantidade, mantendo acesso a todas as rotas e ações.",
   })[perfil] || "";
 }
 
@@ -3463,12 +3486,11 @@ async function salvarUsuario(event) {
   const payload = {
     nome: document.getElementById("usuarioNome").value.trim(), perfil,
     ativo: document.getElementById("usuarioAtivo").value === "true",
-    rotas_coleta_ids: (perfil === "operador_coleta" ? [1, 2, 3] : perfil === "admin" ? [1, 2, 3] : []).map(n => document.getElementById("usuarioRota" + n).value).filter(Boolean).map(Number),
+    rotas_coleta_ids: (["operador_coleta", "admin"].includes(perfil) ? Array.from(document.querySelectorAll("#usuarioRotasLista select")) : []).map(campo => campo.value).filter(Boolean).map(Number),
   };
   erro.hidden = true;
-  const limiteRotas = perfil === "operador_coleta" ? 3 : perfil === "admin" ? 3 : 0;
-  if (!payload.nome || (perfil === "operador_coleta" && payload.rotas_coleta_ids.length < 1) || payload.rotas_coleta_ids.length > limiteRotas || payload.rotas_coleta_ids.some(id => !Number.isSafeInteger(id) || id <= 0) || new Set(payload.rotas_coleta_ids).size !== payload.rotas_coleta_ids.length) {
-    erro.textContent = "Informe o nome e escolha rotas diferentes: até três para Coleta ou até três para Administrador.";
+  if (!payload.nome || (perfil === "operador_coleta" && payload.rotas_coleta_ids.length < 1) || payload.rotas_coleta_ids.some(id => !Number.isSafeInteger(id) || id <= 0) || new Set(payload.rotas_coleta_ids).size !== payload.rotas_coleta_ids.length) {
+    erro.textContent = "Informe o nome e escolha rotas diferentes. Operador Coleta precisa de pelo menos uma rota.";
     erro.hidden = false; return;
   }
   botao.disabled = true;

@@ -91,7 +91,15 @@ async function soltarPdf(locator,files){
    await viewer.locator('#zoomAjustar').click();
    assert.equal(await viewer.locator('body').getAttribute('data-zoom'),'1');
    await viewer.locator('#zoomMais').click();assert.equal(await viewer.locator('#zoomValor').innerText(),'120%');
-   await viewer.locator('#zoomMenos').click();assert.equal(await viewer.locator('#zoomValor').innerText(),'100%');
+   await viewer.locator('#zoomMais').click();await viewer.locator('#zoomMais').click();
+   await viewer.locator('#paginas').evaluate(el=>{el.scrollLeft=0;el.scrollTop=0;});
+   const area=await viewer.locator('#paginas').boundingBox();
+   await page.mouse.move(area.x+area.width*.7,area.y+area.height*.7);await page.mouse.down();
+   assert.equal(await viewer.locator('#paginas').evaluate(el=>getComputedStyle(el).cursor),'grabbing');
+   await page.mouse.move(area.x+area.width*.7-90,area.y+area.height*.7-90,{steps:8});await page.mouse.up();
+   const pan=await viewer.locator('#paginas').evaluate(el=>({left:el.scrollLeft,top:el.scrollTop,cursor:getComputedStyle(el).cursor}));
+   assert(pan.left>=80&&pan.top>=80,JSON.stringify(pan));assert.equal(pan.cursor,'grab');
+   await viewer.locator('#zoomAjustar').click();assert.equal(await viewer.locator('#zoomValor').innerText(),'100%');
    const ordinary=await viewer.locator('#paginas').evaluate(el=>{const event=new WheelEvent('wheel',{deltaY:120,cancelable:true});el.dispatchEvent(event);return {prevented:event.defaultPrevented,zoom:Number(document.body.dataset.zoom)};});
    assert.equal(ordinary.prevented,false);assert.equal(ordinary.zoom,1);
    const sheet=await page.frameLocator('#relatorioPdfViewer').locator('.pagina').first().evaluate(el=>{const b=el.getBoundingClientRect(),root=document.getElementById('paginas'),area=root.getBoundingClientRect();return {width:b.width,height:b.height,top:b.top-area.top,bottom:b.bottom-area.top,viewportHeight:root.clientHeight,viewportWidth:root.clientWidth};});
@@ -147,6 +155,14 @@ async function soltarPdf(locator,files){
    assert.equal(await page.locator('#relatorioPdfStatus').innerText(),'Rota3.pdf');
    await page.evaluate(()=>{window.__downloadDelay=0});
    if(perfil==='admin'){await page.waitForTimeout(1200);await page.screenshot({path:__dirname+'/relatorio-pdf-'+width+'.png'});}
+   await page.evaluate(()=>{window.__state.user.rotas_coleta_ids=[1,2,3,4,5,6,7,8];return atualizarInterfaceSessao();});
+   assert.equal(await page.locator('#relatorioPaginas button').count(),8);
+   await page.locator('#relatorioPagina8').click();await page.waitForFunction(()=>!relatorioPdfCarregando);
+   await page.locator('#relatorioArquivoPdf').setInputFiles({name:'Rota8.pdf',mimeType:'application/pdf',buffer:pdfFixture()});
+   await page.waitForFunction(()=>!relatorioPdfEnviando);
+   assert.equal(await page.evaluate(()=>relatorioRotaId),8);
+   assert.equal(await page.locator('#relatorioPdfStatus').innerText(),'Rota8.pdf');
+   assert((await page.evaluate(()=>Object.values(window.__state.documents))).some(doc=>doc.rota_id===8));
    await page.evaluate(()=>{window.__state.user={...window.__state.user,id:'outra-pessoa',perfil:'operador_coleta'};return atualizarInterfaceSessao();});
    assert.equal(await page.locator('#relatorioPdfViewer').count(),0);
    await page.evaluate(()=>carregarPdfRelatorio());
