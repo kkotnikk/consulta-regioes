@@ -3,15 +3,18 @@ const html=fs.readFileSync(__dirname+'/index.html','utf8');
 const routes=[1,2,3].map(id=>({id,motorista:'Motorista '+id,placa:'ABC1D2'+id,regiao:'Lapa',status:'em_rota',numero_coletas:5}));
 const stub=(perfil,ativo=true)=>'window.__state='+JSON.stringify({routes,documents:{},files:{},user:{id:'test',nome:'Pessoa '+perfil,perfil,ativo,rotas_coleta_ids:['admin','operador_coleta'].includes(perfil)?[1,2,3]:[]},users:[{id:'test',nome:'João',perfil:'admin',ativo:true,rotas_coleta_ids:[1,2,3]},{id:'coleta',nome:'Ana',perfil:'operador_coleta',ativo:true,rotas_coleta_ids:[1,2,3]}],signedIn:perfil!=='anon'})+`;
 window.supabase={createClient(){
- function query(table){let single=false,filters={},patch=null;const q=new Proxy({}, {get(_,key){
+ function query(table){let single=false,filters={},patch=null,range=null;const q=new Proxy({}, {get(_,key){
   if(key==='then')return resolve=>{
    let data=table==='relatorios_por_rota'?Object.values(window.__state.documents):table==='rotas'?window.__state.routes:table==='usuarios'?filters.id===window.__state.user.id?[window.__state.user]:window.__state.users:[];
    if(table!=='usuarios')data=data.filter(row=>Object.entries(filters).every(([key,value])=>row[key]===value));
    else if(filters.id)data=data.filter(u=>u.id===filters.id);
    if(patch){data.forEach(u=>Object.assign(u,patch));window.__lastUpdate={filters,patch};}
-   resolve({data:single?data[0]||null:data,error:null});
+   if(range)data=data.slice(range[0],range[1]+1);
+   const response={data:single?data[0]||null:data,error:!single&&window.__adminQueryFailure&&['usuarios','relatorios_por_rota'].includes(table)?{message:'Falha de teste'}:null};
+   if(!single&&window.__adminQueryDelay&&['usuarios','relatorios_por_rota'].includes(table)){window.__adminQueryStarted=true;setTimeout(()=>resolve(response),window.__adminQueryDelay);}else resolve(response);
   };
   if(key==='single'||key==='maybeSingle')return ()=>{single=true;return q};
+  if(key==='range')return (start,end)=>{range=[start,end];return q};
   if(key==='eq')return (name,value)=>{filters[name]=value;return q};
   if(key==='upsert')return value=>{window.__state.documents[value.usuario_id+'|'+value.rota_id]=value;return q};if(key==='update')return value=>{patch=value;return q};return ()=>q;
  }});return q;}
@@ -32,7 +35,8 @@ async function soltarPdf(locator,files){
   for(const type of ['dragenter','dragover','drop'])el.dispatchEvent(new DragEvent(type,{bubbles:true,cancelable:true,dataTransfer:transfer}));
  },files.map(f=>({name:f.name,base64:f.buffer.toString('base64')})));
 }
-(async()=>{
+module.exports={stub,pdfFixture,soltarPdf};
+if(require.main===module)(async()=>{
  const launch={executablePath:process.env.CHROMIUM_EXECUTABLE,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader'],env:{...process.env,LD_LIBRARY_PATH:process.env.CHROMIUM_LIBRARY_PATH||process.env.LD_LIBRARY_PATH||''}};
  const browser=await chromium.launch(launch),results=[];
  for(const width of [1280,390])for(const perfil of ['admin','operador_coleta','operador_conferencia']){

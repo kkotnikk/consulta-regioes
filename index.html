@@ -377,6 +377,7 @@ html{scrollbar-gutter:stable}
 .relatorio-acoes{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
 #relatorioEnviarPdf{min-height:42px;padding:11px 16px;font-size:12px;white-space:nowrap}
 .relatorio-pdf-status{flex:none;margin:0 0 12px;font-size:12px;color:#81613e;overflow-wrap:anywhere}
+.relatorio-admin-modos{display:flex;flex:none;gap:8px;margin-bottom:12px;flex-wrap:wrap}.relatorio-admin-modos button,.relatorio-admin-painel button{min-height:34px;padding:8px 12px;font-size:12px;border:1px solid #cbb491;border-radius:6px;background:transparent;color:#624523;box-shadow:none}.relatorio-admin-modos button[aria-pressed="true"]{background:#08703f;color:white;border-color:#08703f}.relatorio-admin-painel{flex:none;padding:12px;border:1px solid #cbb491;border-radius:8px;margin-bottom:12px;background:#f4ead8}.relatorio-admin-filtros{display:flex;align-items:flex-end;gap:10px}.relatorio-admin-filtros label{flex:1;min-width:0;font-size:11px;color:#81613e}.relatorio-admin-filtros select{display:block;width:100%;min-width:0;margin-top:5px;min-height:36px;font-size:12px;padding:7px 10px}.relatorio-admin-painel p{font-size:11px;line-height:1.5;margin:8px 0 0}.relatorio-admin-modos button:focus-visible{outline:2px solid #08703f;outline-offset:2px}
 .relatorio-paginas{display:flex;align-items:center;gap:7px;flex:none;min-width:0;max-width:100%;overflow-x:auto;margin:0 0 10px;padding-bottom:3px;scrollbar-width:thin}
 .relatorio-paginas button{flex:none;min-height:34px;min-width:38px;padding:7px 12px;font-size:12px;border:1px solid #cbb491;background:transparent;color:#624523;border-radius:6px;box-shadow:none}
 .relatorio-paginas button[aria-selected="true"]{background:#08703f;border-color:#08703f;color:white}
@@ -401,7 +402,7 @@ html{scrollbar-gutter:stable}
   body.imprimindo-relatorio #relatorioView{display:block!important;position:static!important;inset:auto!important;width:100%;overflow:visible;box-shadow:none;background:white!important;transform:none!important}
   body.imprimindo-relatorio .relatorio-container{max-width:none;padding:0}
   body.imprimindo-relatorio .relatorio-cabecalho{margin-bottom:24px}
-  body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-pdf-status,body.imprimindo-relatorio .relatorio-paginas,body.imprimindo-relatorio .relatorio-rota{display:none!important}
+  body.imprimindo-relatorio .relatorio-admin-modos,body.imprimindo-relatorio .relatorio-admin-painel,body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-pdf-status,body.imprimindo-relatorio .relatorio-paginas,body.imprimindo-relatorio .relatorio-rota{display:none!important}
   body.imprimindo-relatorio #relatorioView *{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
 }
 @media(max-width:1200px){:root{--menu-width:192px}.relatorio-container{padding:28px}}
@@ -597,6 +598,14 @@ html{scrollbar-gutter:stable}
         <input id="relatorioArquivoPdf" type="file" accept="application/pdf,.pdf" onchange="enviarPdfRelatorio(this)" hidden>
         <button type="button" class="relatorio-imprimir" onclick="imprimirRelatorio()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6zM17 11h1"/></svg><span>Imprimir relatório</span></button>
       </div>
+    </div>
+    <div id="relatorioAdminModos" class="relatorio-admin-modos" role="group" aria-label="Escolher relatórios" hidden>
+      <button id="relatorioMeus" type="button" aria-pressed="true" onclick="alternarModoRelatoriosAdmin('meus')">Meus relatórios</button>
+      <button id="relatorioUsuarios" type="button" aria-pressed="false" onclick="alternarModoRelatoriosAdmin('usuarios')">Relatórios dos usuários</button>
+    </div>
+    <div id="relatorioAdminPainel" class="relatorio-admin-painel" hidden>
+      <div class="relatorio-admin-filtros"><label for="relatorioAdminUsuario">Usuário<select id="relatorioAdminUsuario" onchange="selecionarUsuarioRelatorio(this.value)"><option value="">Selecione um usuário</option></select></label><button id="relatorioAdminAtualizar" type="button" onclick="carregarRelatoriosAdmin()">Atualizar</button></div>
+      <p id="relatorioAdminStatus" role="status"></p>
     </div>
     <nav id="relatorioPaginas" class="relatorio-paginas" role="tablist" aria-label="Relatórios das suas rotas">
       <button id="relatorioPagina1" type="button" role="tab" aria-controls="relatorioConteudo" onclick="selecionarPaginaRelatorio(0)">1</button>
@@ -3006,10 +3015,128 @@ let relatorioPaginaAtual = 0;
 let relatorioUsuarioId = null;
 let relatorioRotaId = null;
 
-function rotasRelatorioUsuario(usuario = usuarioAtualSistema) {
-  if (!usuarioPodeAcessarRelatorio(usuario)) return [];
-  return [...new Set(usuario.rotas_coleta_ids || [])].map(id =>
-    rotasPublicasCache.find(r => Number(r.id) === Number(id)) || rotasAdminCache.find(r => Number(r.id) === Number(id)) || { id: Number(id) }
+let relatorioAdminModo = "meus";
+let relatorioAdminUsuarioId = "";
+let relatorioAdminUsuarios = [];
+let relatorioAdminDocumentos = [];
+let relatorioAdminSessaoId = null;
+let relatorioAdminRequest = 0;
+let relatorioAdminCarregando = false;
+let relatorioAdminErro = "";
+
+function sincronizarRelatoriosAdmin() {
+  const id = usuarioTemPermissao([]) ? usuarioAtualSistema.id : null;
+  if (id === relatorioAdminSessaoId) return;
+  relatorioAdminRequest++; relatorioAdminSessaoId = id;
+  relatorioAdminModo = "meus"; relatorioAdminUsuarioId = "";
+  relatorioAdminUsuarios = []; relatorioAdminDocumentos = [];
+  relatorioAdminCarregando = false; relatorioAdminErro = "";
+}
+
+function usuarioRelatorioSelecionado() {
+  if (relatorioAdminModo === "usuarios") {
+    if (!usuarioTemPermissao([]) || relatorioAdminSessaoId !== usuarioAtualSistema.id) return null;
+    return relatorioAdminUsuarios.find(usuario => usuario.id === relatorioAdminUsuarioId) || null;
+  }
+  return usuarioPodeAcessarRelatorio() ? usuarioAtualSistema : null;
+}
+
+function relatorioConsultaDeOutroUsuario() {
+  return usuarioTemPermissao([]) && relatorioAdminModo === "usuarios";
+}
+
+function renderizarControlesRelatoriosAdmin() {
+  const admin = usuarioTemPermissao([]), consulta = admin && relatorioAdminModo === "usuarios";
+  document.getElementById("relatorioAdminModos").hidden = !admin;
+  document.getElementById("relatorioAdminPainel").hidden = !consulta;
+  document.getElementById("relatorioMeus").setAttribute("aria-pressed", String(!consulta));
+  document.getElementById("relatorioUsuarios").setAttribute("aria-pressed", String(consulta));
+  ["relatorioMeus", "relatorioUsuarios"].forEach(id => document.getElementById(id).disabled = relatorioPdfEnviando);
+  const select = document.getElementById("relatorioAdminUsuario");
+  const usuarios = relatorioAdminUsuarios.filter(usuario => usuario.id !== usuarioAtualSistema?.id);
+  const assinatura = JSON.stringify(usuarios.map(usuario => [usuario.id, usuario.nome, usuario.ativo]));
+  if (select.dataset.opcoes !== assinatura) {
+    select.replaceChildren(new Option(usuarios.length ? "Selecione um usuário" : "Nenhum outro usuário cadastrado", ""));
+    usuarios.forEach(usuario => select.add(new Option((usuario.nome || "Usuário sem nome") + (usuario.ativo ? "" : " · Desativado"), usuario.id)));
+    select.dataset.opcoes = assinatura;
+  }
+  select.value = relatorioAdminUsuarioId;
+  select.disabled = relatorioAdminCarregando || relatorioPdfEnviando || !usuarios.length;
+  document.getElementById("relatorioAdminAtualizar").disabled = relatorioAdminCarregando || relatorioPdfEnviando;
+  const usuario = usuarioRelatorioSelecionado();
+  const documentos = relatorioAdminDocumentos.filter(doc => doc.usuario_id === usuario?.id);
+  const totalRotas = consulta && usuario ? rotasRelatorioUsuario(usuario).length : 0;
+  const status = document.getElementById("relatorioAdminStatus");
+  status.textContent = relatorioAdminCarregando ? "Carregando usuários e relatórios..." : relatorioAdminErro || (usuario ? totalRotas + (totalRotas === 1 ? " rota · " : " rotas · ") + documentos.length + (documentos.length === 1 ? " PDF anexado" : " PDFs anexados") : "Selecione uma pessoa para consultar seus relatórios.");
+  status.classList.toggle("erro", !!relatorioAdminErro);
+  document.getElementById("tituloRelatorio").textContent = consulta ? "Relatórios dos usuários" : "Relatório";
+}
+
+async function carregarRelatoriosAdmin() {
+  const actor = await obterUsuarioAtualSistema();
+  sincronizarRelatoriosAdmin();
+  if (!usuarioTemPermissao([], actor)) { renderizarRelatorio(); return false; }
+  if (relatorioAdminCarregando) return false;
+  const sessaoId = actor.id, request = ++relatorioAdminRequest;
+  relatorioAdminCarregando = true; relatorioAdminErro = ""; renderizarRelatorio();
+  async function buscarTodos(tabela, campos, ordens) {
+    const registros = [];
+    for (let inicio = 0; ; inicio += 500) {
+      let query = supabaseClient.from(tabela).select(campos);
+      for (const ordem of ordens) query = query.order(ordem);
+      const { data, error } = await query.range(inicio, inicio + 499);
+      if (error) throw error;
+      if (request !== relatorioAdminRequest || !usuarioTemPermissao([]) || usuarioAtualSistema.id !== sessaoId) return [];
+      registros.push(...(data || []));
+      if ((data || []).length < 500) return registros;
+    }
+  }
+  try {
+    const [usuarios, documentos] = await Promise.all([
+      buscarTodos("usuarios", "id,nome,perfil,ativo,rotas_coleta_ids", ["nome", "id"]),
+      buscarTodos("relatorios_por_rota", "usuario_id,rota_id,nome,arquivo_path,atualizado_em", ["usuario_id", "rota_id"]),
+    ]);
+    if (request !== relatorioAdminRequest || !usuarioTemPermissao([]) || usuarioAtualSistema.id !== sessaoId) return false;
+    relatorioAdminUsuarios = usuarios; relatorioAdminDocumentos = documentos;
+    for (const doc of documentos) if (!relatorioAdminUsuarios.some(usuario => usuario.id === doc.usuario_id)) relatorioAdminUsuarios.push({ id: doc.usuario_id, nome: "Usuário " + doc.usuario_id, ativo: false, rotas_coleta_ids: [] });
+    if (!relatorioAdminUsuarios.some(usuario => usuario.id === relatorioAdminUsuarioId && usuario.id !== sessaoId)) relatorioAdminUsuarioId = relatorioAdminUsuarios.find(usuario => usuario.id !== sessaoId)?.id || "";
+    return true;
+  } catch (_) {
+    if (request === relatorioAdminRequest) relatorioAdminErro = "Não foi possível carregar os relatórios. Clique em Atualizar para tentar novamente.";
+    return false;
+  } finally {
+    if (request === relatorioAdminRequest) {
+      relatorioAdminCarregando = false; renderizarRelatorio();
+      if (telaSistemaAtual === "relatorio") carregarPdfRelatorio();
+    }
+  }
+}
+
+async function alternarModoRelatoriosAdmin(modo) {
+  if (!["meus", "usuarios"].includes(modo) || relatorioPdfEnviando) return false;
+  const actor = await obterUsuarioAtualSistema(); sincronizarRelatoriosAdmin();
+  if (!usuarioTemPermissao([], actor)) { renderizarRelatorio(); return false; }
+  if (relatorioAdminModo !== modo) { limparPdfRelatorio(); relatorioPaginaAtual = 0; relatorioAdminModo = modo; }
+  renderizarRelatorio();
+  if (modo === "usuarios") await carregarRelatoriosAdmin();
+  else await carregarPdfRelatorio();
+  return true;
+}
+
+function selecionarUsuarioRelatorio(id) {
+  if (!usuarioTemPermissao([]) || relatorioAdminModo !== "usuarios" || relatorioPdfEnviando || relatorioAdminCarregando) return false;
+  if (id && !relatorioAdminUsuarios.some(usuario => usuario.id === id && usuario.id !== usuarioAtualSistema.id)) return false;
+  limparPdfRelatorio(); relatorioPaginaAtual = 0; relatorioAdminUsuarioId = id;
+  renderizarRelatorio(); carregarPdfRelatorio(); return true;
+}
+
+function rotasRelatorioUsuario(usuario = usuarioRelatorioSelecionado()) {
+  if (!usuario || !usuarioPodeAcessarRelatorio()) return [];
+  const admin = usuarioTemPermissao([]);
+  if (usuario.id !== usuarioAtualSistema.id && !admin) return [];
+  const arquivos = admin ? relatorioAdminDocumentos.filter(doc => doc.usuario_id === usuario.id).map(doc => Number(doc.rota_id)) : [];
+  return [...new Set([...(usuario.rotas_coleta_ids || []).map(Number), ...arquivos])].map(id =>
+    rotasPublicasCache.find(r => Number(r.id) === id) || rotasAdminCache.find(r => Number(r.id) === id) || { id }
   );
 }
 
@@ -3023,7 +3150,7 @@ function limparPdfRelatorio() {
 }
 
 function podeReceberPdfRelatorio() {
-  return usuarioPodeEditarRelatorio() && !!relatorioRotaId && !relatorioPdfEnviando;
+  return usuarioPodeEditarRelatorio() && !relatorioConsultaDeOutroUsuario() && !!relatorioRotaId && !relatorioPdfEnviando;
 }
 function selecionarPdfRelatorio() {
   if (podeReceberPdfRelatorio()) document.getElementById("relatorioArquivoPdf").click();
@@ -3068,7 +3195,10 @@ document.addEventListener("dragend", ocultarAreaPdfArrastado);
 function renderizarRelatorio() {
   const conteudo = document.getElementById("relatorioConteudo");
   if (!conteudo) return;
-  const usuarioId = usuarioPodeAcessarRelatorio() ? usuarioAtualSistema.id : null;
+  sincronizarRelatoriosAdmin();
+  renderizarControlesRelatoriosAdmin();
+  const dono = usuarioRelatorioSelecionado();
+  const usuarioId = dono?.id || null;
   if (usuarioId !== relatorioUsuarioId) { limparPdfRelatorio(); relatorioPaginaAtual = 0; relatorioUsuarioId = usuarioId; }
   const rotas = rotasRelatorioUsuario();
   if (!rotas[relatorioPaginaAtual]) relatorioPaginaAtual = 0;
@@ -3093,9 +3223,9 @@ function renderizarRelatorio() {
   conteudo.setAttribute("aria-labelledby", "relatorioPagina" + (relatorioPaginaAtual + 1));
   document.getElementById("relatorioRota").innerHTML = rota
     ? escapeHtml(["Página " + (relatorioPaginaAtual + 1), "Rota " + rota.id, rota.motorista].filter(Boolean).join(" · ")) + (rota.placa ? " · " + placaComAviso(rota.placa) : "")
-    : "Nenhuma rota vinculada ao seu usuário.";
+    : relatorioConsultaDeOutroUsuario() ? "Nenhuma rota ou relatório para este usuário." : "Nenhuma rota vinculada ao seu usuário.";
   const enviar = document.getElementById("relatorioEnviarPdf");
-  enviar.hidden = !usuarioPodeEditarRelatorio();
+  enviar.hidden = !usuarioPodeEditarRelatorio() || relatorioConsultaDeOutroUsuario();
   enviar.disabled = relatorioPdfEnviando || !rota;
   enviar.textContent = relatorioPdfEnviando ? "Enviando..." : relatorioDocumentoAtual ? "Substituir PDF" : "Enviar PDF";
   document.querySelector(".relatorio-imprimir").disabled = !relatorioPdfUrl;
@@ -3112,7 +3242,9 @@ function renderizarRelatorio() {
     }
     const botao = area.querySelector("button");
     botao.disabled = !podeReceberPdfRelatorio();
-    botao.querySelector("span").textContent = relatorioPdfEnviando ? "Enviando PDF..." : rota ? "ou clique para selecionar" : "Vincule uma rota ao seu perfil";
+    botao.querySelector("strong").textContent = relatorioConsultaDeOutroUsuario() ? "Sem PDF nesta rota" : "Soltar PDF";
+    botao.querySelector("small").textContent = relatorioConsultaDeOutroUsuario() ? "Relatórios separados por usuário e rota" : "Um PDF por rota · até 20 MB";
+    botao.querySelector("span").textContent = relatorioConsultaDeOutroUsuario() ? relatorioAdminCarregando ? "Carregando relatórios..." : "Nenhum arquivo anexado para a seleção atual" : relatorioPdfEnviando ? "Enviando PDF..." : rota ? "ou clique para selecionar" : "Vincule uma rota ao seu perfil";
     status.hidden = true; return;
   }
   if (conteudo.querySelector("iframe")?.dataset.documento === relatorioDocumentoAtual.arquivo_path) return;
@@ -3147,7 +3279,7 @@ document.getElementById("relatorioPaginas").addEventListener("keydown", event =>
 });
 
 function relatorioRequisicaoAtual(request, usuarioId, rotaId) {
-  return request === relatorioPdfRequest && usuarioAtualSistema?.id === usuarioId
+  return request === relatorioPdfRequest && usuarioPodeAcessarRelatorio() && usuarioRelatorioSelecionado()?.id === usuarioId
     && relatorioUsuarioId === usuarioId && relatorioRotaId === rotaId
     && rotasRelatorioUsuario().some(r => r.id === rotaId);
 }
@@ -3280,6 +3412,7 @@ async function abrirRelatorio() {
   }
   renderizarRelatorio();
   carregarPdfRelatorio();
+  if (usuarioTemPermissao([], usuario)) carregarRelatoriosAdmin();
   return alternarTelaSistema("relatorio");
 }
 
