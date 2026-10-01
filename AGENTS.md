@@ -26,3 +26,10 @@
 - Apenas três atalhos administrativos: “Bairros e rotas”, “Suporte e sugestões”, “Histórico e usuários”. Abertura animada para baixo; o primeiro rola ao topo do gerenciamento.
 - O relatório vazio possui área pontilhada “Soltar PDF”, com seleção por clique/teclado ou arrastar e soltar. Um único arquivo por envio, sempre na rota selecionada, usando a mesma validação e autorização do botão Enviar PDF.
 - Preserve animações suaves de entrada, rolagem, modais e transições de tela; o menu permanece fixo.
+
+## Avisos de rodízio
+
+- Final 1/2: segunda; 3/4: terça; 5/6: quarta; 7/8: quinta; 9/0: sexta. Use `rodizioDaPlaca` e `placaComAviso` para todas as placas exibidas. Vermelho “Rodízio hoje”, laranja “Rodízio amanhã”.
+- Use o dia civil de `America/Sao_Paulo`; amanhã significa o próximo dia do calendário. Ignore fins de semana e feriados nacionais/estaduais/municipais de São Paulo, incluindo Sexta-feira Santa e Corpus Christi. Não trate pontos facultativos nem suspensões exclusivas para carros de passeio como liberação de caminhões.
+- Fonte: https://www.cetsp.com.br/rodizio.aspx e https://prefeitura.sp.gov.br/web/gestao/w/calendario_2026, conferidas em 01/10/2026. O aviso identifica o dia pelo final da placa; não determina isenções individuais, enquadramento geográfico ou suspensões extraordinárias futuras.
+- Preserve os avisos em cartões públicos/administrativos, detalhes, histórico, cabeçalho de relatório, seleção de rotas do usuário e digitação de placa em cadastro/edição. Atualize no retorno à aba e a cada 30 segundos, sem recriar o PDF ou interromper a digitação.
