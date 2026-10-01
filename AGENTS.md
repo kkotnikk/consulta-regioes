@@ -1,14 +1,19 @@
 # Consulta Regiões
 
-## Permissões
+## Perfis e permissões
 
-- O perfil `admin` (Administrativo) ativo tem acesso às funções gerais do site, incluindo permissões adicionadas no futuro. A confirmação de retorno é a exceção: exclusiva do perfil `operacional` ativo, conforme pedido do usuário. Um usuário inativo não recebe acesso.
-- No frontend, use `usuarioTemPermissao(perfisPermitidos, usuario)` para verificar permissões. Uma lista vazia representa uma ação exclusiva do Administrativo; o Administrativo também passa em listas destinadas ao Operacional.
-- No banco, novas funções e políticas devem reconhecer o Administrativo. Reutilize `consulta_regioes_private.usuario_tem_permissao(text[])` para verificar o perfil do usuário autenticado na tabela `public.usuarios`.
-- A interface não substitui a autorização no banco. Mantenha a verificação de permissão em cada operação de escrita. Não conceda permissões administrativas aos demais perfis.
-- Para confirmar retorno, use `usuarioPodeConfirmarRetorno(usuario)` no frontend e a validação exclusiva de `operacional` na RPC e no trigger `proteger_confirmacao_retorno`. Não use a regra geral que autoriza o Administrativo nessa ação.
-- Preserve o escopo solicitado e as animações existentes ao alterar a interface.
+- Cada pessoa utiliza uma conta individual com nome próprio, e-mail e senha. Não criar contas compartilhadas por perfil.
+- `admin` (Administrador) ativo tem TODAS as permissões existentes e futuras. Toda autorização nova deve usar o helper central que inclui Administrador.
+- `operador_coleta` (Operador Coleta) ativo visualiza todas as rotas. Só marca “Retornando à base” nas exatamente duas rotas atribuídas em `usuarios.rotas_coleta_ids`. Pode acessar, editar e imprimir o relatório.
+- `operador_conferencia` (Operador Conferência) ativo visualiza todas as rotas e marca “Retorno confirmado”. Não possui acesso ao relatório nem ações administrativas.
+- Visitantes e usuários inativos não acessam rotas, relatório ou administração. A consulta pública de bairros e o envio de sugestões/chamados permanecem disponíveis.
+- No frontend, use `usuarioTemPermissao(perfisPermitidos, usuario)`. Lista vazia significa somente Administrador. Para ações por rota use `usuarioPodeRetornarRota(id, usuario)`; para confirmação `usuarioPodeConfirmarRetorno(usuario)`; para relatório `usuarioPodeAcessarRelatorio` e `usuarioPodeEditarRelatorio`.
+- No banco, use `consulta_regioes_private.usuario_tem_permissao(text[])` e `usuario_pode_retornar_rota(bigint)`. A interface não substitui RLS/RPC/trigger. Operadores não podem editar seus perfis nem alterar cadastros administrativos.
+- A criação de contas utiliza a Edge Function `criar-usuario`, com validação de JWT e Administrador ativo. Chaves de serviço nunca são expostas no frontend.
+- A conta legada “Operacional Teste” foi convertida em Coleta desativado. O Administrador deve informar o nome individual e duas rotas antes de ativar.
 
-## Pendências solicitadas
+## Relatório e animações
 
-- Relatório (registrado em 01/10/2026): ao implementar o relatório, permitir acesso somente a usuários autenticados e ativos dos perfis `admin` (Administrativo) e `operacional` (Operacional/Operador). Visitantes, usuários inativos e outros perfis não devem ter acesso. O usuário pediu apenas guardar esta regra para adicionar depois; não aplicar a restrição nesta etapa.
+- O conteúdo do relatório permanece vazio conforme pedido. Mantenha o botão de impressão no canto superior direito.
+- Quando o editor do relatório for implementado, aplique a permissão Coleta + Administrador também no backend.
+- Preserve animações suaves de entrada, rolagem, modais e transições de tela; o menu permanece fixo.

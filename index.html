@@ -398,6 +398,9 @@ html{scrollbar-gutter:stable}
   .relatorio-cabecalho h1{font-size:29px}
   .relatorio-imprimir{font-size:11px;padding:10px 12px;gap:6px}
 }
+
+/* Acessos individuais */
+[hidden]{display:none!important}.usuario-form{margin:22px 0;padding:20px 0;border-top:1px solid #cbb491;border-bottom:1px solid #cbb491}.usuario-form h4{margin:0 0 18px;color:#624523;font-size:20px}.usuario-form small{font-size:12px;color:#81613d}.usuario-form input,.usuario-form select{width:100%;min-width:0}.usuario-form .acoes button{flex:1}.usuario-item>.editar{margin-top:12px;font-size:12px}.usuario-form :disabled{opacity:.65}.usuario-meta{overflow-wrap:anywhere}
 </style>
 </head>
 
@@ -421,7 +424,7 @@ html{scrollbar-gutter:stable}
   <nav class="side-nav">
     <a class="nav-link ativo" href="#consulta"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15m6-12v15"/></svg><span>Consulta</span></a>
     <a class="nav-link" href="#controleRotas"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Rotas</span></a>
-    <a class="nav-link" href="#relatorio" aria-controls="relatorioView"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H5v18h14V8l-5-5Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></svg><span>Relatório</span></a>
+    <a class="nav-link" href="#relatorio" aria-controls="relatorioView" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H5v18h14V8l-5-5Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></svg><span>Relatório</span></a>
     <button type="button" class="admin-btn" onclick="abrirAdmin()" aria-controls="gerenciamentoView" aria-expanded="false">Gerenciar sistema</button>
   </nav>
   <div class="sidebar-footer">
@@ -1189,7 +1192,28 @@ async function mostrarPainelAdmin() {
       <section class="admin-bloco">
         <div class="suporte-kicker">ACESSOS</div>
         <h3>Usuários</h3>
-        <p class="aviso" style="text-align:left">Perfis autorizados a utilizar o sistema.</p>
+        <p class="aviso" style="text-align:left">Uma conta para cada pessoa, com nome e permissões individuais.</p>
+        <button type="button" onclick="abrirCadastroUsuario()">Cadastrar usuário</button>
+        <form id="formUsuario" class="usuario-form" hidden onsubmit="salvarUsuario(event)">
+          <h4 id="tituloFormUsuario">Novo usuário</h4>
+          <input id="usuarioEditarId" type="hidden">
+          <div class="campo"><label for="usuarioNome">Nome de quem vai usar</label><input id="usuarioNome" required maxlength="120" autocomplete="name"></div>
+          <div id="usuarioCredenciais">
+            <div class="campo"><label for="usuarioEmail">E-mail de acesso</label><input id="usuarioEmail" type="email" autocomplete="off"></div>
+            <div class="campo"><label for="usuarioSenha">Senha inicial</label><input id="usuarioSenha" type="password" minlength="8" maxlength="128" autocomplete="new-password"><small>Mínimo de 8 caracteres.</small></div>
+          </div>
+          <div class="campo"><label for="usuarioPerfil">Perfil</label><select id="usuarioPerfil" onchange="atualizarCamposPerfilUsuario()">
+            <option value="operador_coleta">Operador Coleta</option><option value="operador_conferencia">Operador Conferência</option><option value="admin">Administrador</option>
+          </select></div>
+          <p id="usuarioResumoPermissoes" class="aviso" style="text-align:left"></p>
+          <div id="usuarioRotasColeta">
+            <div class="campo"><label for="usuarioRota1">Primeira rota de coleta</label><select id="usuarioRota1"></select></div>
+            <div class="campo"><label for="usuarioRota2">Segunda rota de coleta</label><select id="usuarioRota2"></select></div>
+          </div>
+          <div class="campo"><label for="usuarioAtivo">Acesso</label><select id="usuarioAtivo"><option value="true">Ativo</option><option value="false">Desativado</option></select></div>
+          <p id="usuarioFormErro" class="erro" role="alert" hidden></p>
+          <div class="acoes"><button id="usuarioSalvar" type="submit">Criar usuário</button><button type="button" class="sair" onclick="fecharCadastroUsuario()">Cancelar</button></div>
+        </form>
         <div id="adminUsuarios" class="usuarios-lista"></div>
       </section>
     </div>
@@ -1618,7 +1642,7 @@ function renderizarRotasAdmin() {
 
         <div class="acoes" style="margin-top:10px; flex-wrap:wrap;">
 
-          ${(!rota.status || rota.status === "em_rota") && usuarioTemPermissao(["operacional"])
+          ${(!rota.status || rota.status === "em_rota") && usuarioPodeRetornarRota(rota.id)
             ? `<button type="button" class="registrar-retornando" onclick="event.stopPropagation(); registrarRetornandoBase(${Number(rota.id)}, this)">Retornando à base</button>`
             : ""}
 
@@ -1659,7 +1683,7 @@ async function confirmarRetorno(id) {
 
   const usuario = await obterUsuarioAtualSistema();
   if (!usuarioPodeConfirmarRetorno(usuario)) {
-    mostrarToast("Somente usuários Operacional ou Administrativo ativos podem confirmar retorno.", "erro");
+    mostrarToast("Somente Operador Conferência ou Administrador ativos podem confirmar retorno.", "erro");
     return;
   }
 
@@ -2255,7 +2279,7 @@ function abrirDetalhesRota(id, origem = "publica") {
   document.getElementById("detalhesObservacao").textContent = rota.observacao || "Sem observações.";
   document.getElementById("areaConfirmarRetornoPublico").style.display = !confirmada && usuarioPodeConfirmarRetorno() ? "block" : "none";
   const areaRetornando = document.getElementById("areaRegistrarRetornandoBase");
-  const podeRegistrarRetornando = usuarioTemPermissao(["operacional"]) && (!rota.status || rota.status === "em_rota");
+  const podeRegistrarRetornando = usuarioPodeRetornarRota(rota.id) && (!rota.status || rota.status === "em_rota");
   areaRetornando.style.display = podeRegistrarRetornando ? "block" : "none";
   document.getElementById("detalhesRetornandoBase").textContent = rota.retornando_base_em
     ? `${formatarHora(rota.retornando_base_em)}${rota.retornando_base_por_nome ? " · " + rota.retornando_base_por_nome : ""}`
@@ -2276,7 +2300,7 @@ function fecharDetalhesRota() {
 
 function iniciarConfirmacaoRetornoPublico() {
   if (!usuarioPodeConfirmarRetorno()) {
-    mostrarToast("Somente usuários Operacional ou Administrativo ativos podem confirmar retorno.", "erro");
+    mostrarToast("Somente Operador Conferência ou Administrador ativos podem confirmar retorno.", "erro");
     return;
   }
   const rota = rotasPublicasCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId)) || rotasAdminCache.find(r => Number(r.id) === Number(rotaDetalhesAtualId));
@@ -2728,7 +2752,7 @@ function atualizarMenuSistema(hash) {
 
 function alternarTelaSistema(destino, { imediato = false } = {}) {
   const ids = { consulta: "consultaView", gerenciamento: "gerenciamentoView", relatorio: "relatorioView" };
-  if (!ids[destino] || (destino === "gerenciamento" && !usuarioTemPermissao([]))) return Promise.resolve(false);
+  if (!ids[destino] || (destino === "gerenciamento" && !usuarioTemPermissao([])) || (destino === "relatorio" && !usuarioPodeAcessarRelatorio())) return Promise.resolve(false);
   window.solidezSoft?.cancelScroll?.();
   transicaoTelaSistema?.finalizar();
   if (destino === telaSistemaAtual) return Promise.resolve(true);
@@ -2815,13 +2839,17 @@ function renderizarRelatorio() {
   document.getElementById("relatorioConteudo")?.replaceChildren();
 }
 
-function imprimirRelatorio() {
-  if (telaSistemaAtual !== "relatorio") return;
+async function imprimirRelatorio() {
+  const usuario = await obterUsuarioAtualSistema();
+  if (telaSistemaAtual !== "relatorio" || !usuarioPodeAcessarRelatorio(usuario)) {
+    await atualizarInterfaceSessao();
+    return;
+  }
   document.body.classList.add("imprimindo-relatorio");
   window.print();
 }
 window.addEventListener("beforeprint", () => {
-  document.body.classList.toggle("imprimindo-relatorio", telaSistemaAtual === "relatorio");
+  document.body.classList.toggle("imprimindo-relatorio", telaSistemaAtual === "relatorio" && usuarioPodeAcessarRelatorio());
 });
 window.addEventListener("afterprint", () => document.body.classList.remove("imprimindo-relatorio"));
 
@@ -2842,14 +2870,45 @@ function usuarioTemPermissao(perfisPermitidos = [], usuario = usuarioAtualSistem
 }
 
 function usuarioPodeConfirmarRetorno(usuario = usuarioAtualSistema) {
-  return usuarioTemPermissao(["operacional"], usuario);
+  return usuarioTemPermissao(["operador_conferencia"], usuario);
+}
+
+function usuarioPodeRetornarRota(id, usuario = usuarioAtualSistema) {
+  return usuarioTemPermissao([], usuario) || (
+    usuarioTemPermissao(["operador_coleta"], usuario) &&
+    (usuario.rotas_coleta_ids || []).some(rotaId => Number(rotaId) === Number(id))
+  );
+}
+
+function usuarioPodeAcessarRelatorio(usuario = usuarioAtualSistema) {
+  return usuarioTemPermissao(["operador_coleta"], usuario);
+}
+
+function usuarioPodeEditarRelatorio(usuario = usuarioAtualSistema) {
+  // O editor será adicionado quando o conteúdo do relatório for definido.
+  return usuarioPodeAcessarRelatorio(usuario);
+}
+
+function nomePerfilUsuario(perfil) {
+  return ({admin: "Administrador", operador_coleta: "Operador Coleta", operador_conferencia: "Operador Conferência"})[perfil] || "Sem perfil";
+}
+
+async function abrirRelatorio() {
+  const usuario = await obterUsuarioAtualSistema();
+  if (!usuarioPodeAcessarRelatorio(usuario)) {
+    if (!usuario) abrirLoginAdminPopup();
+    else mostrarToast("O relatório está disponível para Operador Coleta e Administrador.", "erro");
+    return false;
+  }
+  renderizarRelatorio();
+  return alternarTelaSistema("relatorio");
 }
 
 async function obterUsuarioAtualSistema() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session?.user) { usuarioAtualSistema = null; return null; }
-  const { data, error } = await supabaseClient.from("usuarios").select("id,nome,perfil,ativo").eq("id", session.user.id).maybeSingle();
-  if (error || !data || !data.ativo) { usuarioAtualSistema = null; return null; }
+  const { data, error } = await supabaseClient.from("usuarios").select("id,nome,perfil,ativo,rotas_coleta_ids").eq("id", session.user.id).maybeSingle();
+  if (error || !data || !data.ativo || !["admin","operador_coleta","operador_conferencia"].includes(data.perfil)) { usuarioAtualSistema = null; return null; }
   usuarioAtualSistema = data;
   return data;
 }
@@ -2859,6 +2918,9 @@ async function atualizarInterfaceSessao() {
   const area = document.getElementById("usuarioSessao");
   const btnAdmin = document.querySelector(".admin-btn");
   const nomeGerenciamento = document.getElementById("gerenciamentoUsuario");
+  const linkRelatorio = document.querySelector('.nav-link[href="#relatorio"]');
+  if (linkRelatorio) linkRelatorio.hidden = !usuarioPodeAcessarRelatorio(usuario);
+  if (!usuarioPodeAcessarRelatorio(usuario) && telaSistemaAtual === "relatorio") await alternarTelaSistema("consulta", { imediato: true });
   if (nomeGerenciamento) nomeGerenciamento.textContent = usuario?.nome || "";
   if (!usuarioTemPermissao([], usuario) && telaSistemaAtual === "gerenciamento") {
     await alternarTelaSistema("consulta", { imediato: true });
@@ -2872,7 +2934,7 @@ async function atualizarInterfaceSessao() {
   }
   if (area) {
     area.classList.add("ativo");
-    area.innerHTML = `${escapeHtml(usuario.nome)} · ${usuarioTemPermissao([], usuario) ? "Administrador" : "Operacional"} <button type="button" onclick="sairSistema()">Sair</button>`;
+    area.innerHTML = `${escapeHtml(usuario.nome)} · ${nomePerfilUsuario(usuario.perfil)} <button type="button" onclick="sairSistema()">Sair</button>`;
   }
   if (btnAdmin) {
     if (usuarioTemPermissao([], usuario)) { btnAdmin.style.display = "block"; btnAdmin.textContent = "Gerenciar sistema"; }
@@ -2896,7 +2958,7 @@ async function abrirAdmin() {
   const usuario = await obterUsuarioAtualSistema();
   if (!usuario) { abrirLoginAdminPopup(); return; }
   if (!usuarioTemPermissao([], usuario)) {
-    mostrarToast("Seu perfil é Operacional. Você pode acompanhar as rotas e confirmar retornos.", "sucesso");
+    mostrarToast(`Seu perfil é ${nomePerfilUsuario(usuario.perfil)}. Acompanhe as rotas na tela de consulta.`, "sucesso");
     return;
   }
   if (telaSistemaAtual === "gerenciamento") {
@@ -2922,7 +2984,7 @@ async function login() {
   if (usuarioTemPermissao([], usuario)) { await mostrarPainelAdmin(); }
   else {
     const admin=document.getElementById("admin"); if(admin){admin.style.display="none";admin.innerHTML="";}
-    mostrarToast(`Bem-vindo, ${usuario.nome}. Acesso operacional liberado.`,"sucesso");
+    mostrarToast(`Bem-vindo, ${usuario.nome}. ${nomePerfilUsuario(usuario.perfil)} liberado.`,"sucesso");
     /* Mantém a página na posição atual após o login. */
   }
 }
@@ -2947,8 +3009,8 @@ async function registrarRetornandoBase(id, botao) {
   if (botao) { botao.disabled = true; botao.textContent = "Registrando..."; }
   try {
     const usuario = await obterUsuarioAtualSistema();
-    if (!usuarioTemPermissao(["operacional"], usuario)) {
-      mostrarToast("Somente usuários Operacional ou Administrativo ativos podem registrar o retorno à base.", "erro");
+    if (!usuarioPodeRetornarRota(id, usuario)) {
+      mostrarToast("Você só pode registrar o retorno à base nas duas rotas atribuídas ao seu usuário.", "erro");
       return;
     }
     const rotaId = Number(id);
@@ -2981,7 +3043,7 @@ async function executarConfirmacaoRetornoPublico() {
   const id=Number(rotaDetalhesAtualId); const rota=rotasPublicasCache.find(r=>Number(r.id)===id)||rotasAdminCache.find(r=>Number(r.id)===id); if(!id||!rota)return;
   const usuario=await obterUsuarioAtualSistema();
   if(!usuario){ fecharConfirmacaoRetornoPublico(); abrirLoginAdminPopup(); mostrarToast("Entre no sistema para confirmar o retorno.","erro"); return; }
-  if(!usuarioPodeConfirmarRetorno(usuario)){ fecharConfirmacaoRetornoPublico(); mostrarToast("Somente usuários Operacional ou Administrativo ativos podem confirmar retorno.","erro"); return; }
+  if(!usuarioPodeConfirmarRetorno(usuario)){ fecharConfirmacaoRetornoPublico(); mostrarToast("Somente Operador Conferência ou Administrador ativos podem confirmar retorno.","erro"); return; }
   const botao=document.getElementById("btnSegundaConfirmacaoRetorno"); botao.disabled=true; botao.textContent="Confirmando...";
   const { error }=await supabaseClient.rpc("confirmar_retorno_rota", { rota_id:id });
   botao.disabled=false; botao.textContent="Sim, confirmar retorno";
@@ -3001,12 +3063,149 @@ async function carregarHistoricoRotas(){
   lista.innerHTML=data.map(h=>`<div class="historico-item"><div class="historico-topo"><strong>${escapeHtml(nomes[h.acao]||h.acao)}</strong><span>${h.criado_em?new Date(h.criado_em).toLocaleString("pt-BR"):"—"}</span></div><div>${escapeHtml(h.motorista||"—")} · ${escapeHtml(h.placa||"—")} · ${escapeHtml(h.regiao||"—")}</div><div class="historico-meta">Alterado por <strong>${escapeHtml(h.usuario_nome||"—")}</strong></div></div>`).join("");
 }
 
-async function carregarUsuariosAdmin(){
-  const lista=document.getElementById("adminUsuarios"); if(!lista)return;
-  lista.innerHTML='<p class="aviso">Carregando usuários...</p>';
-  const {data,error}=await supabaseClient.from("usuarios").select("id,nome,perfil,ativo").order("nome");
-  if(error){console.error(error);lista.innerHTML=`<div class="erro">Não foi possível carregar os usuários.<br><small>${escapeHtml(error.message||"")}</small></div>`;return;}
-  lista.innerHTML=(data||[]).map(u=>`<div class="usuario-item"><div class="usuario-topo"><strong>${escapeHtml(u.nome||"Sem nome")}</strong><span class="perfil-badge">${escapeHtml(u.perfil||"—")}</span></div><div class="usuario-meta">${u.ativo?"● Acesso ativo":"⚪ Acesso desativado"}</div></div>`).join("") || '<p class="aviso">Nenhum usuário cadastrado.</p>';
+let usuariosAdminCache = [];
+let rotasCadastroUsuario = [];
+let cadastroUsuarioCarregamento = 0;
+
+async function carregarUsuariosAdmin() {
+  const lista = document.getElementById("adminUsuarios");
+  if (!lista || !usuarioTemPermissao([])) return;
+  lista.innerHTML = '<p class="aviso">Carregando usuários...</p>';
+  const { data, error } = await supabaseClient.from("usuarios").select("id,nome,perfil,ativo,rotas_coleta_ids").order("nome");
+  if (error) { lista.innerHTML = '<div class="erro">Não foi possível carregar os usuários.</div>'; return; }
+  usuariosAdminCache = data || [];
+  lista.innerHTML = usuariosAdminCache.map(u => {
+    const rotas = (u.rotas_coleta_ids || []).map(id => {
+      const rota = rotasAdminCache.find(r => Number(r.id) === Number(id));
+      return rota ? [rota.motorista, rota.regiao].filter(Boolean).join(" · ") : "Rota #" + id;
+    });
+    return '<div class="usuario-item"><div class="usuario-topo"><strong>' + escapeHtml(u.nome || "Sem nome") +
+      '</strong><span class="perfil-badge">' + nomePerfilUsuario(u.perfil) +
+      '</span></div><div class="usuario-meta">' + (u.ativo ? "● Acesso ativo" : "⚪ Acesso desativado") +
+      (u.perfil === "operador_coleta" ? '<br>' + (rotas.length === 2 ? "Coleta: " + rotas.map(escapeHtml).join(" / ") : "Pendente: informe o nome da pessoa e escolha duas rotas.") : "") +
+      '</div><button type="button" class="editar" onclick="abrirCadastroUsuario(usuariosAdminCache[' + usuariosAdminCache.indexOf(u) + '].id)">Editar usuário</button></div>';
+  }).join("") || '<p class="aviso">Nenhum usuário cadastrado.</p>';
+}
+
+async function abrirCadastroUsuario(id = "") {
+  const actor = await obterUsuarioAtualSistema();
+  if (!usuarioTemPermissao([], actor)) return;
+  const form = document.getElementById("formUsuario");
+  if (!form) return;
+  const usuario = usuariosAdminCache.find(u => u.id === id);
+  if (id && !usuario) return;
+  const carregamento = ++cadastroUsuarioCarregamento;
+  form.reset();
+  document.getElementById("usuarioEditarId").value = id;
+  document.getElementById("usuarioNome").value = usuario?.nome === "Operacional Teste" ? "" : usuario?.nome || "";
+  document.getElementById("usuarioPerfil").value = usuario?.perfil || "operador_coleta";
+  document.getElementById("usuarioAtivo").value = String(usuario?.ativo ?? true);
+  document.getElementById("usuarioCredenciais").hidden = !!id;
+  ["usuarioEmail", "usuarioSenha"].forEach(campo => {
+    document.getElementById(campo).disabled = !!id;
+    document.getElementById(campo).required = !id;
+  });
+  document.getElementById("tituloFormUsuario").textContent = id ? "Editar usuário" : "Novo usuário";
+  document.getElementById("usuarioSalvar").textContent = id ? "Salvar alterações" : "Criar usuário";
+  document.getElementById("usuarioSalvar").disabled = true;
+  document.getElementById("usuarioFormErro").hidden = true;
+  const proprioAdmin = id === actor.id;
+  document.getElementById("usuarioPerfil").disabled = proprioAdmin;
+  document.getElementById("usuarioAtivo").disabled = proprioAdmin;
+  form.hidden = false;
+  const { data, error } = await supabaseClient.from("rotas").select("id,motorista,regiao,placa").order("motorista");
+  if (carregamento !== cadastroUsuarioCarregamento || form.hidden) return;
+  rotasCadastroUsuario = data || [];
+  const options = '<option value="">Selecione uma rota</option>' + rotasCadastroUsuario.map(r =>
+    '<option value="' + Number(r.id) + '">' + escapeHtml([r.motorista, r.regiao, r.placa].filter(Boolean).join(" · ")) + '</option>'
+  ).join("");
+  [1, 2].forEach(n => {
+    const select = document.getElementById("usuarioRota" + n);
+    select.innerHTML = options;
+    select.value = String(usuario?.rotas_coleta_ids?.[n - 1] || "");
+  });
+  if (error) {
+    document.getElementById("usuarioFormErro").textContent = "Não foi possível carregar as rotas. Abra o cadastro novamente.";
+    document.getElementById("usuarioFormErro").hidden = false;
+  } else document.getElementById("usuarioSalvar").disabled = false;
+  atualizarCamposPerfilUsuario();
+  document.getElementById("usuarioNome").focus({ preventScroll: true });
+  form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function atualizarCamposPerfilUsuario() {
+  const perfil = document.getElementById("usuarioPerfil").value;
+  const coleta = perfil === "operador_coleta";
+  document.getElementById("usuarioRotasColeta").hidden = !coleta;
+  [1, 2].forEach(n => {
+    const campo = document.getElementById("usuarioRota" + n);
+    campo.required = coleta; campo.disabled = !coleta;
+  });
+  document.getElementById("usuarioResumoPermissoes").textContent = ({
+    operador_coleta: "Visualiza todas as rotas. Marca Retornando à base somente nas duas rotas abaixo. Pode acessar, editar e imprimir o relatório.",
+    operador_conferencia: "Visualiza todas as rotas e confirma o retorno à base. Sem acesso ao relatório.",
+    admin: "Acesso completo: todas as permissões existentes e futuras, usuários, rotas e relatório.",
+  })[perfil] || "";
+}
+
+function fecharCadastroUsuario() {
+  cadastroUsuarioCarregamento++;
+  const form = document.getElementById("formUsuario");
+  form?.reset();
+  if (form) form.hidden = true;
+  document.getElementById("usuarioSenha").value = "";
+}
+
+async function salvarUsuario(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const botao = document.getElementById("usuarioSalvar");
+  const erro = document.getElementById("usuarioFormErro");
+  if (botao.disabled || !form.reportValidity()) return;
+  const id = document.getElementById("usuarioEditarId").value;
+  const perfil = document.getElementById("usuarioPerfil").value;
+  const payload = {
+    nome: document.getElementById("usuarioNome").value.trim(), perfil,
+    ativo: document.getElementById("usuarioAtivo").value === "true",
+    rotas_coleta_ids: perfil === "operador_coleta" ? [1, 2].map(n => Number(document.getElementById("usuarioRota" + n).value)) : [],
+  };
+  erro.hidden = true;
+  if (!payload.nome || (perfil === "operador_coleta" && (payload.rotas_coleta_ids.some(id => !Number.isSafeInteger(id) || id <= 0) || payload.rotas_coleta_ids[0] === payload.rotas_coleta_ids[1]))) {
+    erro.textContent = "Informe o nome da pessoa e selecione duas rotas diferentes para Operador Coleta.";
+    erro.hidden = false; return;
+  }
+  botao.disabled = true;
+  const texto = botao.textContent;
+  botao.textContent = "Salvando...";
+  try {
+    const actor = await obterUsuarioAtualSistema();
+    if (!usuarioTemPermissao([], actor)) throw new Error("Somente o Administrador pode gerenciar usuários.");
+    if (id) {
+      const { data, error } = await supabaseClient.from("usuarios").update(payload).eq("id", id).select("id").maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("O usuário não foi atualizado. Confira sua permissão.");
+    } else {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session?.access_token) throw new Error("Entre novamente no sistema.");
+      const response = await fetch(SUPABASE_URL + "/functions/v1/criar-usuario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: "Bearer " + session.access_token },
+        body: JSON.stringify({ ...payload, email: document.getElementById("usuarioEmail").value.trim(), senha: document.getElementById("usuarioSenha").value }),
+      });
+      const resultado = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(resultado.message || "Não foi possível criar o usuário.");
+    }
+    fecharCadastroUsuario();
+    mostrarToast(id ? "Usuário e permissões atualizados." : "Usuário individual criado com sucesso.", "sucesso");
+    await carregarUsuariosAdmin();
+    await atualizarInterfaceSessao();
+    await carregarTotalUsuariosSistema();
+  } catch (error) {
+    erro.textContent = error.message || "Não foi possível salvar o usuário.";
+    erro.hidden = false;
+  } finally {
+    botao.disabled = false; botao.textContent = texto;
+  }
 }
 
 // O responsável é exibido junto aos dados da própria rota.
@@ -3625,8 +3824,7 @@ document.addEventListener('click', event => {
     if(!['#consulta','#controleRotas','#relatorio'].includes(hash))return;
     event.preventDefault();const token=++navToken;
     if(hash==='#relatorio'){
-      renderizarRelatorio();
-      alternarTelaSistema('relatorio').then(()=>{
+      abrirRelatorio().then(()=>{
         if(token!==navToken||telaSistemaAtual!=='relatorio')return;
         setActiveNav(hash);
         if(location.hash!==hash){try{history.pushState(null,'',hash);}catch(_){}}
