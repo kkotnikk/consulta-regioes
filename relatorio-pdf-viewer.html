@@ -26,7 +26,7 @@
 <dialog id="editorNota" aria-labelledby="notaTitulo"><h2 id="notaTitulo">Comentário</h2><label id="notaCampo" for="notaTexto">Comentário adicional<textarea id="notaTexto" maxlength="300"></textarea><small>Até 300 caracteres. O comentário será incluído na impressão.</small></label><p id="notaDescricao" hidden>Esta coleta foi marcada como concluída.</p><p id="notaErro" role="alert" hidden></p><div class="acoes"><button id="notaSalvar" type="button">Salvar comentário</button><button id="notaRemover" type="button" hidden>Remover</button><button id="notaCancelar" type="button">Cancelar</button></div></dialog>
 <script type="module">
 import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.min.mjs';
-import {lerTotalRodape} from './relatorio-total-coletas.mjs?v=20261002-coletas';
+import {lerTotalRodape} from './relatorio-total-coletas.mjs?v=20261002-ultima-folha';
 const base='https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/';
 pdfjs.GlobalWorkerOptions.workerSrc=base+'build/pdf.worker.min.mjs';
 const paginas=document.getElementById('paginas'),folhas=document.getElementById('folhas'),status=document.getElementById('status');
@@ -44,7 +44,7 @@ window.lerTotalPdf=async()=>{
   const resultado=await lerTotalRodape(documento,pdfjs,texto=>apiNotas.informarTotal(texto,false,true),()=>viewerFechado);
   if(viewerFechado)return;
   if(resultado.total===null){
-   apiNotas.informarTotal(resultado.motivo==='ambiguo'?'O rodapé contém totais diferentes. O card foi mantido.':resultado.motivo==='ilegivel'?'O total do rodapé não está legível. O card foi mantido.':'Total de coletas não identificado no rodapé. O card foi mantido.',true);return;
+   apiNotas.informarTotal(resultado.motivo==='ambiguo'?'O rodapé da última página contém totais diferentes. O card foi mantido.':resultado.motivo==='ilegivel'?'O total na última página não está legível. O card foi mantido.':'Total não identificado no rodapé da última página ('+documento.numPages+'). O card foi mantido.',true);return;
   }
   const salvo=await apiNotas.registrarTotal(resultado.total,resultado.origem);totalLido=true;
   apiNotas.informarTotal(resultado.total+' '+(resultado.total===1?'coleta':'coletas')+(salvo.aplicado?' · Card da rota atualizado.':salvo.preservado_manual?' no PDF · Valor ajustado manualmente preservado no card.':' neste relatório · Há um PDF mais recente para esta rota.'));

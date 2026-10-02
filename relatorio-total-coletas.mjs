@@ -10,11 +10,11 @@ export function identificarTotalColetas(texto) {
  return {total:distintos.length===1?distintos[0]:null,ambiguo:distintos.length>1};
 }
 
-export function textoRodape(items,viewport,transformar) {
+export function textoRodape(items,viewport,transformar,inicio=.70) {
  const palavras=items.filter(item=>item.str?.trim()&&item.transform).map(item=>{
   const pos=transformar(viewport.transform,item.transform);
   return {texto:item.str,x:pos[4],y:pos[5]};
- }).filter(item=>item.y>=viewport.height*.70&&item.y<=viewport.height+2);
+ }).filter(item=>item.y>=viewport.height*inicio&&item.y<=viewport.height+2);
  const linhas=[];
  for(const item of palavras.sort((a,b)=>a.y-b.y||a.x-b.x)){
   let linha=linhas.find(linha=>Math.abs(linha.y-item.y)<=3);
@@ -33,22 +33,19 @@ function carregarOcr() {
 }
 
 export async function lerTotalRodape(documento,pdfjs,informar,cancelado=()=>false) {
- const paginasSemTexto=[];let candidatoTexto=null;
- // O rodapé da última folha tem prioridade para o total do relatório completo.
- for(let numero=documento.numPages;numero>=1;numero--){
-  if(cancelado())throw new Error('Leitura cancelada.');
-  const page=await documento.getPage(numero),viewport=page.getViewport({scale:1}),{items}=await page.getTextContent();
-  const texto=textoRodape(items,viewport,pdfjs.Util.transform),resultado=identificarTotalColetas(texto);
-  if(resultado.ambiguo)return {total:null,motivo:'ambiguo'};
-  if(resultado.total!==null){candidatoTexto={total:resultado.total,origem:'texto'};if(!paginasSemTexto.length)return candidatoTexto;break;}
-  // O corpo/numeração pode ser texto selecionável enquanto o total é uma imagem.
-  // Sem um total explícito, examine também a imagem do rodapé desta folha.
-  paginasSemTexto.push(page);
- }
- // Digitalizações são lidas localmente: apenas os 30% inferiores da folha.
- if(!paginasSemTexto.length)return {total:null,motivo:'ausente'};
- informar('Reconhecendo o total no rodapé digitalizado...');
+ if(cancelado())throw new Error('Leitura cancelada.');
+ // O total do relatório fica na última folha; números das demais não são usados.
+ const page=await documento.getPage(documento.numPages),original=page.getViewport({scale:1});
+ const {items}=await page.getTextContent();
+ const resultadoTexto=identificarTotalColetas(textoRodape(items,original,pdfjs.Util.transform));
+ if(resultadoTexto.ambiguo)return {total:null,motivo:'ambiguo'};
+ if(resultadoTexto.total!==null)return {total:resultadoTexto.total,origem:'texto'};
+ // Em relatórios curtos, o rodapé do conteúdo pode ficar acima do rodapé físico da folha.
+ const resultadoConteudo=identificarTotalColetas(textoRodape(items,original,pdfjs.Util.transform,0));
+ if(resultadoConteudo.total!==null)return {total:resultadoConteudo.total,origem:'texto'};
+ informar('Reconhecendo o rodapé da última página...');
  const Tesseract=await carregarOcr();let worker=null;
+ let canvas=null,recorte=null,recorteAmplo=null;
  try{
   if(cancelado())throw new Error('Leitura cancelada.');
   worker=await Tesseract.createWorker('por',1,{
@@ -56,23 +53,30 @@ export async function lerTotalRodape(documento,pdfjs,informar,cancelado=()=>fals
    corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0',
    langPath:'https://tessdata.projectnaptha.com/4.0.0',
   });
-  await worker.setParameters({tessedit_pageseg_mode:'11',user_defined_dpi:'200'});
-  for(const page of paginasSemTexto){
+  const scale=Math.min(3,2400/original.width,3600/original.height),viewport=page.getViewport({scale});
+  canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+  await page.render({canvas,canvasContext:canvas.getContext('2d'),viewport,background:'#ffffff'}).promise;
+  const topo=Math.floor(canvas.height*.70);
+  recorte=document.createElement('canvas');recorte.width=canvas.width;recorte.height=canvas.height-topo;
+  const contexto=recorte.getContext('2d',{willReadFrequently:true});
+  contexto.drawImage(canvas,0,topo,canvas.width,recorte.height,0,0,recorte.width,recorte.height);
+  const topoAmplo=Math.floor(canvas.height*.40);
+  recorteAmplo=document.createElement('canvas');recorteAmplo.width=canvas.width;recorteAmplo.height=canvas.height-topoAmplo;
+  recorteAmplo.getContext('2d').drawImage(canvas,0,topoAmplo,canvas.width,recorteAmplo.height,0,0,recorteAmplo.width,recorteAmplo.height);
+  canvas.width=canvas.height=0;
+  for(const [modo,imagem] of [['6',recorte],['11',recorteAmplo]]){
    if(cancelado())throw new Error('Leitura cancelada.');
-   const original=page.getViewport({scale:1}),scale=Math.min(3,2000/original.width),viewport=page.getViewport({scale});
-   const topo=Math.floor(viewport.height*.70),canvas=document.createElement('canvas');
-   canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height-topo);
-   await page.render({canvas,canvasContext:canvas.getContext('2d'),viewport,transform:[1,0,0,1,0,-topo],background:'#ffffff'}).promise;
-   const {data}=await worker.recognize(canvas.toDataURL('image/png'),{}, {text:true,tsv:true});canvas.width=canvas.height=0;
+   await worker.setParameters({tessedit_pageseg_mode:modo,user_defined_dpi:'240'});
+   const {data}=await worker.recognize(imagem,{}, {text:true,tsv:true});
    const resultado=identificarTotalColetas(data.text);
    if(resultado.ambiguo)return {total:null,motivo:'ambiguo'};
    if(resultado.total!==null){
     const palavras=String(data.tsv||'').split('\n').slice(1).map(linha=>linha.split('\t')).filter(cols=>cols.length>=12&&cols[11].trim());
     const numeros=palavras.filter(cols=>/^\d[\d.]*$/.test(cols[11].trim())&&Number(cols[11].trim().replace(/\./g,''))===resultado.total);
-    if(numeros.some(cols=>Number(cols[10])>=65))return {total:resultado.total,origem:'ocr'};
-    return {total:null,motivo:'ilegivel'};
+    if(numeros.some(cols=>Number(cols[10])>=80))return {total:resultado.total,origem:'ocr'};
+    if(modo==='11')return {total:null,motivo:'ilegivel'};
    }
   }
-  return candidatoTexto||{total:null,motivo:'ausente'};
- }finally{if(worker)await worker.terminate();}
+  return {total:null,motivo:resultadoConteudo.ambiguo?'ambiguo':'ausente'};
+ }finally{if(canvas)canvas.width=canvas.height=0;if(recorte)recorte.width=recorte.height=0;if(recorteAmplo)recorteAmplo.width=recorteAmplo.height=0;if(worker)await worker.terminate();}
 }
