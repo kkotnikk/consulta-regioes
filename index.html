@@ -437,6 +437,13 @@ html{scrollbar-gutter:stable}
 .relatorio-documento-info{min-width:0;flex:1}
 .relatorio-documento .relatorio-rota{margin:0;color:#533c24;font-size:13px;font-weight:600;line-height:1.45}
 .relatorio-documento .relatorio-pdf-status{margin:3px 0 0;color:#816b50;font-size:11px;line-height:1.4}
+.relatorio-navegacao .relatorio-admin-modos{gap:2px;padding:4px;border-radius:9px;background:#eee5d5}
+.relatorio-navegacao .relatorio-admin-modos button{border:0;min-height:32px;padding:7px 11px;background:transparent}
+.relatorio-navegacao .relatorio-admin-modos button[aria-pressed="true"]{background:#08703f}
+.relatorio-navegacao .relatorio-paginas{gap:3px}
+.relatorio-navegacao .relatorio-paginas button{border-color:transparent;min-width:34px;min-height:32px;padding:6px 9px}
+.relatorio-navegacao .relatorio-paginas button[aria-selected="true"]{border-color:#08703f}
+.relatorio-documento{padding:10px 0 9px;background:transparent;border:0;border-top:1px solid #d9c7aa;border-radius:0}
 .relatorio-total-status{display:flex;align-items:center;gap:9px;max-width:48%;margin:0;color:#276247;font-size:12px;line-height:1.4}
 .relatorio-total-status span{min-width:0;overflow-wrap:anywhere}
 .relatorio-total-status button{flex:none;min-height:30px;padding:5px 8px;background:#e7f0e8;color:#145334;font-size:11px}
@@ -649,8 +656,8 @@ html{scrollbar-gutter:stable}
     </div>
     <div class="relatorio-navegacao">
     <div id="relatorioAdminModos" class="relatorio-admin-modos" role="group" aria-label="Escolher relatórios" hidden>
-      <button id="relatorioMeus" type="button" aria-pressed="true" onclick="alternarModoRelatoriosAdmin('meus')">Meus relatórios</button>
-      <button id="relatorioUsuarios" type="button" aria-pressed="false" onclick="alternarModoRelatoriosAdmin('usuarios')">Relatórios dos usuários</button>
+      <button id="relatorioMeus" type="button" aria-pressed="true" onclick="alternarModoRelatoriosAdmin('meus')">Meus</button>
+      <button id="relatorioUsuarios" type="button" aria-pressed="false" onclick="alternarModoRelatoriosAdmin('usuarios')">Usuários</button>
     </div>
     <div class="relatorio-paginas-grupo"><span class="relatorio-paginas-titulo">Rotas</span><nav id="relatorioPaginas" class="relatorio-paginas" role="tablist" aria-label="Relatórios das suas rotas">
       <button id="relatorioPagina1" type="button" role="tab" aria-controls="relatorioConteudo" onclick="selecionarPaginaRelatorio(0)">1</button>
@@ -3396,7 +3403,7 @@ function renderizarRelatorio() {
   }
   conteudo.setAttribute("aria-labelledby", "relatorioPagina" + (relatorioPaginaAtual + 1));
   document.getElementById("relatorioRota").innerHTML = rota
-    ? escapeHtml(["Página " + (relatorioPaginaAtual + 1), "Rota " + rota.id, rota.motorista].filter(Boolean).join(" · ")) + (rota.placa ? " · " + placaComAviso(rota.placa) : "")
+    ? escapeHtml(["Página " + (relatorioPaginaAtual + 1), rota.motorista].filter(Boolean).join(" · ")) + (rota.placa ? " · " + placaComAviso(rota.placa) : "")
     : relatorioConsultaDeOutroUsuario() ? "Nenhuma rota ou relatório para este usuário." : "Nenhuma rota vinculada ao seu usuário.";
   const enviar = document.getElementById("relatorioEnviarPdf");
   enviar.hidden = !usuarioPodeEditarRelatorio() || relatorioConsultaDeOutroUsuario();
@@ -3429,7 +3436,7 @@ function renderizarRelatorio() {
   frame.title = "Relatório da rota " + relatorioRotaId + ": " + relatorioDocumentoAtual.nome;
   frame.dataset.documento = relatorioDocumentoAtual.arquivo_path;
   const pdfUrl = relatorioPdfUrl;
-  frame.src = "./relatorio-pdf-viewer.html?v=20261002-ultima-folha";
+  frame.src = "./relatorio-pdf-viewer.html?v=20261002-barra-simples";
   frame.onload = () => {
     if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl, criarApiAnotacoesRelatorio(frame, pdfUrl));
   };

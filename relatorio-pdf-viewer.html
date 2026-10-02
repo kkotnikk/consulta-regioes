@@ -13,14 +13,28 @@
 #editorNota{width:min(420px,90vw);max-height:85vh;overflow:auto;border:1px solid #cbb491;border-radius:8px;background:#fffaf0;color:#624523;padding:18px;box-shadow:0 8px 32px #38281940}#editorNota::backdrop{background:#38281938}#editorNota h2{font-size:17px;margin:0 0 12px}#editorNota label{display:block;font-size:12px}#notaTexto{display:block;width:100%;min-height:100px;resize:vertical;margin-top:6px;padding:10px;border:1px solid #cbb491;border-radius:5px;background:white;font:13px system-ui,sans-serif;color:#50371b}#editorNota small{display:block;font-size:11px;line-height:1.5;margin-top:6px}#notaErro{color:#b23328;font-size:12px}#editorNota .acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}#editorNota button{padding:8px 12px;border:1px solid #cbb491;border-radius:5px;background:transparent;color:#624523;font:13px system-ui,sans-serif;cursor:pointer}#editorNota #notaSalvar{background:#08703f;color:white;border-color:#08703f}#editorNota #notaRemover{color:#b23328}#editorNota button:disabled{opacity:.5;cursor:default}[hidden]{display:none!important}
 #status{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);max-width:90%;padding:8px 12px;border-radius:6px;background:#fff5e6;box-shadow:0 2px 12px #38281924;text-align:center}#status[hidden]{display:none}
 @media(max-width:500px){#paginas{padding:8px}#folhas{gap:12px}.dica{display:none}}
-@media print{html,body{display:block;height:auto;overflow:visible;background:white}#paginas{height:auto;overflow:visible;padding:0}#folhas{display:block;min-width:0;width:100%}.pagina{width:100%!important;height:auto!important;aspect-ratio:auto!important;margin:0;box-shadow:none;overflow:visible;break-after:page;break-inside:avoid}.pagina:last-child{break-after:auto}.pagina canvas{height:auto}.anotacao{print-color-adjust:exact;-webkit-print-color-adjust:exact;box-shadow:none}.ferramentas,.ferramentas-anotacoes,#editorNota,#status{display:none!important}@page{margin:8mm}}
+.barra-pdf{flex:none;display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;min-height:48px;padding:7px 12px;border-bottom:1px solid #cbb491;background:#fffaf1}
+.barra-pdf .ferramentas,.barra-pdf .ferramentas-anotacoes{flex:none;min-height:0;padding:0;border:0;background:transparent;gap:4px}
+.barra-pdf .ferramentas-anotacoes{order:1;padding-right:15px;border-right:1px solid #dbc8ac}
+.barra-pdf .ferramentas{order:2}
+.barra-pdf button{min-height:32px;padding:6px 10px;border-radius:7px;font-size:12px;font-weight:600}
+.barra-pdf #notaAtualizar{min-width:32px;padding:5px;font-size:18px;line-height:1}
+.barra-pdf #notaEstado{order:3;flex:1 1 180px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:#816b50}
+.barra-pdf #notaEstado.erro{overflow:visible;white-space:normal;text-align:left}
+.barra-pdf .dica{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(max-width:700px){.barra-pdf{gap:7px;padding:8px}.barra-pdf .ferramentas-anotacoes{padding-right:0;border-right:0}.barra-pdf #notaEstado{flex-basis:100%;text-align:left}.barra-pdf button{min-height:34px;padding:6px 8px}}
+@media(max-width:380px){.barra-pdf .ferramentas-anotacoes{width:100%}.barra-pdf .ferramentas{width:100%}}
+@media print{html,body{display:block;height:auto;overflow:visible;background:white}#paginas{height:auto;overflow:visible;padding:0}#folhas{display:block;min-width:0;width:100%}.pagina{width:100%!important;height:auto!important;aspect-ratio:auto!important;margin:0;box-shadow:none;overflow:visible;break-after:page;break-inside:avoid}.pagina:last-child{break-after:auto}.pagina canvas{height:auto}.anotacao{print-color-adjust:exact;-webkit-print-color-adjust:exact;box-shadow:none}.barra-pdf,#editorNota,#status{display:none!important}@page{margin:8mm}}
 </style></head>
 <body>
-<div class="ferramentas" role="toolbar" aria-label="Zoom do PDF">
- <button id="zoomMenos" type="button" aria-label="Diminuir zoom" disabled>−</button><output id="zoomValor" aria-live="polite">100%</output><button id="zoomMais" type="button" aria-label="Aumentar zoom" disabled>+</button><button id="zoomAjustar" type="button" disabled>Ajustar</button><span class="dica">Arraste para navegar · Ctrl + roda do mouse para zoom</span>
-</div>
-<div class="ferramentas-anotacoes" role="toolbar" aria-label="Anotações do relatório">
- <button id="notaNavegar" type="button" aria-pressed="true">Navegar</button><button id="notaConcluida" type="button" aria-pressed="false" disabled>✓ Concluída</button><button id="notaComentario" type="button" aria-pressed="false" disabled>Comentário</button><button id="notaAtualizar" type="button" aria-label="Atualizar anotações" disabled>Atualizar</button><span id="notaEstado" role="status">Carregando anotações...</span>
+<div class="barra-pdf">
+ <div class="ferramentas-anotacoes" role="toolbar" aria-label="Anotações do relatório">
+  <button id="notaNavegar" type="button" aria-pressed="true">Mover</button><button id="notaConcluida" type="button" aria-pressed="false" disabled>✓ Feita</button><button id="notaComentario" type="button" aria-pressed="false" disabled>Comentar</button><button id="notaAtualizar" type="button" aria-label="Atualizar anotações" title="Atualizar anotações" disabled>↻</button>
+ </div>
+ <div class="ferramentas" role="toolbar" aria-label="Zoom do PDF" title="Arraste para navegar · Ctrl + roda do mouse para zoom">
+  <button id="zoomMenos" type="button" aria-label="Diminuir zoom" disabled>−</button><output id="zoomValor" aria-live="polite">100%</output><button id="zoomMais" type="button" aria-label="Aumentar zoom" disabled>+</button><button id="zoomAjustar" type="button" disabled>Ajustar</button>
+ </div>
+ <span id="notaEstado" role="status">Carregando anotações...</span><span class="dica">Arraste para navegar · Ctrl + roda do mouse para zoom</span>
 </div>
 <div id="paginas" aria-label="Páginas do relatório lado a lado"><div id="folhas"></div></div><p id="status" role="status">Abrindo PDF...</p>
 <dialog id="editorNota" aria-labelledby="notaTitulo"><h2 id="notaTitulo">Comentário</h2><label id="notaCampo" for="notaTexto">Comentário adicional<textarea id="notaTexto" maxlength="300"></textarea><small>Até 300 caracteres. O comentário será incluído na impressão.</small></label><p id="notaDescricao" hidden>Esta coleta foi marcada como concluída.</p><p id="notaErro" role="alert" hidden></p><div class="acoes"><button id="notaSalvar" type="button">Salvar comentário</button><button id="notaRemover" type="button" hidden>Remover</button><button id="notaCancelar" type="button">Cancelar</button></div></dialog>
@@ -51,7 +65,7 @@ window.lerTotalPdf=async()=>{
  }catch(error){if(!viewerFechado)apiNotas.informarTotal(error.message||'Não foi possível ler o total. O card foi mantido.',true);}
  finally{lendoTotal=false;document.body.dataset.totalLido=String(totalLido);document.body.dataset.totalConcluido='true';}
 };
-function estadoNotas(texto,erro=false){notaEstado.textContent=texto;notaEstado.classList.toggle('erro',erro);}
+function estadoNotas(texto,erro=false){notaEstado.textContent=texto;notaEstado.title=texto;notaEstado.classList.toggle('erro',erro);}
 function atualizarControlesNotas(){
  for(const [modo,botao] of Object.entries(botoesNota)){botao.setAttribute('aria-pressed',String(modoNota===modo));botao.disabled=printing||salvandoNota||(modo!=='navegar'&&(!notasProntas||carregandoNotas||!entries.length));}
  document.getElementById('notaAtualizar').disabled=!apiNotas||printing||salvandoNota||carregandoNotas||editor.open;
@@ -61,7 +75,7 @@ function atualizarControlesNotas(){
 function mudarModoNota(modo){
  if(salvandoNota||printing||!botoesNota[modo])return;
  modoNota=modo;paginas.dataset.modo=modo;atualizarControlesNotas();
- if(notasProntas)estadoNotas(modo==='concluida'?'Clique na coleta feita para marcar ✓.':modo==='comentario'?'Clique na página para adicionar um comentário.':'Anotações salvas · clique em uma marcação para editar ou remover.');
+ if(notasProntas)estadoNotas(modo==='concluida'?'Clique na coleta para marcar ✓.':modo==='comentario'?'Clique na folha para comentar.':'Clique em uma marcação para editar.');
 }
 function desenharAnotacoes(){
  for(const entry of entries){

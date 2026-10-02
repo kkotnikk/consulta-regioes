@@ -30,6 +30,7 @@
 - Apenas três atalhos administrativos: “Bairros e rotas”, “Suporte e sugestões”, “Histórico e usuários”. Abertura animada para baixo; o primeiro rola ao topo do gerenciamento.
 - O controle de rotas cadastradas alterna entre cards detalhados, com todas as ações, e visão geral compacta para comparar mais rotas; a preferência de visualização fica salva neste navegador. Cards compactos exibem os botões Detalhes e Editar. Clicar ou pressionar Enter/Espaço no próprio card abre os detalhes.
 - Na tela de relatório, agrupe seleção de usuário/rotas e dados do PDF em faixas compactas; deixe o total de coletas ao lado dos dados quando houver espaço. Preserve o visualizador e as ações de enviar, imprimir, anotar e reler.
+- Na identificação do relatório, exiba página, motorista e placa, sem o texto “Rota XX”. Dentro do visualizador, mantenha uma única barra compacta com Mover, ✓ Feita, Comentar, atualizar anotações e zoom; preserve os IDs e atalhos de teclado existentes.
 - O relatório vazio possui área pontilhada “Soltar PDF”, com seleção por clique/teclado ou arrastar e soltar. Um único arquivo por envio, sempre na rota selecionada, usando a mesma validação e autorização do botão Enviar PDF.
 - Preserve animações suaves de entrada, rolagem, modais e transições de tela; o menu permanece fixo.
 
