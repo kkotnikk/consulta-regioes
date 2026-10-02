@@ -335,6 +335,26 @@ body.soft-enhanced.login-overlay-ativo::before{animation:soft-overlay-in .4s var
 .rota-card .rota-alterado-por{min-height:18px;margin-top:9px}
 .rota-card::after{margin-top:auto;padding-top:13px}
 #adminRotasLista .rota-admin-item .acoes{margin-top:auto!important;min-height:48px}
+.admin-rotas-controles{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.admin-rotas-controles .admin-rotas-pesquisa{flex:1 1 260px}
+.admin-rotas-visoes{display:flex;gap:4px;padding:4px;background:#f3ede2;border:1px solid #dbc8ac;border-radius:10px}
+.admin-rotas-visoes button{min-height:34px;padding:7px 12px;background:transparent;color:#735b40;border-radius:7px;font-size:11px;font-weight:600}
+.admin-rotas-visoes button[aria-pressed="true"]{background:#fffaf1;color:#4c3520;box-shadow:0 2px 6px #3d271b20}
+#adminRotasLista.visao-geral{grid-template-columns:repeat(auto-fill,minmax(min(100%,215px),1fr));gap:10px;grid-auto-rows:auto}
+#adminRotasLista.visao-geral>.rota-admin-item{padding:13px;min-height:195px}
+#adminRotasLista.visao-geral .rota-admin-status{font-size:10px;margin-bottom:9px;line-height:1.25}
+#adminRotasLista.visao-geral .rota-dados{gap:5px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#adminRotasLista.visao-geral .rota-dados>div:first-child{font-size:15px;min-height:0;margin:0 0 2px}
+#adminRotasLista.visao-geral .motorista-nome{font-size:15px;-webkit-line-clamp:1}
+#adminRotasLista.visao-geral .rota-dados>div:not(:first-child){padding:6px;min-height:0;font-size:11px}
+#adminRotasLista.visao-geral .rota-dados>div:nth-child(2),#adminRotasLista.visao-geral .rota-dados>div:nth-child(3){grid-column:1/-1}
+#adminRotasLista.visao-geral .rota-dados>div:nth-child(4),#adminRotasLista.visao-geral .rota-admin-observacao{display:none}
+#adminRotasLista.visao-geral .rota-admin-coletas-valor{font-size:14px}
+#adminRotasLista.visao-geral .acoes{display:none}
+#adminRotasLista.visao-geral .rota-admin-item::after{content:'Abrir detalhes';margin-top:auto;padding-top:9px;font-size:10px;font-weight:600;color:#8b603b}
+#adminRotasLista.visao-geral .rota-admin-item.confirmada::after{color:#d8e9d6}
+@media(max-width:500px){.admin-rotas-visoes{width:100%}.admin-rotas-visoes button{flex:1}#adminRotasLista.visao-geral{grid-template-columns:repeat(2,minmax(0,1fr))}#adminRotasLista.visao-geral>.rota-admin-item{padding:10px;min-height:190px}}
+@media(max-width:370px){#adminRotasLista.visao-geral{grid-template-columns:1fr}}
 
 /* Retorno à base identificado em azul em todos os lados do card. */
 :is(.rota-card,.rota-admin-item).retornando{border-color:#287fc1;border-top-color:#287fc1}
@@ -432,6 +452,7 @@ html{scrollbar-gutter:stable}
 /* Atalhos compactos, sempre ao alcance dentro do gerenciamento. */
 .side-nav>.admin-btn{min-height:36px;padding:8px 11px;font-size:12px;border-radius:6px;box-shadow:none}
 .admin-atalhos{display:grid;grid-template-columns:1fr;gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid #8b75533b;overflow:hidden;transform-origin:top center}
+.relatorio-lote-modal .modal-sistema-conteudo{max-width:820px;width:100%}.relatorio-lote-intro{color:#81613d;font-size:13px;line-height:1.6}.relatorio-lote-soltar{width:100%;border:2px dashed #b89767;border-radius:10px;background:#fffaf0;color:#624523;padding:22px;cursor:pointer;text-align:center}.relatorio-lote-soltar:hover,.relatorio-lote-soltar:focus-visible{border-color:#08703f;background:#f3f5e8}.relatorio-lote-lista{display:grid;gap:10px;margin:18px 0;max-height:42vh;overflow:auto}.relatorio-lote-item{display:grid;grid-template-columns:minmax(140px,1fr) minmax(180px,1fr) minmax(180px,1.2fr) auto;gap:12px;align-items:center;padding:14px;border:1px solid #cfb98e;border-radius:9px;background:#fffaf0;font-size:12px}.relatorio-lote-item strong,.relatorio-lote-item small{display:block;overflow-wrap:anywhere}.relatorio-lote-item small{color:#81613d;margin-top:4px}.relatorio-lote-item label{font-size:11px}.relatorio-lote-item select{display:block;width:100%;margin-top:5px;font-size:12px}.relatorio-lote-destino{line-height:1.5}.relatorio-lote-pendente{color:#9e3b25}.relatorio-lote-resumo{font-size:12px;color:#624523;min-height:20px}.relatorio-lote-acoes{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}.relatorio-lote-acoes button{font-size:12px}.relatorio-lote-acoes button:disabled{opacity:.5;cursor:default}@media(max-width:700px){.relatorio-lote-item{grid-template-columns:1fr auto}.relatorio-lote-item label,.relatorio-lote-destino{grid-column:1/-1}}
 .admin-atalhos:not([hidden]){animation:admin-atalhos-descer .65s var(--soft-out) both}
 .admin-atalhos:not([hidden]) button{animation:admin-atalho-entrar .4s var(--soft-out) .08s both}
 .admin-atalhos:not([hidden]) button:nth-child(2){animation-delay:.16s}
@@ -594,6 +615,7 @@ html{scrollbar-gutter:stable}
     <div class="relatorio-cabecalho">
       <div><div class="gerenciamento-kicker">SOLIDEZ TRANSPORTES</div><h1 id="tituloRelatorio" tabindex="-1">Relatório</h1></div>
       <div class="relatorio-acoes">
+        <button id="relatorioLoteAbrir" type="button" onclick="abrirEnvioLoteRelatorios()" hidden>Enviar em lote</button>
         <button id="relatorioEnviarPdf" type="button" onclick="selecionarPdfRelatorio()">Enviar PDF</button>
         <input id="relatorioArquivoPdf" type="file" accept="application/pdf,.pdf" onchange="enviarPdfRelatorio(this)" hidden>
         <button type="button" class="relatorio-imprimir" onclick="imprimirRelatorio()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6zM17 11h1"/></svg><span>Imprimir relatório</span></button>
@@ -618,6 +640,17 @@ html{scrollbar-gutter:stable}
     <div id="relatorioConteudo" role="tabpanel" aria-live="polite" aria-labelledby="relatorioPagina1"></div>
   </div>
 </section>
+<div id="modalRelatorioLote" class="modal-sistema relatorio-lote-modal" aria-hidden="true">
+  <div class="modal-sistema-conteudo" role="dialog" aria-modal="true" aria-labelledby="tituloRelatorioLote">
+    <div class="suporte-cabecalho"><div><div class="suporte-kicker">DISTRIBUIÇÃO DE RELATÓRIOS</div><h2 id="tituloRelatorioLote">Enviar PDFs em lote</h2></div><button id="relatorioLoteFechar" type="button" class="suporte-fechar" onclick="fecharEnvioLoteRelatorios()" aria-label="Fechar">×</button></div>
+    <p class="relatorio-lote-intro">Selecione os PDFs do dia. O nome do arquivo sugere a rota; confira os usuários vinculados antes de distribuir.</p>
+    <button id="relatorioLoteSoltar" class="relatorio-lote-soltar" type="button" onclick="document.getElementById('relatorioLoteArquivos').click()">Soltar PDFs aqui ou clicar para selecionar</button>
+    <input id="relatorioLoteArquivos" type="file" accept="application/pdf,.pdf" multiple hidden onchange="adicionarArquivosLote(this.files);this.value=''">
+    <div id="relatorioLoteLista" class="relatorio-lote-lista" aria-live="polite"></div>
+    <p id="relatorioLoteResumo" class="relatorio-lote-resumo" role="status">Carregando destinatários...</p>
+    <div class="relatorio-lote-acoes"><button id="relatorioLoteCancelar" class="btn-cancelar" type="button" onclick="fecharEnvioLoteRelatorios()">Fechar</button><button id="relatorioLoteConfirmar" type="button" onclick="distribuirArquivosLote()" disabled>Distribuir PDFs</button></div>
+  </div>
+</div>
 <button type="button" class="floating-support" onclick="abrirSuporte()" aria-label="Abrir suporte"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2c-1.4.8-1.6 1-1.6 2m0 3h.01"/></svg><span>Precisa de ajuda?</span></button>
 <div id="modalSuporte" class="modal-sistema" aria-hidden="true">
   <div class="modal-sistema-conteudo suporte-modal">
@@ -1309,13 +1342,17 @@ async function mostrarPainelAdmin() {
 
     <div id="adminRotasFerramenta" class="admin-lista controle-rotas-admin">
       <h3>Controle de Rotas cadastradas</h3>
-      <div class="admin-rotas-pesquisa">
+      <div class="admin-rotas-controles"><div class="admin-rotas-pesquisa">
         <label for="buscaRotasAdmin">Pesquisar rotas cadastradas</label>
         <input id="buscaRotasAdmin" type="search" name="filtro-rotas-cadastradas"
           placeholder="Motorista, placa, região, ajudante ou status"
           autocomplete="off" oninput="renderizarRotasAdmin()"
           aria-controls="adminRotasLista">
       </div>
+      <div class="admin-rotas-visoes" role="group" aria-label="Visualização das rotas">
+        <button id="adminRotasVisaoDetalhada" type="button" aria-pressed="true" onclick="alterarVisaoRotasAdmin('detalhada')">Detalhada</button>
+        <button id="adminRotasVisaoGeral" type="button" aria-pressed="false" onclick="alterarVisaoRotasAdmin('geral')">Visão geral</button>
+      </div></div>
       <p id="resumoBuscaRotasAdmin" class="admin-rotas-contagem" role="status" aria-live="polite"></p>
       <div id="adminRotasLista"></div>
     </div>
@@ -1711,6 +1748,20 @@ async function adicionarRota() {
 
 
 let rotasAdminCache = [];
+const CHAVE_VISAO_ROTAS_ADMIN = "consulta_rotas_admin_visao_v1";
+function visaoRotasAdminSalva() {
+  try { return localStorage.getItem(CHAVE_VISAO_ROTAS_ADMIN) === "geral" ? "geral" : "detalhada"; }
+  catch { return "detalhada"; }
+}
+function alterarVisaoRotasAdmin(visao) {
+  const lista = document.getElementById("adminRotasLista");
+  if (!lista) return;
+  const geral = visao === "geral";
+  lista.classList.toggle("visao-geral", geral);
+  document.getElementById("adminRotasVisaoGeral")?.setAttribute("aria-pressed", String(geral));
+  document.getElementById("adminRotasVisaoDetalhada")?.setAttribute("aria-pressed", String(!geral));
+  try { localStorage.setItem(CHAVE_VISAO_ROTAS_ADMIN, geral ? "geral" : "detalhada"); } catch {}
+}
 
 async function carregarRotasAdmin() {
 
@@ -1742,6 +1793,7 @@ async function carregarRotasAdmin() {
 function renderizarRotasAdmin() {
   const lista = document.getElementById("adminRotasLista");
   if (!lista) return;
+  alterarVisaoRotasAdmin(visaoRotasAdminSalva());
 
   const prepararBusca = valor => normalizar(String(valor ?? "")).replace(/[-–]/g, "");
   const busca = prepararBusca(document.getElementById("buscaRotasAdmin")?.value || "");
@@ -3286,6 +3338,7 @@ function criarApiAnotacoesRelatorio(frame, pdfUrl) {
 function renderizarRelatorio() {
   const conteudo = document.getElementById("relatorioConteudo");
   if (!conteudo) return;
+  document.getElementById("relatorioLoteAbrir").hidden = !usuarioTemPermissao(["operador_coleta"]);
   sincronizarRelatoriosAdmin();
   renderizarControlesRelatoriosAdmin();
   const dono = usuarioRelatorioSelecionado();
@@ -3442,6 +3495,173 @@ async function enviarPdfRelatorio(input) {
     input.value = ""; relatorioPdfEnviando = false; renderizarRelatorio();
     if (telaSistemaAtual === "relatorio") carregarPdfRelatorio();
   }
+}
+
+const loteRelatorios = { arquivos: [], usuarios: [], ocupado: false, carregando: false, erro: "", sequencia: 0, atorId: null };
+
+function normalizarNomeRotaLote(valor) {
+  return String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/\.pdf$/i, "").replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+}
+
+function destinatariosRotaLote(rotaId) {
+  return loteRelatorios.usuarios.filter(usuario => (usuario.rotas_coleta_ids || []).some(id => Number(id) === Number(rotaId)));
+}
+
+function sugerirRotaLote(nome) {
+  const base = normalizarNomeRotaLote(nome).replace(/^(relatorio|rota|coletas)\s+/, "");
+  const candidatas = rotasPublicasCache.filter(rota => {
+    const motorista = normalizarNomeRotaLote(rota.motorista), placa = normalizarNomeRotaLote(rota.placa);
+    return base === motorista || base === placa || base === String(rota.id)
+      || (motorista && base.startsWith(motorista + " ") && /^\d/.test(base.slice(motorista.length + 1)));
+  });
+  return candidatas.length === 1 ? Number(candidatas[0].id) : null;
+}
+
+function renderizarEnvioLote() {
+  const lista = document.getElementById("relatorioLoteLista");
+  const pendentes = loteRelatorios.arquivos.filter(item => item.estado !== "enviado");
+  const ids = pendentes.map(item => item.rotaId).filter(Boolean);
+  const repetidas = new Set(ids.filter((id, indice) => ids.indexOf(id) !== indice));
+  lista.innerHTML = loteRelatorios.arquivos.map(item => {
+    const rota = rotasPublicasCache.find(rota => Number(rota.id) === Number(item.rotaId));
+    const destinatarios = rota ? destinatariosRotaLote(rota.id) : [];
+    const opcoes = rotasPublicasCache.map(rota => `<option value="${Number(rota.id)}" ${Number(item.rotaId) === Number(rota.id) ? "selected" : ""}>${escapeHtml(rota.motorista || "Rota sem nome")} · Rota ${Number(rota.id)}${rota.placa ? " · " + escapeHtml(rota.placa) : ""}</option>`).join("");
+    const destino = !rota ? "Escolha uma rota" : !destinatarios.length ? "Nenhum usuário vinculado a esta rota" : destinatarios.map(usuario => escapeHtml(usuario.nome)).join(", ");
+    const aviso = repetidas.has(item.rotaId) ? " · Há dois PDFs para esta rota" : "";
+    return `<div class="relatorio-lote-item"><div><strong>${escapeHtml(item.arquivo.name)}</strong><small>${(item.arquivo.size / 1024 / 1024).toFixed(2)} MB · ${escapeHtml(item.estado === "enviado" ? "Distribuído · " + item.mensagem : item.estado === "erro" ? item.mensagem : "Aguardando confirmação")}</small></div><label>Rota identificada<select aria-label="Rota do PDF ${escapeHtml(item.arquivo.name)}" onchange="selecionarRotaLote(${item.id},this.value)" ${loteRelatorios.ocupado || item.estado === "enviado" ? "disabled" : ""}><option value="">Selecione a rota</option>${opcoes}</select></label><div class="relatorio-lote-destino ${!destinatarios.length || repetidas.has(item.rotaId) ? "relatorio-lote-pendente" : ""}"><strong>Destino</strong>${destino}${aviso}</div><button type="button" class="btn-cancelar" onclick="removerArquivoLote(${item.id})" ${loteRelatorios.ocupado ? "disabled" : ""} aria-label="Remover ${escapeHtml(item.arquivo.name)}">×</button></div>`;
+  }).join("");
+  const validos = pendentes.length > 0 && !loteRelatorios.carregando && !loteRelatorios.erro
+    && !repetidas.size && pendentes.every(item => item.rotaId && destinatariosRotaLote(item.rotaId).length);
+  const confirmacao = document.getElementById("relatorioLoteConfirmar");
+  confirmacao.disabled = loteRelatorios.ocupado || !validos;
+  confirmacao.textContent = loteRelatorios.ocupado ? "Distribuindo..." : `Distribuir ${pendentes.length || ""} PDF${pendentes.length === 1 ? "" : "s"}`;
+  document.getElementById("relatorioLoteSoltar").disabled = loteRelatorios.ocupado;
+  document.getElementById("relatorioLoteFechar").disabled = loteRelatorios.ocupado;
+  document.getElementById("relatorioLoteCancelar").disabled = loteRelatorios.ocupado;
+  const resumo = document.getElementById("relatorioLoteResumo");
+  resumo.textContent = loteRelatorios.ocupado ? "Enviando os PDFs para cada usuário vinculado..." : loteRelatorios.carregando ? "Carregando destinatários..." : loteRelatorios.erro || (!loteRelatorios.arquivos.length ? "Adicione um ou mais PDFs para conferir a distribuição." : repetidas.size ? "Escolha somente um PDF por rota nesta remessa." : !validos && pendentes.length ? "Confira a rota e os destinatários de cada arquivo." : pendentes.length ? "Tudo pronto. Confirme para distribuir." : "Distribuição concluída.");
+  resumo.classList.toggle("relatorio-lote-pendente", !!loteRelatorios.erro || !!repetidas.size);
+}
+
+async function carregarDestinatariosLote() {
+  loteRelatorios.carregando = true; loteRelatorios.erro = ""; renderizarEnvioLote();
+  try {
+    const { data, error } = await supabaseClient.rpc("destinatarios_relatorios_em_lote");
+    if (error || !Array.isArray(data)) throw error || new Error("Resposta inválida.");
+    loteRelatorios.usuarios = data;
+  } catch (erro) {
+    loteRelatorios.usuarios = [];
+    loteRelatorios.erro = "Não foi possível carregar os destinatários. Feche e abra esta tela novamente.";
+    console.error("Destinatários dos relatórios:", erro);
+  } finally { loteRelatorios.carregando = false; renderizarEnvioLote(); }
+}
+
+async function abrirEnvioLoteRelatorios() {
+  const usuario = await obterUsuarioAtualSistema();
+  if (!usuarioTemPermissao(["operador_coleta"], usuario)) { mostrarToast("Esta ação exige acesso de Operador Coleta ou Administrador.", "erro"); return; }
+  loteRelatorios.arquivos = []; loteRelatorios.usuarios = []; loteRelatorios.atorId = usuario.id;
+  const modal = document.getElementById("modalRelatorioLote"); modal.classList.add("ativo"); modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden"; document.getElementById("relatorioLoteSoltar").focus();
+  carregarDestinatariosLote();
+}
+
+function fecharEnvioLoteRelatorios() {
+  if (loteRelatorios.ocupado) return;
+  const modal = document.getElementById("modalRelatorioLote"); modal.classList.remove("ativo"); modal.setAttribute("aria-hidden", "true");
+  loteRelatorios.arquivos = []; document.body.style.overflow = "";
+  document.getElementById("relatorioLoteAbrir").focus({ preventScroll: true });
+}
+
+async function adicionarArquivosLote(arquivos) {
+  if (loteRelatorios.ocupado || !document.getElementById("modalRelatorioLote").classList.contains("ativo")) return;
+  let rejeitados = 0;
+  for (const arquivo of Array.from(arquivos)) {
+    if (!arquivo.name.toLowerCase().endsWith(".pdf") || !arquivo.size || arquivo.size > 20 * 1024 * 1024 || await arquivo.slice(0, 5).text() !== "%PDF-") { rejeitados++; continue; }
+    loteRelatorios.arquivos.push({ id: ++loteRelatorios.sequencia, arquivo, rotaId: sugerirRotaLote(arquivo.name), estado: "pendente", mensagem: "" });
+  }
+  if (rejeitados) mostrarToast(`${rejeitados} arquivo(s) ignorado(s). Use PDFs válidos de até 20 MB.`, "erro");
+  renderizarEnvioLote();
+}
+
+function selecionarRotaLote(id, valor) {
+  if (loteRelatorios.ocupado) return;
+  const item = loteRelatorios.arquivos.find(item => item.id === id);
+  if (item && item.estado !== "enviado") item.rotaId = valor ? Number(valor) : null;
+  renderizarEnvioLote();
+}
+
+function removerArquivoLote(id) {
+  if (loteRelatorios.ocupado) return;
+  loteRelatorios.arquivos = loteRelatorios.arquivos.filter(item => item.id !== id); renderizarEnvioLote();
+}
+
+const areaLote = document.getElementById("relatorioLoteSoltar");
+for (const evento of ["dragenter", "dragover"]) areaLote.addEventListener(evento, e => { if (Array.from(e.dataTransfer?.types || []).includes("Files")) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } });
+areaLote.addEventListener("drop", e => { if (!e.dataTransfer?.files.length) return; e.preventDefault(); adicionarArquivosLote(e.dataTransfer.files); });
+
+async function lerTotalArquivoLote(arquivo, usuarioId, rotaId, caminho) {
+  const versao = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/';
+  const [pdfjs, leitor] = await Promise.all([import(versao + 'build/pdf.min.mjs'), import('./relatorio-total-coletas.mjs?v=20261002-ultima-folha')]);
+  pdfjs.GlobalWorkerOptions.workerSrc = versao + 'build/pdf.worker.min.mjs';
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(await arquivo.arrayBuffer()), isEvalSupported: false,
+    cMapUrl: versao + 'cmaps/', cMapPacked: true, standardFontDataUrl: versao + 'standard_fonts/', wasmUrl: versao + 'wasm/' }).promise;
+  try {
+    const resultado = await leitor.lerTotalRodape(pdf, pdfjs, () => {});
+    if (resultado.total === null) return false;
+    const { data, error } = await supabaseClient.rpc("registrar_total_coletas_pdf", {
+      p_usuario_id: usuarioId, p_rota_id: rotaId, p_arquivo_path: caminho, p_total: resultado.total, p_origem: resultado.origem,
+    });
+    if (error || !data) throw error || new Error("Não foi possível atualizar o card.");
+    return !!data.aplicado;
+  } finally { await pdf.destroy(); }
+}
+
+async function distribuirArquivosLote() {
+  if (loteRelatorios.ocupado || loteRelatorios.carregando || loteRelatorios.erro) return;
+  const pendentes = loteRelatorios.arquivos.filter(item => item.estado !== "enviado");
+  const ids = pendentes.map(item => item.rotaId);
+  if (!pendentes.length || ids.some(id => !id || !destinatariosRotaLote(id).length) || new Set(ids).size !== ids.length) { renderizarEnvioLote(); return; }
+  loteRelatorios.ocupado = true; renderizarEnvioLote(); let entregues = 0;
+  for (const item of pendentes) {
+    const enviados = []; let vinculado = false;
+    try {
+      const ator = await obterUsuarioAtualSistema();
+      if (!usuarioTemPermissao(["operador_coleta"], ator) || ator.id !== loteRelatorios.atorId) throw new Error("Sua sessão mudou. Abra o envio em lote novamente.");
+      for (const destino of destinatariosRotaLote(item.rotaId)) {
+        const caminho = destino.id + "/" + item.rotaId + "/" + crypto.randomUUID() + ".pdf";
+        const { error } = await supabaseClient.storage.from("relatorios").upload(caminho, item.arquivo, { contentType: "application/pdf", upsert: false });
+        if (error) throw error;
+        enviados.push({ usuario_id: destino.id, arquivo_path: caminho });
+      }
+      const { data, error } = await supabaseClient.rpc("distribuir_relatorio_rota", {
+        p_rota_id: item.rotaId, p_nome: item.arquivo.name.slice(0, 255), p_arquivos: enviados,
+      });
+      if (error || !data || data.destinatarios?.length !== enviados.length) throw error || new Error("Não foi possível confirmar a distribuição.");
+      vinculado = true;
+      const ultimo = enviados.find(arquivo => arquivo.usuario_id === data.usuario_total_id);
+      try {
+        const atualizado = ultimo && await lerTotalArquivoLote(item.arquivo, ultimo.usuario_id, item.rotaId, ultimo.arquivo_path);
+        item.mensagem = atualizado ? "Card atualizado" : "Total pendente de leitura";
+      } catch (erroTotal) { console.error("Leitura do total no lote:", erroTotal); item.mensagem = "Total pendente de leitura"; }
+      item.estado = "enviado"; entregues++;
+    } catch (erro) {
+      if (!vinculado && enviados.length) {
+        try { await supabaseClient.storage.from("relatorios").remove(enviados.map(item => item.arquivo_path)); } catch (_) {}
+      }
+      item.estado = "erro"; item.mensagem = erro.message || "Não foi possível distribuir.";
+      console.error("Envio em lote:", erro);
+    }
+    renderizarEnvioLote();
+  }
+  loteRelatorios.ocupado = false; renderizarEnvioLote();
+  if (entregues) {
+    await carregarRotasPublicas();
+    if (usuarioTemPermissao([])) { await carregarRotasAdmin(); await carregarRelatoriosAdmin(); }
+    limparPdfRelatorio(); renderizarRelatorio(); await carregarPdfRelatorio();
+    mostrarToast(`${entregues} PDF${entregues === 1 ? "" : "s"} distribuído${entregues === 1 ? "" : "s"}.`, "sucesso");
+  }
+  if (pendentes.some(item => item.estado === "erro")) mostrarToast("Alguns PDFs não foram distribuídos. Confira a lista e tente novamente.", "erro");
 }
 
 async function imprimirRelatorio() {
