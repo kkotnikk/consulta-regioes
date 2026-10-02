@@ -428,15 +428,14 @@ html{scrollbar-gutter:stable}
 .relatorio-acoes #relatorioLoteAbrir:hover{background:#f0e7d7}
 .relatorio-acoes .relatorio-imprimir{background:#e7f0e8;border:1px solid #b7d0bb;color:#145334;box-shadow:none}
 .relatorio-acoes .relatorio-imprimir:hover{background:#d9e9db}
-.relatorio-navegacao{display:flex;align-items:center;flex-wrap:wrap;gap:10px 22px;padding:0 0 12px}
-.relatorio-navegacao .relatorio-admin-modos{margin:0}
-.relatorio-paginas-grupo{display:flex;align-items:center;gap:11px;min-width:0;flex:1 1 220px}
-.relatorio-paginas-titulo{flex:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#81613e}
+.relatorio-navegacao{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 0 12px}
+.relatorio-navegacao .relatorio-admin-modos{margin:0 0 0 auto;flex:none}
+.relatorio-paginas-grupo{display:flex;align-items:center;min-width:0;flex:1 1 auto}
 .relatorio-navegacao .relatorio-paginas{margin:0;padding:0;flex:1}
 .relatorio-documento{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;min-width:0;margin-bottom:10px;padding:11px 14px;border:1px solid #d9c7aa;border-radius:10px;background:#fffaf1}
 .relatorio-documento-info{min-width:0;flex:1}
-.relatorio-documento .relatorio-rota{margin:0;color:#533c24;font-size:13px;font-weight:600;line-height:1.45}
-.relatorio-documento .relatorio-pdf-status{margin:3px 0 0;color:#816b50;font-size:11px;line-height:1.4}
+.relatorio-documento .relatorio-rota{margin:0;color:#533c24;font-size:16px;font-weight:600;line-height:1.4}
+.relatorio-pdf-status{max-width:100%;margin:8px 0 0;color:#816b50;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
 .relatorio-navegacao .relatorio-admin-modos{gap:2px;padding:4px;border-radius:9px;background:#eee5d5}
 .relatorio-navegacao .relatorio-admin-modos button{border:0;min-height:32px;padding:7px 11px;background:transparent}
 .relatorio-navegacao .relatorio-admin-modos button[aria-pressed="true"]{background:#08703f}
@@ -447,15 +446,15 @@ html{scrollbar-gutter:stable}
 .relatorio-total-status{display:flex;align-items:center;gap:9px;max-width:48%;margin:0;color:#276247;font-size:12px;line-height:1.4}
 .relatorio-total-status span{min-width:0;overflow-wrap:anywhere}
 .relatorio-total-status button{flex:none;min-height:30px;padding:5px 8px;background:#e7f0e8;color:#145334;font-size:11px}
-@media(max-width:860px){.relatorio-paginas-grupo{flex-basis:100%}.relatorio-documento{align-items:flex-start;flex-direction:column}.relatorio-total-status{max-width:100%}}
-@media(max-width:500px){.relatorio-acoes{width:100%;justify-content:stretch}.relatorio-acoes>button{flex:1 1 auto;padding:8px 10px;font-size:11px}#relatorioView .relatorio-acoes #relatorioEnviarPdf{padding:8px 10px}.relatorio-acoes .relatorio-imprimir .icon{display:none}.relatorio-navegacao .relatorio-admin-modos{width:100%}.relatorio-admin-modos button{flex:1}.relatorio-documento{padding:10px 12px}}
+@media(max-width:860px){.relatorio-documento{align-items:flex-start;flex-direction:column}.relatorio-total-status{max-width:100%}}
+@media(max-width:500px){.relatorio-acoes{width:100%;justify-content:stretch}.relatorio-acoes>button{flex:1 1 auto;padding:8px 10px;font-size:11px}#relatorioView .relatorio-acoes #relatorioEnviarPdf{padding:8px 10px}.relatorio-acoes .relatorio-imprimir .icon{display:none}.relatorio-navegacao .relatorio-admin-modos{width:auto}.relatorio-documento{padding:10px 0}.relatorio-documento .relatorio-rota{font-size:15px}}
 @media print{
   body.imprimindo-relatorio{background:white!important}
   body.imprimindo-relatorio>*:not(#relatorioView){display:none!important}
   body.imprimindo-relatorio #relatorioView{display:block!important;position:static!important;inset:auto!important;width:100%;overflow:visible;box-shadow:none;background:white!important;transform:none!important}
   body.imprimindo-relatorio .relatorio-container{max-width:none;padding:0}
   body.imprimindo-relatorio .relatorio-cabecalho{margin-bottom:24px}
-  body.imprimindo-relatorio .relatorio-navegacao,body.imprimindo-relatorio .relatorio-documento,body.imprimindo-relatorio .relatorio-admin-painel,body.imprimindo-relatorio .relatorio-acoes{display:none!important}
+  body.imprimindo-relatorio .relatorio-navegacao,body.imprimindo-relatorio .relatorio-documento,body.imprimindo-relatorio .relatorio-admin-painel,body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-pdf-status{display:none!important}
   body.imprimindo-relatorio #relatorioView *{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
 }
 @media(max-width:1200px){:root{--menu-width:192px}.relatorio-container{padding:28px}}
@@ -655,24 +654,25 @@ html{scrollbar-gutter:stable}
       </div>
     </div>
     <div class="relatorio-navegacao">
-    <div id="relatorioAdminModos" class="relatorio-admin-modos" role="group" aria-label="Escolher relatórios" hidden>
-      <button id="relatorioMeus" type="button" aria-pressed="true" onclick="alternarModoRelatoriosAdmin('meus')">Meus</button>
-      <button id="relatorioUsuarios" type="button" aria-pressed="false" onclick="alternarModoRelatoriosAdmin('usuarios')">Usuários</button>
-    </div>
-    <div class="relatorio-paginas-grupo"><span class="relatorio-paginas-titulo">Rotas</span><nav id="relatorioPaginas" class="relatorio-paginas" role="tablist" aria-label="Relatórios das suas rotas">
+    <div class="relatorio-paginas-grupo"><nav id="relatorioPaginas" class="relatorio-paginas" role="tablist" aria-label="Páginas dos relatórios">
       <button id="relatorioPagina1" type="button" role="tab" aria-controls="relatorioConteudo" onclick="selecionarPaginaRelatorio(0)">1</button>
       <button id="relatorioPagina2" type="button" role="tab" aria-controls="relatorioConteudo" onclick="selecionarPaginaRelatorio(1)">2</button>
       <button id="relatorioPagina3" type="button" role="tab" aria-controls="relatorioConteudo" onclick="selecionarPaginaRelatorio(2)">3</button>
-    </nav></div></div>
+    </nav></div>
+    <div id="relatorioAdminModos" class="relatorio-admin-modos" role="group" aria-label="Escolher relatórios" hidden>
+      <button id="relatorioMeus" type="button" aria-pressed="true" onclick="alternarModoRelatoriosAdmin('meus')">Meus</button>
+      <button id="relatorioUsuarios" type="button" aria-pressed="false" onclick="alternarModoRelatoriosAdmin('usuarios')">Usuários</button>
+    </div></div>
     <div id="relatorioAdminPainel" class="relatorio-admin-painel" hidden>
       <div class="relatorio-admin-filtros"><label for="relatorioAdminUsuario">Usuário<select id="relatorioAdminUsuario" onchange="selecionarUsuarioRelatorio(this.value)"><option value="">Selecione um usuário</option></select></label><button id="relatorioAdminAtualizar" type="button" onclick="carregarRelatoriosAdmin()">Atualizar</button></div>
       <p id="relatorioAdminStatus" role="status"></p>
     </div>
     <div class="relatorio-documento">
-      <div class="relatorio-documento-info"><p id="relatorioRota" class="relatorio-rota" role="status"></p><p id="relatorioPdfStatus" class="relatorio-pdf-status" role="status" hidden></p></div>
+      <div class="relatorio-documento-info"><p id="relatorioRota" class="relatorio-rota" role="status"></p></div>
       <p id="relatorioTotalStatus" class="relatorio-total-status" role="status" hidden><span id="relatorioTotalTexto"></span><button id="relatorioRelerTotal" type="button" onclick="document.getElementById('relatorioPdfViewer')?.contentWindow.lerTotalPdf?.()" hidden>Ler novamente</button></p>
     </div>
     <div id="relatorioConteudo" role="tabpanel" aria-live="polite" aria-labelledby="relatorioPagina1"></div>
+    <p id="relatorioPdfStatus" class="relatorio-pdf-status" role="status" hidden></p>
   </div>
 </section>
 <div id="modalRelatorioLote" class="modal-sistema relatorio-lote-modal" aria-hidden="true">
@@ -3403,7 +3403,7 @@ function renderizarRelatorio() {
   }
   conteudo.setAttribute("aria-labelledby", "relatorioPagina" + (relatorioPaginaAtual + 1));
   document.getElementById("relatorioRota").innerHTML = rota
-    ? escapeHtml(["Página " + (relatorioPaginaAtual + 1), rota.motorista].filter(Boolean).join(" · ")) + (rota.placa ? " · " + placaComAviso(rota.placa) : "")
+    ? escapeHtml(rota.motorista || "Motorista não informado") + (rota.placa ? " · " + placaComAviso(rota.placa) : "")
     : relatorioConsultaDeOutroUsuario() ? "Nenhuma rota ou relatório para este usuário." : "Nenhuma rota vinculada ao seu usuário.";
   const enviar = document.getElementById("relatorioEnviarPdf");
   enviar.hidden = !usuarioPodeEditarRelatorio() || relatorioConsultaDeOutroUsuario();

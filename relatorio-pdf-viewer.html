@@ -18,23 +18,26 @@
 .barra-pdf .ferramentas-anotacoes{order:1;padding-right:15px;border-right:1px solid #dbc8ac}
 .barra-pdf .ferramentas{order:2}
 .barra-pdf button{min-height:32px;padding:6px 10px;border-radius:7px;font-size:12px;font-weight:600}
-.barra-pdf #notaAtualizar{min-width:32px;padding:5px;font-size:18px;line-height:1}
+.barra-pdf #notaAtualizar{order:4;flex:none;min-width:32px;margin-left:auto;padding:5px;border:1px solid #cbb491;background:transparent;color:#624523;font-size:18px;line-height:1;cursor:pointer}
+.barra-pdf #notaAtualizar:hover{background:#08703f0d;border-color:#08703f}
+.barra-pdf #notaAtualizar:focus-visible{outline:2px solid #08703f;outline-offset:2px}
+.barra-pdf #notaAtualizar:disabled{opacity:.5;cursor:default}
 .barra-pdf #notaEstado{order:3;flex:1 1 180px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:#816b50}
 .barra-pdf #notaEstado.erro{overflow:visible;white-space:normal;text-align:left}
 .barra-pdf .dica{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-@media(max-width:700px){.barra-pdf{gap:7px;padding:8px}.barra-pdf .ferramentas-anotacoes{padding-right:0;border-right:0}.barra-pdf #notaEstado{flex-basis:100%;text-align:left}.barra-pdf button{min-height:34px;padding:6px 8px}}
+@media(max-width:700px){.barra-pdf{gap:7px;padding:8px}.barra-pdf .ferramentas-anotacoes{padding-right:0;border-right:0}.barra-pdf #notaEstado{order:5;flex-basis:100%;text-align:left}.barra-pdf button{min-height:34px;padding:6px 8px}}
 @media(max-width:380px){.barra-pdf .ferramentas-anotacoes{width:100%}.barra-pdf .ferramentas{width:100%}}
 @media print{html,body{display:block;height:auto;overflow:visible;background:white}#paginas{height:auto;overflow:visible;padding:0}#folhas{display:block;min-width:0;width:100%}.pagina{width:100%!important;height:auto!important;aspect-ratio:auto!important;margin:0;box-shadow:none;overflow:visible;break-after:page;break-inside:avoid}.pagina:last-child{break-after:auto}.pagina canvas{height:auto}.anotacao{print-color-adjust:exact;-webkit-print-color-adjust:exact;box-shadow:none}.barra-pdf,#editorNota,#status{display:none!important}@page{margin:8mm}}
 </style></head>
 <body>
 <div class="barra-pdf">
  <div class="ferramentas-anotacoes" role="toolbar" aria-label="Anotações do relatório">
-  <button id="notaNavegar" type="button" aria-pressed="true">Mover</button><button id="notaConcluida" type="button" aria-pressed="false" disabled>✓ Feita</button><button id="notaComentario" type="button" aria-pressed="false" disabled>Comentar</button><button id="notaAtualizar" type="button" aria-label="Atualizar anotações" title="Atualizar anotações" disabled>↻</button>
+  <button id="notaNavegar" type="button" aria-pressed="true">Mover</button><button id="notaConcluida" type="button" aria-pressed="false" disabled>✓ Feita</button><button id="notaComentario" type="button" aria-pressed="false" disabled>Comentar</button>
  </div>
  <div class="ferramentas" role="toolbar" aria-label="Zoom do PDF" title="Arraste para navegar · Ctrl + roda do mouse para zoom">
   <button id="zoomMenos" type="button" aria-label="Diminuir zoom" disabled>−</button><output id="zoomValor" aria-live="polite">100%</output><button id="zoomMais" type="button" aria-label="Aumentar zoom" disabled>+</button><button id="zoomAjustar" type="button" disabled>Ajustar</button>
  </div>
- <span id="notaEstado" role="status">Carregando anotações...</span><span class="dica">Arraste para navegar · Ctrl + roda do mouse para zoom</span>
+ <span id="notaEstado" role="status">Carregando anotações...</span><button id="notaAtualizar" type="button" aria-label="Atualizar anotações" title="Atualizar anotações" disabled>↻</button><span class="dica">Arraste para navegar · Ctrl + roda do mouse para zoom</span>
 </div>
 <div id="paginas" aria-label="Páginas do relatório lado a lado"><div id="folhas"></div></div><p id="status" role="status">Abrindo PDF...</p>
 <dialog id="editorNota" aria-labelledby="notaTitulo"><h2 id="notaTitulo">Comentário</h2><label id="notaCampo" for="notaTexto">Comentário adicional<textarea id="notaTexto" maxlength="300"></textarea><small>Até 300 caracteres. O comentário será incluído na impressão.</small></label><p id="notaDescricao" hidden>Esta coleta foi marcada como concluída.</p><p id="notaErro" role="alert" hidden></p><div class="acoes"><button id="notaSalvar" type="button">Salvar comentário</button><button id="notaRemover" type="button" hidden>Remover</button><button id="notaCancelar" type="button">Cancelar</button></div></dialog>
