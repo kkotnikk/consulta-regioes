@@ -41,7 +41,9 @@ export async function lerTotalRodape(documento,pdfjs,informar,cancelado=()=>fals
   const texto=textoRodape(items,viewport,pdfjs.Util.transform),resultado=identificarTotalColetas(texto);
   if(resultado.ambiguo)return {total:null,motivo:'ambiguo'};
   if(resultado.total!==null){candidatoTexto={total:resultado.total,origem:'texto'};if(!paginasSemTexto.length)return candidatoTexto;break;}
-  if(!texto.trim())paginasSemTexto.push(page);
+  // O corpo/numeração pode ser texto selecionável enquanto o total é uma imagem.
+  // Sem um total explícito, examine também a imagem do rodapé desta folha.
+  paginasSemTexto.push(page);
  }
  // Digitalizações são lidas localmente: apenas os 30% inferiores da folha.
  if(!paginasSemTexto.length)return {total:null,motivo:'ausente'};
@@ -67,7 +69,7 @@ export async function lerTotalRodape(documento,pdfjs,informar,cancelado=()=>fals
    if(resultado.total!==null){
     const palavras=String(data.tsv||'').split('\n').slice(1).map(linha=>linha.split('\t')).filter(cols=>cols.length>=12&&cols[11].trim());
     const numeros=palavras.filter(cols=>/^\d[\d.]*$/.test(cols[11].trim())&&Number(cols[11].trim().replace(/\./g,''))===resultado.total);
-    if(numeros.some(cols=>Number(cols[10])>=80))return {total:resultado.total,origem:'ocr'};
+    if(numeros.some(cols=>Number(cols[10])>=65))return {total:resultado.total,origem:'ocr'};
     return {total:null,motivo:'ilegivel'};
    }
   }

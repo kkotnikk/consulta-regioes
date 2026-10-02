@@ -15,8 +15,8 @@ function pdfTotal(total){
 async function pdfDigitalizado(page){
  if(process.env.PDF_TOTAL_SCANNED_PATH)return fs.readFileSync(process.env.PDF_TOTAL_SCANNED_PATH);
  const base64=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=800;canvas.height=100;const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,800,100);ctx.fillStyle='black';ctx.font='bold 32px Arial';ctx.fillText('TOTAL:   24 COLETAS -',20,60);return canvas.toDataURL('image/jpeg').split(',')[1]});
- const jpg=Buffer.from(base64,'base64'),stream='q 500 0 0 62.5 30 30 cm /Im0 Do Q';
- return construirPdf(['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>','<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream',Buffer.concat([Buffer.from('<< /Type /XObject /Subtype /Image /Width 800 /Height 100 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpg.length+' >>\nstream\n'),jpg,Buffer.from('\nendstream')])]);
+ const jpg=Buffer.from(base64,'base64'),stream='BT /F1 12 Tf 40 750 Td (Relatorio com texto selecionavel) Tj 0 -715 Td (Pagina 1) Tj ET q 500 0 0 62.5 30 30 cm /Im0 Do Q';
+ return construirPdf(['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 5 0 R >> /Font << /F1 6 0 R >> >> /Contents 4 0 R >>','<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream',Buffer.concat([Buffer.from('<< /Type /XObject /Subtype /Image /Width 800 /Height 100 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpg.length+' >>\nstream\n'),jpg,Buffer.from('\nendstream')]),'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>']);
 }
 const ready=page=>page.waitForFunction(()=>{const b=document.getElementById('relatorioPdfViewer')?.contentDocument?.body;return b?.dataset.pronto==='true'&&b.dataset.totalConcluido==='true'});
 (async()=>{
@@ -52,6 +52,22 @@ const ready=page=>page.waitForFunction(()=>{const b=document.getElementById('rel
   assert.match(await page.locator('#relatorioTotalTexto').innerText(),/24 coletas.*atualizado/);
   assert.equal(await page.evaluate(()=>rotasPublicasCache.find(r=>r.id===1).numero_coletas),24);
   if(perfil==='admin')assert.equal(await page.evaluate(()=>rotasAdminCache.find(r=>r.id===1).numero_coletas),24);
+  if(perfil==='admin'){
+   await page.evaluate(()=>editarRota(1));await page.locator('#editarNumeroColetas').fill('31');
+   await page.evaluate(()=>salvarEdicaoRota());
+   assert.equal(await page.evaluate(()=>window.__state.routes[0].numero_coletas),31);
+   await page.evaluate(()=>document.getElementById('relatorioPdfViewer').contentWindow.lerTotalPdf());
+   await page.waitForFunction(()=>document.getElementById('relatorioPdfViewer').contentDocument.body.dataset.totalConcluido==='true');
+   assert.equal(await page.evaluate(()=>window.__state.routes[0].numero_coletas),31);
+   assert.match(await page.locator('#relatorioTotalTexto').innerText(),/ajustado manualmente/);
+   await page.evaluate(()=>window.__routeUpdateEmpty=true);
+   await page.evaluate(()=>editarRota(1));await page.locator('#editarNumeroColetas').fill('32');
+   await page.evaluate(()=>salvarEdicaoRota());
+   assert.equal(await page.evaluate(()=>window.__state.routes[0].numero_coletas),31);
+   assert.equal(await page.locator('#modalEditarRota').getAttribute('aria-hidden'),'false');
+   assert.match(await page.locator('.toast').last().innerText(),/não foi salvo/);
+   await page.evaluate(()=>{window.__routeUpdateEmpty=false;fecharEdicaoRota()});
+  }
   await page.evaluate(()=>renderizarRotasPublicas());
   assert.match(await page.locator('#rotasPublicas').innerText(),/24/);
   await enviar(null,'Sem-total.pdf');

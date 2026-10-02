@@ -12,7 +12,7 @@ window.supabase={createClient(){
    if(inserir)data=data.filter(row=>row.id===inserir.id);
    if(table!=='usuarios')data=data.filter(row=>Object.entries(filters).every(([key,value])=>row[key]===value));
    else if(filters.id)data=data.filter(u=>u.id===filters.id);
-   if(patch&&!falhaNota){data.forEach(u=>Object.assign(u,patch));window.__lastUpdate={filters,patch};}
+   if(patch&&!falhaNota){if(table==='rotas'&&window.__routeUpdateEmpty)data=[];else data.forEach(u=>Object.assign(u,patch));window.__lastUpdate={filters,patch};}
    if(remover&&!falhaNota)data.forEach(row=>delete window.__state.annotations[row.id]);
    if(range)data=data.slice(range[0],range[1]+1);
    const response={data:single?data[0]||null:data,error:falhaNota||(!single&&window.__adminQueryFailure&&['usuarios','relatorios_por_rota'].includes(table))?{message:'Falha de teste'}:null};
@@ -32,9 +32,10 @@ window.supabase={createClient(){
  const state=window.__state,doc=state.documents[args.p_usuario_id+'|'+args.p_rota_id];
  if(window.__totalFailure||!doc||doc.arquivo_path!==args.p_arquivo_path||!state.user.ativo||(!['admin','operador_coleta'].includes(state.user.perfil))||(state.user.perfil!=='admin'&&(state.user.id!==args.p_usuario_id||!state.user.rotas_coleta_ids.includes(args.p_rota_id))))return {data:null,error:{message:'Não autorizado ou PDF substituído'}};
  const latest=Object.values(state.documents).filter(d=>d.rota_id===args.p_rota_id).sort((a,b)=>String(b.atualizado_em||'').localeCompare(String(a.atualizado_em||'')))[0];
- const applied=latest?.arquivo_path===doc.arquivo_path,route=state.routes.find(r=>r.id===args.p_rota_id);
- if(applied&&route)route.numero_coletas=args.p_total;
- return {data:{aplicado:applied,total:args.p_total,numero_coletas:route?.numero_coletas,rota_id:args.p_rota_id},error:null};
+ const applied=latest?.arquivo_path===doc.arquivo_path,route=state.routes.find(r=>r.id===args.p_rota_id),key=args.p_usuario_id+'|'+args.p_rota_id;
+ state.totals||={};const previous=state.totals[key],manual=applied&&previous?.path===args.p_arquivo_path&&previous?.total===args.p_total&&route?.numero_coletas!==args.p_total;
+ if(!manual){state.totals[key]={path:args.p_arquivo_path,total:args.p_total};if(applied&&route)route.numero_coletas=args.p_total;}
+ return {data:{aplicado:applied&&!manual,preservado_manual:manual,total:args.p_total,numero_coletas:route?.numero_coletas,rota_id:args.p_rota_id},error:null};
 },removeChannel:async()=>{},channel(){const c={on(){return c},subscribe(){return c},presenceState(){return {}},track:async()=>{}};return c;}};
 }};`;
 

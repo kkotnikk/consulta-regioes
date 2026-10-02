@@ -1945,11 +1945,12 @@ async function salvarEdicaoRota() {
     status
   };
 
-  // Só envia Número de Coletas quando houver um valor digitado.
-  // Isso mantém compatibilidade com rotas antigas e permite editar o status normalmente.
-  if (numeroColetasValor !== "") {
-    atualizacao.numero_coletas = Number(numeroColetasValor);
+  const numeroColetas = numeroColetasValor.trim() === "" ? null : Number(numeroColetasValor);
+  if (numeroColetas !== null && (!Number.isInteger(numeroColetas) || numeroColetas < 0 || numeroColetas > 1000000)) {
+    mostrarToast("Informe um número inteiro de coletas entre 0 e 1.000.000.", "erro");
+    return;
   }
+  atualizacao.numero_coletas = numeroColetas;
 
   // Ao voltar para Em rota, apaga o horário do retorno anterior.
   if (status === "em_rota") {
@@ -1961,19 +1962,26 @@ async function salvarEdicaoRota() {
     botaoSalvar.textContent = "Salvando...";
   }
 
-  const { error } = await supabaseClient
-    .from("rotas")
-    .update(atualizacao)
-    .eq("id", id);
+  let data, error;
+  try {
+    ({ data, error } = await supabaseClient
+      .from("rotas")
+      .update(atualizacao)
+      .eq("id", id)
+      .select("id,numero_coletas")
+      .maybeSingle());
+  } catch (falha) {
+    error = falha;
+  }
 
   if (botaoSalvar) {
     botaoSalvar.disabled = false;
     botaoSalvar.textContent = "Salvar alterações";
   }
 
-  if (error) {
-    console.error("Erro ao editar rota:", error);
-    mostrarToast("Não foi possível salvar as alterações.", "erro");
+  if (error || !data || data.numero_coletas !== numeroColetas) {
+    console.error("Erro ao editar rota:", error || "Nenhuma rota foi atualizada ou o número não foi confirmado.");
+    mostrarToast("O número de coletas não foi salvo. Confira seu acesso e tente novamente.", "erro");
     return;
   }
 
@@ -3338,7 +3346,7 @@ function renderizarRelatorio() {
   frame.title = "Relatório da rota " + relatorioRotaId + ": " + relatorioDocumentoAtual.nome;
   frame.dataset.documento = relatorioDocumentoAtual.arquivo_path;
   const pdfUrl = relatorioPdfUrl;
-  frame.src = "./relatorio-pdf-viewer.html?v=20261001-total-rodape";
+  frame.src = "./relatorio-pdf-viewer.html?v=20261002-coletas";
   frame.onload = () => {
     if (relatorioPdfUrl === pdfUrl && usuarioPodeAcessarRelatorio()) frame.contentWindow.abrirPdf?.(pdfUrl, criarApiAnotacoesRelatorio(frame, pdfUrl));
   };

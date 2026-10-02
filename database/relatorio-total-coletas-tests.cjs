@@ -40,6 +40,9 @@ const fs=require('fs'),assert=require('node:assert/strict'),{PGlite}=require('@e
   await upload(2,1,2);await assert.rejects(()=>ler(2,1,999),/substituído/);
   assert.equal((await ler(2,1,0,2)).aplicado,true);
  });
+ // A releitura do mesmo PDF não apaga o ajuste manual feito pelo admin.
+ await as(1,async()=>{await db.query('update rotas set numero_coletas=31 where id=1')});
+ await as(2,async()=>{const manual=await ler(2,1,0,2);assert.equal(manual.preservado_manual,true);assert.equal(manual.numero_coletas,31)});
  await as(3,async()=>{await upload(3,1);assert.equal((await ler(3,1,42,1,'ocr')).numero_coletas,42)});
  await as(2,async()=>{const antigo=await ler(2,1,7,2);assert.equal(antigo.aplicado,false);assert.equal(antigo.numero_coletas,42)});
  await as(1,async()=>{

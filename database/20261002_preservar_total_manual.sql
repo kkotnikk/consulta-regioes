@@ -1,24 +1,4 @@
--- A leitura do PDF pode atualizar somente o número de coletas da sua rota.
--- O registro interno preserva origem, arquivo e autor sem publicar documentos.
-create table consulta_regioes_private.relatorios_totais (
- usuario_id uuid not null,
- rota_id bigint not null,
- arquivo_path text not null,
- total integer not null check(total between 0 and 1000000),
- origem text not null check(origem in ('texto','ocr')),
- lido_por uuid not null references auth.users(id),
- lido_em timestamptz not null default now(),
- primary key(usuario_id,rota_id),
- foreign key(usuario_id,rota_id) references public.relatorios_por_rota(usuario_id,rota_id) on delete cascade
-);
-create index relatorios_totais_autor_idx on consulta_regioes_private.relatorios_totais(lido_por);
-alter table consulta_regioes_private.relatorios_totais enable row level security;
-revoke all on consulta_regioes_private.relatorios_totais from public,anon,authenticated;
-create policy totais_relatorio_leitura on consulta_regioes_private.relatorios_totais for select to authenticated
- using(consulta_regioes_private.usuario_pode_acessar_relatorio_rota(usuario_id,rota_id));
-
--- SECURITY DEFINER é restrito a esta operação e ao schema privado: o Operador
--- Coleta continua sem UPDATE direto de rotas ou de outros campos cadastrais.
+-- Releituras do mesmo PDF preservam um ajuste manual feito depois da leitura.
 create or replace function consulta_regioes_private.registrar_total_coletas_pdf(
  p_usuario_id uuid,p_rota_id bigint,p_arquivo_path text,p_total integer,p_origem text
 ) returns jsonb language plpgsql security definer set search_path='' as $$
@@ -68,12 +48,4 @@ begin
  return jsonb_build_object('aplicado',false,'total',p_total,'numero_coletas',quantidade,'rota_id',p_rota_id);
 end;
 $$;
-revoke all on function consulta_regioes_private.registrar_total_coletas_pdf(uuid,bigint,text,integer,text) from public,anon,authenticated;
-grant execute on function consulta_regioes_private.registrar_total_coletas_pdf(uuid,bigint,text,integer,text) to authenticated;
-create function public.registrar_total_coletas_pdf(p_usuario_id uuid,p_rota_id bigint,p_arquivo_path text,p_total integer,p_origem text)
-returns jsonb language sql security invoker set search_path='' as $$
- select consulta_regioes_private.registrar_total_coletas_pdf($1,$2,$3,$4,$5);
-$$;
-revoke all on function public.registrar_total_coletas_pdf(uuid,bigint,text,integer,text) from public,anon,authenticated;
-grant execute on function public.registrar_total_coletas_pdf(uuid,bigint,text,integer,text) to authenticated;
 notify pgrst,'reload schema';
